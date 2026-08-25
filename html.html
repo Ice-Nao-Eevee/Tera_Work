@@ -3,43 +3,126 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tera Work</title>
+    <title>Selera Sambal</title>
     <link rel="stylesheet" href="global.css" />
     <link rel="stylesheet" href="css.css" />
   </head>
   <body>
-    <main class="page-shell">
-      <section class="hero-card">
-        <p class="eyebrow">Home</p>
-        <h1>Selamat datang di Tera Work</h1>
-        <p class="lead">
-          Halaman ini sudah memakai background manual dari
-          <span>foodbg.jpg</span> dan bisa langsung dibuka di browser.
-        </p>
+    <!-- Header / Navbar -->
+    <header class="navbar">
+      <a href="index.html" class="brand">
+        <img src="Logo.jpeg" alt="Logo Selera Sambal" class="logo-img" />
+        <span class="brand-name">Selera Sambal</span>
+      </a>
+      
+      <nav class="nav-links">
+        <a href="menu.html">Menu Kami</a>
+        <a href="menu.html#promo">Promo</a>
+        <a href="#tentang">Tentang Kami</a>
+      </nav>
+      
+      <div class="nav-actions">
+        <!-- Ikon Sparkle Diamond -->
+        <svg class="sparkle-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#3B82F6"/>
+        </svg>
 
-        <div class="actions">
-          <a class="primary-btn" href="#menu">Lihat Menu</a>
-          <a class="secondary-btn" href="#tentang">Tentang</a>
+        <!-- Badge Meja -->
+        <div class="table-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+            <path d="M7 2v20"></path>
+            <path d="M21 2l-4 4v16"></path>
+            <path d="M17 11c3 0 4-4 4-9H17z"></path>
+          </svg>
+          Meja 5
+        </div>
+
+        <!-- Ikon Keranjang -->
+        <button class="cart-icon-btn" aria-label="Keranjang">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#72231a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="home-main-content">
+      <section class="hero-section-alt">
+        <div class="hero-container">
+          
+          <!-- Bagian Teks Kiri -->
+          <div class="hero-text-content">
+            <div class="hero-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#8c2c20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              100+ Cita Rasa Istimewa
+            </div>
+            
+            <h1 class="hero-heading">
+              Rasa Favoritmu <br>
+              <span class="text-maroon">Khas Nusantara</span>
+            </h1>
+            
+            <p class="hero-desc">
+              Pilih menu yang kamu suka, nikmati kelezatan sambal istimewa racikan tangan koki terbaik langsung di meja Anda.
+            </p>
+
+            <!-- INI TOMBOL YANG DIHUBUNGKAN KE MENU LIST -->
+            <a href="Menu-list.html" class="btn-lihat-menu">
+              Lihat Menu Selengkapnya
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 6px;">
+            <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </a>
+          </div>
+
+          <!-- Bagian Gambar Kanan -->
+          <div class="hero-image-content">
+            <!-- Pastikan Anda punya gambar hero di folder Anda. Sementara ini disesuaikan dengan broken image di contoh Anda -->
+            <img src="hero-sajikan.jpg" alt="Sajikan Selera Sambal" class="hero-img-main" onerror="this.style.display='none'">
+          </div>
+
         </div>
       </section>
-
-      <section id="menu" class="info-grid">
-        <article class="info-card">
-          <h2>Background Manual</h2>
-          <p>
-            Jika ingin mengganti gambar latar, cukup replace file
-            <code>foodbg.jpg</code> atau ubah path di <code>global.css</code>.
-          </p>
-        </article>
-
-        <article id="tentang" class="info-card">
-          <h2>File Utama</h2>
-          <p>
-            Tampilan home sekarang ada di <code>html.html</code>, sedangkan
-            style global ada di <code>global.css</code> dan <code>css.css</code>.
-          </p>
-        </article>
-      </section>
     </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div class="footer-brand-info">
+          <h3>Selera Sambal</h3>
+          <p>
+            Berdiri sejak 14 November 2023, Selera Sambal hadir membawa racikan sambal ulek khas Nusantara yang autentik. Dibuat dari rempah segar pilihan dan resep rumahan, kami siap bikin momen makan nasi hangatmu jadi jauh lebih nikmat.
+          </p>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Layanan</h4>
+          <ul>
+            <li><a href="#dine-in">Dine-In</a></li>
+            <li><a href="#ambil-sendiri">Ambil Sendiri</a></li>
+            <li><a href="#katering">Katering</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Hubungi Kami</h4>
+          <ul>
+            <li><a href="#whatsapp">WhatsApp</a></li>
+            <li><a href="#instagram">Instagram</a></li>
+            <li><a href="#email">Email Support</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <hr />
+        <p>&copy; 2026 Selera Sambal Nusantara. Hak Cipta Dilindungi.</p>
+      </div>
+    </footer>
   </body>
 </html>
