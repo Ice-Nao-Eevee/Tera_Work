@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Selera Sambal - Khas Nusantara</title>
+    <link rel="stylesheet" href="global.css" />
+    <link rel="stylesheet" href="css.css" />
+  </head>
+  <body class="light-bg">
+    <!-- Header / Navbar -->
+    <!-- Header / Navbar -->
+    <header class="navbar">
+      <!-- 1. Brand dibungkus tag <a> agar bisa dipencet untuk kembali ke Home -->
+      <a href="index.html" class="brand" style="text-decoration: none;">
+        <img src="Logo.jpeg" alt="Logo Selera Sambal" class="logo-img" />
+        <span class="brand-name">Selera Sambal</span>
+      </a>
+      
+      <!-- 2. Navigasi tengah (Tanpa tulisan Home) -->
+      <nav class="nav-links">
+        <a href="Menu-list.html">Menu Kami</a>
+        <a href="#promo">Promo</a>
+        <a href="#tentang">Tentang Kami</a>
+      </nav>
+      
+      <!-- 3. Ikon Kanan (Lengkap dengan keranjang) -->
+      <div class="nav-actions">
+        <!-- Ikon Bintang Biru -->
+        <svg class="sparkle-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#4A90E2"/>
+        </svg>
+
+        <!-- Badge Meja & Ikon Garpu Sendok -->
+        <div class="table-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+            <path d="M7 2v20"></path>
+            <path d="M21 2l-4 4v16"></path>
+            <path d="M17 11c3 0 4-4 4-9H17z"></path>
+          </svg>
+          Meja 5
+        </div>
+
+        <!-- Ikon Keranjang (Shopping Bag) -->
+        <button class="cart-icon-btn" aria-label="Keranjang">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#72231a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Layout (Split Screen) -->
+    <main class="hero-split">
+      <div class="hero-text-content">
+        <!-- Badge Tag Lingkaran Merah & Bintang -->
+        <div class="badge-tag">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="12" fill="#83271d"/>
+            <path d="M12 16.5l4.95 3-1.28-5.65L20 9.87l-5.78-.49L12 4.12 9.78 9.38 4 9.87l4.33 3.98L7.05 19.5 12 16.5z" fill="#ffffff"/>
+          </svg>
+          100+ Cita Rasa Istimewa
+        </div>
+
+        <h1 class="split-title">
+          Rasa Favoritmu<br />
+          <span class="highlight-red">Khas Nusantara</span>
+        </h1>
+
+        <p class="split-lead">
+          Pilih menu yang kamu suka, nikmati kelezatan sambal istimewa racikan tangan koki terbaik langsung di meja Anda.
+        </p>
+
+        <!-- Tombol Utama + Chevron Bawah -->
+        <a class="primary-btn btn-arrow" href="#menu-list">
+          Lihat Menu Selengkapnya
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </a>
+      </div>
+
+      <div class="hero-image-content">
+        <img src="menu-hero.jpg" alt="Sajikan Selera Sambal" class="rounded-banner" />
+      </div>
+    </main>
+
+    <!-- Footer Solid Dark -->
+    <footer class="site-footer solid-dark">
+      <div class="footer-grid">
+        <div class="footer-brand-info">
+          <h3>Selera Sambal</h3>
+          <p>
+            Berdiri sejak 14 November 2023, Selera Sambal hadir membawa racikan sambal ulek khas Nusantara yang autentik. Dibuat dari rempah segar pilihan dan resep rumahan, kami siap bikin momen makan nasi hangatmu jadi jauh lebih nikmat.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h4>Layanan</h4>
+          <ul>
+            <li><a href="#dine-in">Dine-In</a></li>
+            <li><a href="#ambil-sendiri">Ambil Sendiri</a></li>
+            <li><a href="#catering">Catering</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4>Hubungi Kami</h4>
+          <ul>
+            <li><a href="#whatsapp">WhatsApp</a></li>
+            <li><a href="#instagram">Instagram</a></li>
+            <li><a href="#email">Email Support</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <hr />
+        <p>&copy; 2026 Selera Sambal Nusantara. Hak Cipta Dilindungi.</p>
+      </div>
+    </footer>
+  </body>
+</html>
