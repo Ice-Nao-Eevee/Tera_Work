@@ -105,7 +105,7 @@ export default function AdminPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Masukkan Password (admin123)"
+            placeholder="Masukkan Password"
             className="w-full px-4 py-3 rounded-2xl border border-[#f5c7bc] bg-white text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#7a2323]"
           />
           <button

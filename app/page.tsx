@@ -9,7 +9,7 @@ export default function HomePage() {
   return (
     <main className="min-h-[calc(100vh-80px)] flex flex-col justify-between relative bg-[#2a1a15] text-white overflow-hidden">
       {/* Background Image with Dark Gradient Overlay matching desktop-welcome screenshot */}
-      <div className="absolute inset-0 z-0 opacity-40 mix-blend-overlay">
+      <div className="absolute inset-0 z-0 opacity-70">
         <Image
           src="/foodbg.jpg"
           alt="Selera Sambal Background"
@@ -23,7 +23,7 @@ export default function HomePage() {
         />
       </div>
 
-      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#2a1a15] via-[#2a1a15]/60 to-transparent" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#2a1a15]/90 via-[#2a1a15]/20 to-transparent" />
 
       {/* Hero Content Container */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-16 md:pt-28 pb-20 flex-1 flex flex-col justify-center items-center text-center">

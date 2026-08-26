@@ -1,4 +1,4 @@
-// File: E:\Tera_Work-testing\app\layout.tsx
+// File: D:\Tera_Work\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
