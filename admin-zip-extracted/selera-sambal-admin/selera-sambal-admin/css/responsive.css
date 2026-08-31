@@ -1,0 +1,133 @@
+@media(max-width:1024px) {
+  .app {
+    grid-template-columns:72px 1fr
+  }
+  .sidebar {
+    padding:20px 10px
+  }
+  .logo span,.nav-link span:not(.nav-icon),.nav-label,.side-bottom .nav-link span:not(.nav-icon) {
+    display:none
+  }
+  .logo {
+    justify-content:center;
+    padding:0 0 20px
+  }
+  .nav-link {
+    justify-content:center
+  }
+  .cards {
+    grid-template-columns:repeat(2,1fr)
+  }
+}
+@media(max-width:700px) {
+  .app {
+    display:block
+  }
+  .sidebar {
+    height:100vh;
+    left:0;
+    padding-top:18px;
+    position:fixed;
+    transform:translateX(-100%);
+    transition:.25s;
+    width:255px;
+    z-index:50
+  }
+  .sidebar.open {
+    transform:none
+  }
+  .sidebar .logo span,.sidebar .nav-link span:not(.nav-icon),.sidebar .nav-label {
+    display:block
+  }
+  .sidebar .logo,.sidebar .nav-link {
+    justify-content:flex-start
+  }
+  .topbar {
+    padding:0 15px
+  }
+  .menu-toggle {
+    display: inline-flex;
+  }
+  .topbar .crumb {
+    display:none
+  }
+  .global-search {
+    width:min(42vw,220px)
+  }
+  .profile-name {
+    display:none
+  }
+  .page {
+    padding:22px 15px
+  }
+  .page-heading {
+    align-items:stretch;
+    flex-direction:column
+  }
+  .page-heading .btn {
+    align-self:flex-start
+  }
+  .dashboard-grid {
+    grid-template-columns:1fr
+  }
+  .form-grid {
+    grid-template-columns:1fr
+  }
+  .form-grid .full {
+    grid-column:auto
+  }
+  .modal {
+    padding:19px
+  }
+  .data-table {
+    min-width:650px
+  }
+  .product-grid {
+    grid-template-columns:1fr
+  }
+  .login-shell {
+    display:block
+  }
+  .brand-panel {
+    display:none
+  }
+  .login-card {
+    border-radius:0;
+    min-height:100vh;
+    padding-top:90px;
+    width:100%
+  }
+  .mobile-logo {
+    align-items:center;
+    display:flex;
+    font-weight:700;
+    gap:8px;
+    margin-bottom:50px
+  }
+  .mobile-logo b {
+    align-items:center;
+    background:var(--primary);
+    border-radius:8px;
+    color:#fff;
+    display:flex;
+    font-family:'Playfair Display';
+    height:29px;
+    justify-content:center;
+    width:29px
+  }
+}
+@media(max-width:390px) {
+  .cards {
+    grid-template-columns:1fr
+  }
+  .top-actions .avatar {
+    display:none
+  }
+  .global-search {
+    width:145px
+  }
+  .toolbar input {
+    min-width:100%;
+    width:100%
+  }
+}

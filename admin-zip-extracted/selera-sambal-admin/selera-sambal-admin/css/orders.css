@@ -1,0 +1,18 @@
+@import url('responsive.css');
+
+@media print {
+  body>*:not(.modal-layer) {
+    display:none
+  }
+  .modal-layer {
+    background:#fff;
+    position:static
+  }
+  .modal {
+    box-shadow:none;
+    max-width:500px
+  }
+  .modal-head,.form-actions {
+    display:none
+  }
+}
