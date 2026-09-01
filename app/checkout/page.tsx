@@ -27,20 +27,25 @@ export default function CheckoutPage() {
   const [promos, setPromos] = useState<IPromo[]>(STATIC_PROMOS);
   const [addedPromoId, setAddedPromoId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [taxRate, setTaxRate] = useState<number>(0.10);
+  const [serviceRate, setServiceRate] = useState<number>(0.05);
 
   useEffect(() => {
     setItems(getCartItems());
     setTableSession(getTableSession());
     setNotes(getOrderNotes());
 
-    fetch('/api/promos')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.promos && data.promos.length > 0) {
-          setPromos(data.promos);
-        }
-      })
-      .catch(() => {});
+    // Fetch promos and settings in parallel from DB
+    Promise.all([
+      fetch('/api/promos').then(r => r.json()),
+      fetch('/api/settings').then(r => r.json()),
+    ]).then(([promoData, settingsData]) => {
+      if (promoData.promos && promoData.promos.length > 0) setPromos(promoData.promos);
+      if (settingsData.settings) {
+        setTaxRate((settingsData.settings.taxRatePercent ?? 10) / 100);
+        setServiceRate((settingsData.settings.serviceChargeRatePercent ?? 5) / 100);
+      }
+    }).catch(() => {});
   }, []);
 
   const handleAddPromo = (promo: IPromo) => {
@@ -62,8 +67,8 @@ export default function CheckoutPage() {
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const taxAmount = Math.round(subtotal * 0.10); // PB1 10%
-  const serviceChargeAmount = Math.round(subtotal * 0.05); // Service 5%
+  const taxAmount = Math.round(subtotal * taxRate);
+  const serviceChargeAmount = Math.round(subtotal * serviceRate);
   const combinedTaxService = taxAmount + serviceChargeAmount;
   const grandTotal = subtotal + combinedTaxService;
 
@@ -246,7 +251,7 @@ export default function CheckoutPage() {
                 <span className="font-semibold text-[#2a1a15]">{formatRupiah(subtotal)}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-[#735a52]">
-                <span>Pajak & Layanan (15%)</span>
+                <span>Pajak ({Math.round(taxRate * 100)}%) + Layanan ({Math.round(serviceRate * 100)}%)</span>
                 <span className="font-semibold text-[#2a1a15]">{formatRupiah(combinedTaxService)}</span>
               </div>
             </div>

@@ -1,3 +1,12 @@
+/**
+ * lib/db.ts — Next.js-safe cached Mongoose connection.
+ *
+ * Uses a module-level cache (via `global`) so that a single connection is
+ * reused across hot reloads in development and across serverless invocations
+ * in production.  Switching between local MongoDB and Atlas is purely an
+ * env-var change (MONGODB_URI) — no code changes required.
+ */
+
 import mongoose from 'mongoose';
 import {
   CategoryModel,
@@ -5,9 +14,6 @@ import {
   TableModel,
   PromoModel,
   SettingsModel,
-  OrderModel,
-  ITable,
-  IOrder,
 } from './models';
 import { generateTableToken } from './jwt';
 import {
@@ -17,70 +23,82 @@ import {
   STATIC_SETTINGS,
 } from './staticData';
 
-// Re-export static data under legacy names so server-side code still works
-export const INITIAL_CATEGORIES = STATIC_CATEGORIES;
-export const INITIAL_MENU_ITEMS = STATIC_MENU_ITEMS;
-export const INITIAL_PROMOS = STATIC_PROMOS;
-export const INITIAL_SETTINGS = STATIC_SETTINGS;
+const MONGODB_URI = process.env.MONGODB_URI!;
 
-const MONGODB_URI = process.env.MONGODB_URI || '';
-
-let isConnected = false;
-
-// Global in-memory cache for fast fallback
-let memoryStore = {
-  categories: [...STATIC_CATEGORIES],
-  menuItems: [...STATIC_MENU_ITEMS],
-  promos: [...STATIC_PROMOS],
-  settings: { ...STATIC_SETTINGS },
-  tables: [
-    { _id: 'table-1', tableNumber: 1, qrToken: generateTableToken('table-1', 1), isActive: true },
-    { _id: 'table-2', tableNumber: 2, qrToken: generateTableToken('table-2', 2), isActive: true },
-    { _id: 'table-3', tableNumber: 3, qrToken: generateTableToken('table-3', 3), isActive: true },
-    { _id: 'table-5', tableNumber: 5, qrToken: generateTableToken('table-5', 5), isActive: true },
-    { _id: 'table-10', tableNumber: 10, qrToken: generateTableToken('table-10', 10), isActive: true },
-  ] as ITable[],
-  orders: [] as IOrder[],
-};
-
-export async function connectDB() {
-  if (isConnected) return;
-
-  if (MONGODB_URI) {
-    try {
-      await mongoose.connect(MONGODB_URI);
-      isConnected = true;
-      console.log('Connected to MongoDB Atlas');
-      await seedDatabaseIfEmpty();
-      return;
-    } catch (err) {
-      console.warn('MongoDB connection failed, falling back to memory store:', err);
-    }
-  }
-  console.log('Running Selera Sambal with hybrid in-memory store');
+if (!MONGODB_URI) {
+  throw new Error(
+    'Please define the MONGODB_URI environment variable inside .env.local'
+  );
 }
 
-async function seedDatabaseIfEmpty() {
-  if (!isConnected) return;
-  const count = await MenuItemModel.countDocuments();
-  if (count === 0) {
-    await CategoryModel.insertMany(STATIC_CATEGORIES);
-    await MenuItemModel.insertMany(STATIC_MENU_ITEMS);
-    await PromoModel.insertMany(STATIC_PROMOS);
-    await SettingsModel.create(STATIC_SETTINGS);
+// ── Global cache (survives Next.js hot-reloads in dev) ───────────────────────
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
 
-    // Seed Tables
-    for (let i = 1; i <= 10; i++) {
-      const id = `table-${i}`;
-      await TableModel.create({
-        tableNumber: i,
-        qrToken: generateTableToken(id, i),
-        isActive: true,
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongooseCache: MongooseCache | undefined;
+}
+
+if (!global._mongooseCache) {
+  global._mongooseCache = { conn: null, promise: null };
+}
+
+const cached = global._mongooseCache;
+
+// ── Main connect function ─────────────────────────────────────────────────────
+export async function connectDB(): Promise<typeof mongoose> {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        bufferCommands: false,
+      })
+      .then(async (mg) => {
+        console.log('✅ Connected to MongoDB:', MONGODB_URI.split('/').pop());
+        await seedDatabaseIfEmpty();
+        return mg;
+      })
+      .catch((err) => {
+        // Reset cache so the next request retries the connection
+        cached.conn = null;
+        cached.promise = null;
+        throw err;
       });
-    }
   }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
 }
 
-export function getMemoryStore() {
-  return memoryStore;
+// ── Auto-seed on first connection ────────────────────────────────────────────
+async function seedDatabaseIfEmpty() {
+  const count = await MenuItemModel.countDocuments();
+  if (count > 0) return; // already seeded
+
+  console.log('🌱 Seeding database with initial data...');
+
+  // Strip the string _id fields from static data so MongoDB generates ObjectIds
+  const stripId = <T extends { _id?: any }>(items: T[]): Omit<T, '_id'>[] =>
+    items.map(({ _id, ...rest }) => rest);
+
+  await CategoryModel.insertMany(stripId(STATIC_CATEGORIES));
+  await MenuItemModel.insertMany(stripId(STATIC_MENU_ITEMS));
+  await PromoModel.insertMany(stripId(STATIC_PROMOS));
+  await SettingsModel.create({ ...STATIC_SETTINGS });
+
+  // Seed tables 1–10
+  for (let i = 1; i <= 10; i++) {
+    const id = `table-${i}`;
+    await TableModel.create({
+      tableNumber: i,
+      qrToken: generateTableToken(id, i),
+      isActive: true,
+    });
+  }
+
+  console.log('✅ Database seeded successfully.');
 }

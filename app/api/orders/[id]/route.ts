@@ -1,59 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB, getMemoryStore } from '@/lib/db';
+import { connectDB } from '@/lib/db';
 import { OrderModel } from '@/lib/models';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+// GET /api/orders/[id] — fetch a single order by orderCode
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const orderCode = decodeURIComponent(params.id);
-
   try {
     await connectDB();
-    if (process.env.MONGODB_URI) {
-      const order = await OrderModel.findOne({ orderCode }).lean();
-      if (order) {
-        return NextResponse.json({ order });
-      }
+    const order = await OrderModel.findOne({ orderCode }).lean();
+    if (!order) {
+      return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
+    return NextResponse.json({ order });
   } catch (err) {
-    console.log('Using memory store fallback for /api/orders/[id]');
+    console.error('GET /api/orders/[id] error:', err);
+    return NextResponse.json({ error: 'Gagal memuat pesanan' }, { status: 500 });
   }
-
-  const store = getMemoryStore();
-  const order = store.orders.find((o) => o.orderCode === orderCode);
-
-  if (!order) {
-    return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
-  }
-
-  return NextResponse.json({ order });
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+// PATCH /api/orders/[id] — update order status (used by admin panel)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const orderCode = decodeURIComponent(params.id);
-  const body = await req.json();
-
   try {
     await connectDB();
-    if (process.env.MONGODB_URI) {
-      const updated = await OrderModel.findOneAndUpdate(
-        { orderCode },
-        { status: body.status, updatedAt: new Date() },
-        { new: true }
-      ).lean();
-      if (updated) {
-        return NextResponse.json({ order: updated });
-      }
+    const { status } = await req.json();
+    const order = await OrderModel.findOneAndUpdate(
+      { orderCode },
+      { status, updatedAt: new Date() },
+      { new: true }
+    ).lean();
+    if (!order) {
+      return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
+    return NextResponse.json({ order });
   } catch (err) {
-    console.log('Using memory store fallback for PATCH /api/orders/[id]');
+    console.error('PATCH /api/orders/[id] error:', err);
+    return NextResponse.json({ error: 'Gagal memperbarui status pesanan' }, { status: 500 });
   }
+}
 
-  const store = getMemoryStore();
-  const index = store.orders.findIndex((o) => o.orderCode === orderCode);
-  if (index > -1) {
-    store.orders[index].status = body.status;
-    store.orders[index].updatedAt = new Date().toISOString();
-    return NextResponse.json({ order: store.orders[index] });
+// DELETE /api/orders/[id] — delete an order (admin only)
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const orderCode = decodeURIComponent(params.id);
+  try {
+    await connectDB();
+    const order = await OrderModel.findOneAndDelete({ orderCode }).lean();
+    if (!order) {
+      return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('DELETE /api/orders/[id] error:', err);
+    return NextResponse.json({ error: 'Gagal menghapus pesanan' }, { status: 500 });
   }
-
-  return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
 }

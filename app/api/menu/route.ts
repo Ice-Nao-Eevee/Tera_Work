@@ -1,24 +1,31 @@
-import { NextResponse } from 'next/server';
-import { connectDB, getMemoryStore } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { connectDB } from '@/lib/db';
 import { MenuItemModel, CategoryModel } from '@/lib/models';
 
+// GET /api/menu — list all active menu items + all categories
 export async function GET() {
   try {
     await connectDB();
-    if (process.env.MONGODB_URI) {
-      const items = await MenuItemModel.find({ isActive: true }).lean();
-      const categories = await CategoryModel.find().sort({ sortOrder: 1 }).lean();
-      if (items.length > 0) {
-        return NextResponse.json({ menuItems: items, categories });
-      }
-    }
+    const [items, categories] = await Promise.all([
+      MenuItemModel.find({ isActive: true }).lean(),
+      CategoryModel.find().sort({ sortOrder: 1 }).lean(),
+    ]);
+    return NextResponse.json({ menuItems: items, categories });
   } catch (err) {
-    console.log('Using memory store fallback for /api/menu');
+    console.error('GET /api/menu error:', err);
+    return NextResponse.json({ error: 'Gagal memuat menu' }, { status: 500 });
   }
+}
 
-  const store = getMemoryStore();
-  return NextResponse.json({
-    menuItems: store.menuItems,
-    categories: store.categories,
-  });
+// POST /api/menu — create a new menu item
+export async function POST(req: NextRequest) {
+  try {
+    await connectDB();
+    const body = await req.json();
+    const item = await MenuItemModel.create(body);
+    return NextResponse.json({ item }, { status: 201 });
+  } catch (err) {
+    console.error('POST /api/menu error:', err);
+    return NextResponse.json({ error: 'Gagal menambah menu' }, { status: 500 });
+  }
 }

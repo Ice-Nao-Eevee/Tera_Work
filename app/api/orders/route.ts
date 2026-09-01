@@ -1,35 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB, getMemoryStore } from '@/lib/db';
-import { OrderModel, IOrder } from '@/lib/models';
+import { connectDB } from '@/lib/db';
+import { OrderModel } from '@/lib/models';
 
 function generateOrderCode(): string {
   const num = Math.floor(1000 + Math.random() * 9000);
   return `ARU-${num}`;
 }
 
+// GET /api/orders — list all orders, newest first
 export async function GET() {
   try {
     await connectDB();
-    if (process.env.MONGODB_URI) {
-      const orders = await OrderModel.find().sort({ createdAt: -1 }).lean();
-      return NextResponse.json({ orders });
-    }
+    const orders = await OrderModel.find().sort({ createdAt: -1 }).lean();
+    return NextResponse.json({ orders });
   } catch (err) {
-    console.log('Using memory store fallback for GET /api/orders');
+    console.error('GET /api/orders error:', err);
+    return NextResponse.json({ error: 'Gagal memuat pesanan' }, { status: 500 });
   }
-
-  const store = getMemoryStore();
-  return NextResponse.json({ orders: store.orders });
 }
 
+// POST /api/orders — create a new order (from customer checkout)
 export async function POST(req: NextRequest) {
   try {
+    await connectDB();
     const body = await req.json();
-    const orderCode = generateOrderCode();
 
-    const newOrder: IOrder = {
+    // Ensure unique order code (retry up to 3 times on collision)
+    let orderCode = generateOrderCode();
+    let attempts = 0;
+    while (attempts < 3) {
+      const existing = await OrderModel.findOne({ orderCode });
+      if (!existing) break;
+      orderCode = generateOrderCode();
+      attempts++;
+    }
+
+    const order = await OrderModel.create({
       orderCode,
-      tableNumber: body.tableNumber || 5,
+      tableNumber: body.tableNumber || 1,
       items: body.items || [],
       notes: body.notes || '',
       subtotal: body.subtotal || 0,
@@ -37,26 +45,11 @@ export async function POST(req: NextRequest) {
       serviceChargeAmount: body.serviceChargeAmount || 0,
       total: body.total || 0,
       status: 'received',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    });
 
-    await connectDB();
-
-    if (process.env.MONGODB_URI) {
-      try {
-        const created = await OrderModel.create(newOrder);
-        return NextResponse.json({ order: created }, { status: 201 });
-      } catch (err) {
-        console.error('Error saving order to MongoDB:', err);
-      }
-    }
-
-    // Save to memory store
-    const store = getMemoryStore();
-    store.orders.unshift(newOrder);
-    return NextResponse.json({ order: newOrder }, { status: 201 });
+    return NextResponse.json({ order }, { status: 201 });
   } catch (err) {
+    console.error('POST /api/orders error:', err);
     return NextResponse.json({ error: 'Gagal membuat pesanan' }, { status: 500 });
   }
 }

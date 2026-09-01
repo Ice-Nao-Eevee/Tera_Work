@@ -20,6 +20,21 @@ export default function CartPage() {
   const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState<string>('');
+  const [taxRate, setTaxRate] = useState<number>(0.10);
+  const [serviceRate, setServiceRate] = useState<number>(0.05);
+
+  // Load tax/service rates from DB settings
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.settings) {
+          setTaxRate((data.settings.taxRatePercent ?? 10) / 100);
+          setServiceRate((data.settings.serviceChargeRatePercent ?? 5) / 100);
+        }
+      })
+      .catch(() => {}); // keep defaults on error
+  }, []);
 
   const refreshCart = () => {
     setItems(getCartItems());
@@ -38,10 +53,10 @@ export default function CartPage() {
     saveOrderNotes(val);
   };
 
-  // Tax rates calculations (PB1 10% + Service 5% = Total 15%)
+  // Tax rates from DB settings (falls back to 10%/5% if settings not loaded yet)
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const taxAmount = Math.round(subtotal * 0.10); // PB1 10%
-  const serviceChargeAmount = Math.round(subtotal * 0.05); // Service 5%
+  const taxAmount = Math.round(subtotal * taxRate);
+  const serviceChargeAmount = Math.round(subtotal * serviceRate);
   const combinedTaxService = taxAmount + serviceChargeAmount;
   const grandTotal = subtotal + combinedTaxService;
 
@@ -184,7 +199,7 @@ export default function CartPage() {
                 <span className="font-semibold text-[#2a1a15]">{formatRupiah(subtotal)}</span>
               </div>
               <div className="flex justify-between items-center text-xs text-[#735a52]">
-                <span>Pajak Restoran (PB1 10%) + Service (5%)</span>
+                <span>Pajak ({Math.round(taxRate * 100)}%) + Service ({Math.round(serviceRate * 100)}%)</span>
                 <span className="font-semibold text-[#2a1a15]">{formatRupiah(combinedTaxService)}</span>
               </div>
             </div>
