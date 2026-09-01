@@ -1,7 +1,9 @@
 {
-  "/page": "app/page.js",
-  "/api/categories/route": "app/api/categories/route.js",
+  "/menu/page": "app/menu/page.js",
   "/api/orders/route": "app/api/orders/route.js",
   "/api/menu/route": "app/api/menu/route.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/promos/route": "app/api/promos/route.js",
+  "/api/settings/route": "app/api/settings/route.js",
   "/admin/page": "app/admin/page.js"
 }

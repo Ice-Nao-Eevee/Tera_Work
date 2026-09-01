@@ -746,7 +746,7 @@ export default function AdminPage() {
         @media print { .no-print { display:none !important; } }
       `}</style>
       <div className="ss-admin flex min-h-screen bg-[#f8f6f2] text-[#292522]">
-        <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 fixed md:relative h-screen top-0 left-0 ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`} style={{ padding: '26px 14px' }}>
+        <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 sticky top-0 h-screen self-start ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:sticky md:translate-x-0`} style={{ padding: '26px 14px' }}>
           <a href="#" onClick={e => { e.preventDefault(); setPage('dashboard'); setMobileOpen(false); }} className={`flex items-center gap-[10px] font-bold text-[16px] pb-[25px] text-[#f7f1eb] no-underline ${collapsed ? 'justify-center' : 'px-[10px]'}`}>
             <b className="w-[33px] h-[33px] rounded-[12px] bg-[#aa2027] flex items-center justify-center shrink-0 text-white" style={{ fontFamily: 'Playfair Display,serif' }}>SS</b>
             {!collapsed && <span>Selera Sambal</span>}
@@ -772,7 +772,7 @@ export default function AdminPage() {
           </div>
         </aside>
         {mobileOpen && <div className="fixed inset-0 z-[49] bg-black/40 md:hidden no-print" onClick={() => setMobileOpen(false)} />}
-        <main className="flex-1 min-w-0 flex flex-col" style={{ marginLeft: 0 }}>
+        <main className="flex-1 min-w-0 flex flex-col">
           <header className="no-print sticky top-0 z-[4] bg-white/90 backdrop-blur border-b border-[#e9e3dc] h-[70px] flex items-center justify-between gap-4 px-[clamp(18px,3vw,38px)]">
             <div className="flex items-center gap-3">
               <button onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 768) setMobileOpen(s => !s); else setCollapsed(s => !s); }} className="p-2 rounded-[9px] hover:bg-[#f3eeea] text-[18px]">☰</button>

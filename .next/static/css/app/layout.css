@@ -1174,6 +1174,9 @@ video {
   margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(2rem * var(--tw-space-y-reverse));
 }
+.self-start{
+  align-self: flex-start;
+}
 .overflow-auto{
   overflow: auto;
 }
@@ -2367,6 +2370,10 @@ body {
 
   .md\:relative{
     position: relative;
+  }
+
+  .md\:sticky{
+    position: sticky;
   }
 
   .md\:col-span-2{
