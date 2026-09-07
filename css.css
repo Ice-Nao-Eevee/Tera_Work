@@ -371,6 +371,19 @@ body.light-bg {
   outline: none;
 }
 
+.menu-search-top {
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+.menu-search-top .search-bar {
+  max-width: 400px;
+  background-color: #ffffff;
+  border: 1px solid #e6d5cc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+
 /* Main Content Area */
 .menu-main-content {
   max-width: 1280px;

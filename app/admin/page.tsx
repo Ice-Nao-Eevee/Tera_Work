@@ -506,8 +506,7 @@ function PromotionsPage({ onToast }: { onToast: (m: string) => void }) {
   const refresh = useCallback(async () => {
     try {
       // Fetch ALL promos (including inactive) for admin view
-      const res = await fetch('/api/promos');
-      const data = await res.json();
+      const data = await apiFetch<{ promos: Promotion[] }>('/api/promos');
       setPromos(data.promos || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -556,9 +555,50 @@ function InventoryPage() {
 
 // ── NotificationsPage (local-only, no DB needed) ──────────────────────────────
 function NotificationsPage({ onToast }: { onToast: (m: string) => void }) {
-  const [tick, setTick] = useState(0); const refresh = () => setTick(t => t + 1);
-  const items = ssGet<Notification[]>('notifications'); const rev = [...items].reverse();
-  return <div key={tick}><PageHeading title="Notifikasi" desc="Tetap tahu setiap perubahan penting." action={items.length ? <button onClick={() => { ssSet('notifications', items.map(n => ({ ...n, read: true }))); onToast('Semua notifikasi sudah dibaca'); refresh(); }} className={bSec}>Tandai semua dibaca</button> : undefined} />{rev.length ? <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)]"><div className="flex flex-col gap-3">{rev.map(n => <div key={n.id} className="flex items-center gap-3 pb-3 border-b border-[#e9e3dc] last:border-0 last:pb-0"><span className="w-[34px] h-[34px] bg-[#fff0df] rounded-[8px] grid place-items-center text-[#bb7420] shrink-0">◌</span><div className="flex-1"><b className="block text-sm">{n.text}</b><small className="text-[#827a73] text-xs">{fmtDate(n.createdAt)}</small></div><Badge status={n.read ? 'Dibaca' : 'Baru'} /><button onClick={() => { ssSet('notifications', items.filter(i => i.id !== n.id)); refresh(); }} className="text-[#827a73] text-lg hover:text-[#aa2027] px-1">x</button></div>)}</div></section> : <EmptyState title="Belum ada notifikasi" text="Pemberitahuan operasional akan tampil di sini." />}</div>;
+  const [items, setItems] = useState<Notification[]>(() => ssGet<Notification[]>('notifications'));
+  const rev = [...items].reverse();
+
+  const markAllRead = () => {
+    const updated = items.map(n => ({ ...n, read: true }));
+    ssSet('notifications', updated);
+    setItems(updated);
+    onToast('Semua notifikasi sudah dibaca');
+  };
+
+  const deleteItem = (id: string) => {
+    const updated = items.filter(n => n.id !== id);
+    ssSet('notifications', updated);
+    setItems(updated);
+  };
+
+  return (
+    <div>
+      <PageHeading
+        title="Notifikasi"
+        desc="Tetap tahu setiap perubahan penting."
+        action={items.length ? <button onClick={markAllRead} className={bSec}>Tandai semua dibaca</button> : undefined}
+      />
+      {rev.length ? (
+        <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)]">
+          <div className="flex flex-col gap-3">
+            {rev.map(n => (
+              <div key={n.id} className="flex items-center gap-3 pb-3 border-b border-[#e9e3dc] last:border-0 last:pb-0">
+                <span className="w-[34px] h-[34px] bg-[#fff0df] rounded-[8px] grid place-items-center text-[#bb7420] shrink-0">◌</span>
+                <div className="flex-1">
+                  <b className="block text-sm">{n.text}</b>
+                  <small className="text-[#827a73] text-xs">{fmtDate(n.createdAt)}</small>
+                </div>
+                <Badge status={n.read ? 'Dibaca' : 'Baru'} />
+                <button onClick={() => deleteItem(n.id)} className="text-[#827a73] text-lg hover:text-[#aa2027] px-1">x</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <EmptyState title="Belum ada notifikasi" text="Pemberitahuan operasional akan tampil di sini." />
+      )}
+    </div>
+  );
 }
 
 // ── SettingsPage (wired to /api/settings) ────────────────────────────────────
@@ -709,7 +749,12 @@ export default function AdminPage() {
     setToasts(t => [...t, { id, msg }]);
   }, []);
   const removeToast = useCallback((id: string) => setToasts(t => t.filter(x => x.id !== id)), []);
-  const logout = () => { sessionStorage.removeItem('ss_session'); localStorage.removeItem('ss_remember'); setIsAuth(false); setPage('dashboard'); };
+  const logout = useCallback(() => {
+    sessionStorage.removeItem('ss_session');
+    localStorage.removeItem('ss_remember');
+    setIsAuth(false);
+    setPage('dashboard');
+  }, []);
 
   if (!mounted) return null;
   if (!isAuth) return <LoginPage onLogin={() => setIsAuth(true)} />;
@@ -718,7 +763,7 @@ export default function AdminPage() {
   const unread = notifications.filter(n => !n.read).length;
   const admin = ssGet<AdminUser>('admin');
 
-  const renderPage = () => {
+  const renderPage = useCallback(() => {
     switch (page) {
       case 'dashboard': return <DashboardPage onToast={addToast} />;
       case 'products': return <ProductsPage onToast={addToast} />;
@@ -731,9 +776,8 @@ export default function AdminPage() {
       case 'settings': return <SettingsPage onToast={addToast} />;
       default: return <DashboardPage onToast={addToast} />;
     }
-  };
+  }, [page, addToast]);
 
-  let lastGroup = '';
   return (
     <>
       <style>{`
@@ -746,14 +790,15 @@ export default function AdminPage() {
         @media print { .no-print { display:none !important; } }
       `}</style>
       <div className="ss-admin flex min-h-screen bg-[#f8f6f2] text-[#292522]">
-        <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 fixed md:relative h-screen top-0 left-0 ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`} style={{ padding: '26px 14px' }}>
+        <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 sticky top-0 h-screen self-start ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:sticky md:translate-x-0`} style={{ padding: '26px 14px' }}>
           <a href="#" onClick={e => { e.preventDefault(); setPage('dashboard'); setMobileOpen(false); }} className={`flex items-center gap-[10px] font-bold text-[16px] pb-[25px] text-[#f7f1eb] no-underline ${collapsed ? 'justify-center' : 'px-[10px]'}`}>
             <b className="w-[33px] h-[33px] rounded-[12px] bg-[#aa2027] flex items-center justify-center shrink-0 text-white" style={{ fontFamily: 'Playfair Display,serif' }}>SS</b>
             {!collapsed && <span>Selera Sambal</span>}
           </a>
           <nav className="flex flex-col flex-1">
-            {NAV.map(({ key, icon, label, group }) => {
-              const showG = group !== lastGroup; lastGroup = group;
+            {NAV.map(({ key, icon, label, group }, idx) => {
+              // Pure group separator: compare to previous item's group, no mutable variable
+              const showG = idx === 0 || NAV[idx - 1].group !== group;
               return (
                 <React.Fragment key={key}>
                   {showG && !collapsed && <p className="text-[10px] font-bold tracking-[0.1em] text-[#8d8581] mx-[10px] mt-[21px] mb-[7px]">{group}</p>}
@@ -772,7 +817,7 @@ export default function AdminPage() {
           </div>
         </aside>
         {mobileOpen && <div className="fixed inset-0 z-[49] bg-black/40 md:hidden no-print" onClick={() => setMobileOpen(false)} />}
-        <main className="flex-1 min-w-0 flex flex-col" style={{ marginLeft: 0 }}>
+        <main className="flex-1 min-w-0 flex flex-col">
           <header className="no-print sticky top-0 z-[4] bg-white/90 backdrop-blur border-b border-[#e9e3dc] h-[70px] flex items-center justify-between gap-4 px-[clamp(18px,3vw,38px)]">
             <div className="flex items-center gap-3">
               <button onClick={() => { if (typeof window !== 'undefined' && window.innerWidth <= 768) setMobileOpen(s => !s); else setCollapsed(s => !s); }} className="p-2 rounded-[9px] hover:bg-[#f3eeea] text-[18px]">☰</button>

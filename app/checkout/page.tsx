@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -11,12 +11,13 @@ import {
   getTableSession,
   getOrderNotes,
   clearCart,
+  addToCart,
+  storeEvents,
   CartItem,
   TableSession,
-  addToCart,
 } from '@/lib/store';
 import { STATIC_PROMOS } from '@/lib/staticData';
-import { IPromo } from '@/lib/models';
+import { IPromo } from '@/lib/types';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -30,8 +31,12 @@ export default function CheckoutPage() {
   const [taxRate, setTaxRate] = useState<number>(0.10);
   const [serviceRate, setServiceRate] = useState<number>(0.05);
 
-  useEffect(() => {
+  const refreshCart = useCallback(() => {
     setItems(getCartItems());
+  }, []);
+
+  useEffect(() => {
+    refreshCart();
     setTableSession(getTableSession());
     setNotes(getOrderNotes());
 
@@ -46,11 +51,16 @@ export default function CheckoutPage() {
         setServiceRate((settingsData.settings.serviceChargeRatePercent ?? 5) / 100);
       }
     }).catch(() => {});
-  }, []);
+
+    const unsubscribe = storeEvents.subscribe(refreshCart);
+    return () => unsubscribe();
+  }, [refreshCart]);
 
   const handleAddPromo = (promo: IPromo) => {
+    const promoId = promo.id || promo._id || 'promo-1';
     const promoMenuItem = {
-      _id: `promo_${promo._id}`,
+      id: `promo_${promoId}`,
+      _id: `promo_${promoId}`,
       name: promo.title,
       description: promo.description,
       price: promo.discountedPrice,
@@ -61,9 +71,9 @@ export default function CheckoutPage() {
       isActive: true,
     };
 
-    addToCart(promoMenuItem, 1);
-    setAddedPromoId(promo._id || 'promo-1');
-    setItems(getCartItems());
+    addToCart(promoMenuItem, 1); // storeEvents.notify() dipanggil di dalam addToCart
+    setAddedPromoId(promoId);
+    // Tidak perlu manual setItems — storeEvents subscription akan update otomatis
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -82,7 +92,7 @@ export default function CheckoutPage() {
       const payload = {
         tableNumber: tableSession.tableNumber,
         items: items.map((ci) => ({
-          menuItemId: ci.menuItem._id,
+          menuItemId: ci.menuItem.id || (ci.menuItem as any)._id,
           name: ci.menuItem.name,
           qty: ci.qty,
           price: ci.unitPrice,
@@ -173,12 +183,12 @@ export default function CheckoutPage() {
                   <button
                     onClick={() => handleAddPromo(promos[0])}
                     className={`ml-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs ${
-                      addedPromoId === (promos[0]._id || 'promo-1')
+                      addedPromoId === (promos[0].id || promos[0]._id || 'promo-1')
                         ? 'bg-[#15803d] text-white'
                         : 'bg-[#7a2323] hover:bg-[#631c1c] text-white'
                     }`}
                   >
-                    {addedPromoId === (promos[0]._id || 'promo-1') ? 'Tersimpan' : 'Tambah'}
+                    {addedPromoId === (promos[0].id || promos[0]._id || 'promo-1') ? 'Tersimpan' : 'Tambah'}
                   </button>
                 </div>
               </div>

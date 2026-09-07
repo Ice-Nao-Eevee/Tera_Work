@@ -1,104 +1,119 @@
 /**
- * lib/db.ts — Next.js-safe cached Mongoose connection.
+ * lib/db.ts — Database utilities for Selera Sambal.
  *
- * Uses a module-level cache (via `global`) so that a single connection is
- * reused across hot reloads in development and across serverless invocations
- * in production.  Switching between local MongoDB and Atlas is purely an
- * env-var change (MONGODB_URI) — no code changes required.
+ * Uses Prisma + Supabase PostgreSQL.
+ * getMemoryStore() provides a static fallback when no DB connection is available.
+ * seedDatabaseIfEmpty() populates the DB with initial data on first run.
  */
 
-import mongoose from 'mongoose';
-import {
-  CategoryModel,
-  MenuItemModel,
-  TableModel,
-  PromoModel,
-  SettingsModel,
-} from './models';
-import { generateTableToken } from './jwt';
+import prisma from './prisma';
 import {
   STATIC_CATEGORIES,
   STATIC_MENU_ITEMS,
   STATIC_PROMOS,
   STATIC_SETTINGS,
 } from './staticData';
+import { generateTableToken } from './jwt';
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+// ── Re-export aliases ─────────────────────────────────────────────────────────
+export const INITIAL_MENU_ITEMS = STATIC_MENU_ITEMS;
+export const INITIAL_PROMOS = STATIC_PROMOS;
 
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env.local'
-  );
+/** Returns an in-memory store snapshot (fallback when DB is unavailable). */
+export function getMemoryStore() {
+  return {
+    menuItems: STATIC_MENU_ITEMS,
+    promos: STATIC_PROMOS,
+    categories: STATIC_CATEGORIES,
+    settings: STATIC_SETTINGS,
+  };
 }
 
-// ── Global cache (survives Next.js hot-reloads in dev) ───────────────────────
-interface MongooseCache {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
-}
+// ── Seed tracker (run once per process) ──────────────────────────────────────
+let _seeded = false;
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongooseCache: MongooseCache | undefined;
-}
-
-if (!global._mongooseCache) {
-  global._mongooseCache = { conn: null, promise: null };
-}
-
-const cached = global._mongooseCache;
-
-// ── Main connect function ─────────────────────────────────────────────────────
-export async function connectDB(): Promise<typeof mongoose> {
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(MONGODB_URI, {
-        bufferCommands: false,
-      })
-      .then(async (mg) => {
-        console.log('✅ Connected to MongoDB:', MONGODB_URI.split('/').pop());
-        await seedDatabaseIfEmpty();
-        return mg;
-      })
-      .catch((err) => {
-        // Reset cache so the next request retries the connection
-        cached.conn = null;
-        cached.promise = null;
-        throw err;
-      });
+/**
+ * Call at the top of any route handler to ensure the DB is seeded.
+ * Safe to call multiple times — seeds only once per process lifetime.
+ */
+export async function connectDB(): Promise<void> {
+  if (_seeded) return;
+  _seeded = true;
+  try {
+    await seedDatabaseIfEmpty();
+  } catch (err) {
+    _seeded = false; // allow retry on next request
+    console.error('❌ DB seed failed:', err);
   }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
 }
 
 // ── Auto-seed on first connection ────────────────────────────────────────────
 async function seedDatabaseIfEmpty() {
-  const count = await MenuItemModel.countDocuments();
+  const count = await prisma.menuItem.count();
   if (count > 0) return; // already seeded
 
-  console.log('🌱 Seeding database with initial data...');
+  console.log('🌱 Seeding Supabase database with initial data...');
 
-  // Strip the string _id fields from static data so MongoDB generates ObjectIds
-  const stripId = <T extends { _id?: any }>(items: T[]): Omit<T, '_id'>[] =>
-    items.map(({ _id, ...rest }) => rest);
+  // Categories
+  for (const cat of STATIC_CATEGORIES) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: {},
+      create: { name: cat.name, slug: cat.slug, sortOrder: cat.sortOrder },
+    });
+  }
 
-  await CategoryModel.insertMany(stripId(STATIC_CATEGORIES));
-  await MenuItemModel.insertMany(stripId(STATIC_MENU_ITEMS));
-  await PromoModel.insertMany(stripId(STATIC_PROMOS));
-  await SettingsModel.create({ ...STATIC_SETTINGS });
+  // Menu items
+  for (const item of STATIC_MENU_ITEMS) {
+    await prisma.menuItem.create({
+      data: {
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        photoUrl: item.photoUrl,
+        badge: item.badge ?? 'none',
+        spiceLevels: item.spiceLevels as any,
+        addOns: item.addOns as any,
+        isActive: item.isActive,
+      },
+    });
+  }
 
-  // Seed tables 1–10
+  // Promos
+  for (const promo of STATIC_PROMOS) {
+    await prisma.promo.create({
+      data: {
+        title: promo.title,
+        description: promo.description,
+        originalPrice: promo.originalPrice,
+        discountedPrice: promo.discountedPrice,
+        isActive: promo.isActive,
+      },
+    });
+  }
+
+  // Settings singleton
+  await prisma.settings.create({
+    data: {
+      taxRatePercent: STATIC_SETTINGS.taxRatePercent,
+      serviceChargeRatePercent: STATIC_SETTINGS.serviceChargeRatePercent,
+      restaurantInfo: STATIC_SETTINGS.restaurantInfo as any,
+    },
+  });
+
+  // Tables 1–10
   for (let i = 1; i <= 10; i++) {
     const id = `table-${i}`;
-    await TableModel.create({
-      tableNumber: i,
-      qrToken: generateTableToken(id, i),
-      isActive: true,
+    await prisma.restaurantTable.create({
+      data: {
+        tableNumber: i,
+        qrToken: generateTableToken(id, i),
+        isActive: true,
+      },
     });
   }
 
   console.log('✅ Database seeded successfully.');
 }
+

@@ -8,7 +8,7 @@ import { ArrowLeft, Minus, Plus, ShoppingBag, Check } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { addToCart } from '@/lib/store';
 import { STATIC_MENU_ITEMS } from '@/lib/staticData';
-import { IMenuItem, IAddOn } from '@/lib/models';
+import { IMenuItem, IAddOn } from '@/lib/types';
 
 export default function ItemDetailPage() {
   const router = useRouter();
@@ -26,7 +26,8 @@ export default function ItemDetailPage() {
     fetch('/api/menu')
       .then((res) => res.json())
       .then((data) => {
-        const found = data.menuItems?.find((m: IMenuItem) => m._id === itemId);
+        // API (Prisma) returns `id`, not `_id`
+        const found = data.menuItems?.find((m: IMenuItem) => m.id === itemId);
         if (found) {
           setItem(found);
           if (found.spiceLevels && found.spiceLevels.length > 0) {
@@ -39,7 +40,8 @@ export default function ItemDetailPage() {
       .catch(() => fallbackLocal());
 
     function fallbackLocal() {
-      const found = STATIC_MENU_ITEMS.find((m) => m._id === itemId) || STATIC_MENU_ITEMS[0];
+      // Static data uses _id as fallback key
+      const found = (STATIC_MENU_ITEMS as any[]).find((m) => m.id === itemId || m._id === itemId) || STATIC_MENU_ITEMS[0];
       setItem(found);
       if (found.spiceLevels && found.spiceLevels.length > 0) {
         setSelectedSpice(found.spiceLevels[1]?.label || found.spiceLevels[0]?.label);

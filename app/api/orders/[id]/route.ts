@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { OrderModel } from '@/lib/models';
+import prisma from '@/lib/prisma';
 
 // GET /api/orders/[id] — fetch a single order by orderCode
 export async function GET(
@@ -10,7 +10,7 @@ export async function GET(
   const orderCode = decodeURIComponent(params.id);
   try {
     await connectDB();
-    const order = await OrderModel.findOne({ orderCode }).lean();
+    const order = await prisma.order.findFirst({ where: { orderCode } });
     if (!order) {
       return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
@@ -30,22 +30,22 @@ export async function PATCH(
   try {
     await connectDB();
     const { status } = await req.json();
-    const order = await OrderModel.findOneAndUpdate(
-      { orderCode },
-      { status, updatedAt: new Date() },
-      { new: true }
-    ).lean();
-    if (!order) {
+    const order = await prisma.order.update({
+      where: { orderCode },
+      data: { status },
+    });
+    return NextResponse.json({ order });
+  } catch (err: any) {
+    if (err?.code === 'P2025') {
       return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
-    return NextResponse.json({ order });
-  } catch (err) {
     console.error('PATCH /api/orders/[id] error:', err);
     return NextResponse.json({ error: 'Gagal memperbarui status pesanan' }, { status: 500 });
   }
 }
 
 // DELETE /api/orders/[id] — delete an order (admin only)
+// params.id here is the orderCode (URL-encoded)
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
@@ -53,12 +53,12 @@ export async function DELETE(
   const orderCode = decodeURIComponent(params.id);
   try {
     await connectDB();
-    const order = await OrderModel.findOneAndDelete({ orderCode }).lean();
-    if (!order) {
+    await prisma.order.delete({ where: { orderCode } });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    if (err?.code === 'P2025') {
       return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
-    return NextResponse.json({ success: true });
-  } catch (err) {
     console.error('DELETE /api/orders/[id] error:', err);
     return NextResponse.json({ error: 'Gagal menghapus pesanan' }, { status: 500 });
   }

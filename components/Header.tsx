@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, Utensils } from 'lucide-react';
 import { getCartItems, getTableSession, storeEvents, CartItem, TableSession } from '@/lib/store';
@@ -14,21 +14,21 @@ export default function Header({ onToggleAiChat }: HeaderProps) {
   const [tableSession, setTableSession] = useState<TableSession>({ tableId: 'table-5', tableNumber: 5 });
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     const items = getCartItems();
     const totalQty = items.reduce((acc: number, item: CartItem) => acc + item.qty, 0);
     setCartCount(totalQty);
 
     const session = getTableSession();
     setTableSession(session);
-  };
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
     refreshData();
     const unsubscribe = storeEvents.subscribe(refreshData);
     return () => unsubscribe();
-  }, []);
+  }, [refreshData]);
 
   return (
     <header className="sticky top-0 z-40 bg-[#fdf1ee]/95 backdrop-blur-md border-b border-[#f3d9d3] px-4 md:px-8 py-3.5 flex items-center justify-between transition-all">
