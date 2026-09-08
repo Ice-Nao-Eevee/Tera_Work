@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle2, Clock, Utensils, ChefHat, Sparkles, ArrowRight } from 'lucide-react';
 import { formatRupiah, formatDateTime } from '@/lib/format';
-import { IOrder } from '@/lib/models';
+import { IOrder } from '@/lib/types';
 
 export default function OrderStatusPage() {
   const params = useParams();

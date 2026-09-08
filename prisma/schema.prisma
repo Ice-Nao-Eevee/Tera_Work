@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Category {
+  id        String @id @default(cuid())
+  name      String
+  slug      String @unique
+  sortOrder Int    @default(0)
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Int
+  category    String
+  photoUrl    String
+  badge       String   @default("none")
+  spiceLevels Json     @default("[]")
+  addOns      Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, category])
+  @@map("menu_items")
+}
+
+model RestaurantTable {
+  id          String  @id @default(cuid())
+  tableNumber Int     @unique
+  qrToken     String
+  isActive    Boolean @default(true)
+
+  @@map("tables")
+}
+
+model Promo {
+  id              String  @id @default(cuid())
+  title           String
+  description     String
+  originalPrice   Int
+  discountedPrice Int
+  isActive        Boolean @default(true)
+
+  @@map("promos")
+}
+
+model Order {
+  id                  String   @id @default(cuid())
+  orderCode           String   @unique
+  tableNumber         Int
+  items               Json     @default("[]")
+  notes               String   @default("")
+  subtotal            Int
+  taxAmount           Int
+  serviceChargeAmount Int
+  total               Int
+  status              String   @default("received")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model Settings {
+  id                       String @id @default(cuid())
+  taxRatePercent           Int    @default(10)
+  serviceChargeRatePercent Int    @default(5)
+  restaurantInfo           Json   @default("{}")
+
+  @@map("settings")
+}

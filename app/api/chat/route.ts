@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { connectDB, getMemoryStore, INITIAL_MENU_ITEMS, INITIAL_PROMOS } from '@/lib/db';
-import { MenuItemModel, IMenuItem } from '@/lib/models';
+import { IMenuItem } from '@/lib/types';
 import { formatRupiah } from '@/lib/format';
+import prisma from '@/lib/prisma';
+
 
 const apiKey = process.env.GEMINI_API_KEY || '';
 
@@ -20,19 +22,35 @@ export async function POST(req: NextRequest) {
     await connectDB();
     let menuItems: IMenuItem[] = [];
 
-    if (process.env.MONGODB_URI) {
-      try {
-        const searchRegex = new RegExp(lastUserMessage.split(' ').filter((w: string) => w.length > 2).join('|'), 'i');
-        menuItems = await MenuItemModel.find({
-          $or: [
-            { name: searchRegex },
-            { description: searchRegex },
-            { category: searchRegex },
-          ],
-        }).limit(5).lean();
-      } catch (err) {
-        // Fallback to memory
+    try {
+      const terms = lastUserMessage.split(' ').filter((w: string) => w.length > 2);
+      const orConditions = terms.flatMap((t: string) => [
+        { name: { contains: t, mode: 'insensitive' as const } },
+        { description: { contains: t, mode: 'insensitive' as const } },
+        { category: { contains: t, mode: 'insensitive' as const } },
+      ]);
+      if (orConditions.length > 0) {
+        const rows = await prisma.menuItem.findMany({
+          where: { OR: orConditions, isActive: true },
+          take: 5,
+        });
+        menuItems = rows.map((r: Record<string, any>): IMenuItem => ({
+          id: r.id,
+          name: r.name,
+          description: r.description,
+          price: r.price,
+          category: r.category,
+          photoUrl: r.photoUrl,
+          badge: r.badge,
+          isActive: r.isActive,
+          spiceLevels: r.spiceLevels as IMenuItem['spiceLevels'],
+          addOns: r.addOns as IMenuItem['addOns'],
+          createdAt: r.createdAt,
+          updatedAt: r.updatedAt,
+        }));
       }
+    } catch (err) {
+      // Fallback to memory store (handled below)
     }
 
     if (!menuItems || menuItems.length === 0) {

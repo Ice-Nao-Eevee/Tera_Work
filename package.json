@@ -8,12 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "contract:emit": "prisma contract emit"
+    "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@prisma/client": "^7.10.0",
-    "@prisma/orm-postgres": "^8.0.0-rc.8",
+    "@prisma/client": "^5.22.0",
+    "@supabase/server": "^1.5.3",
+    "@supabase/ssr": "^0.12.5",
+    "@supabase/supabase-js": "^2.115.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "jsonwebtoken": "^9.0.2",
@@ -25,14 +27,13 @@
     "tailwind-merge": "^2.5.2"
   },
   "devDependencies": {
-    "@prisma/cli-engine": "^0.2.3",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.41",
-    "prisma": "^8.0.0-rc.10",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4"
   }

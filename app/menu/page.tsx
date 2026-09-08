@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, ShoppingCart, Plus, ChevronRight } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { getCartItems, addToCart, storeEvents, CartItem } from '@/lib/store';
 import { STATIC_MENU_ITEMS, STATIC_CATEGORIES } from '@/lib/staticData';
-import { IMenuItem, ICategory } from '@/lib/models';
+import { IMenuItem, ICategory } from '@/lib/types';
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<ICategory[]>(STATIC_CATEGORIES);
@@ -16,11 +16,13 @@ export default function MenuPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartTotal, setCartTotal] = useState<number>(0);
-  const [cartCount, setCartCount] = useState<number>(0);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
-  // Load menu items from API or fallback memory
+  // Derived cart values — no redundant state, recalculated only when cartItems changes
+  const cartCount = useMemo(() => cartItems.reduce((sum, item) => sum + (item.qty || 0), 0), [cartItems]);
+  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0), [cartItems]);
+
+  // Load menu items from API or fallback to static data
   useEffect(() => {
     setIsMounted(true);
     fetch('/api/menu')
@@ -36,21 +38,16 @@ export default function MenuPage() {
       .catch(() => console.log('Using default menu items'));
   }, []);
 
-  // Synchronize local cart state
-  const refreshCart = () => {
-    const items = getCartItems();
-    setCartItems(items);
-    const count = items.reduce((sum, item) => sum + (item.qty || 0), 0);
-    const total = items.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-    setCartCount(count);
-    setCartTotal(total);
-  };
+  // Synchronize local cart state — stable ref so storeEvents subscription is not stale
+  const refreshCart = useCallback(() => {
+    setCartItems(getCartItems());
+  }, []);
 
   useEffect(() => {
     refreshCart();
     const unsubscribe = storeEvents.subscribe(refreshCart);
     return () => unsubscribe();
-  }, []);
+  }, [refreshCart]);
 
   // Filter menu items
   const filteredItems = (menuItems || []).filter((item) => {
@@ -133,8 +130,8 @@ export default function MenuPage() {
         </div>
       </section>
 
-      {/* ─── CIRCULAR CATEGORY ICONS ─── */}
-      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-6">
+            {/* ─── FILTER + CART ROW ─── */}
+            <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-6 sticky top-[60px] z-30 shadow-sm">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-start justify-center gap-6 md:gap-10 overflow-x-auto scrollbar-none pb-1">
             {(categories || []).map((cat) => {
@@ -257,10 +254,10 @@ export default function MenuPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {filteredItems.map((item) => (
               <div
-                key={item._id}
+                key={item.id || item._id}
                 className="bg-white rounded-2xl border border-[#ece8e3] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col"
               >
-                <Link href={`/menu/${item._id}`} className="block group">
+                <Link href={`/menu/${item.id || item._id}`} className="block group">
                   {/* Image */}
                   <div className="relative h-44 w-full bg-[#f5ede7] overflow-hidden">
                     {/* Badge */}

@@ -1,4 +1,4 @@
-import { IMenuItem, IAddOn } from './models';
+import { IMenuItem, IAddOn } from './types';
 
 export interface CartItem {
   id: string; // unique cart item instance key
@@ -87,7 +87,8 @@ export function addToCart(
 
   // Create unique key based on item ID + spiceLevel + addOns signature
   const addOnSig = safeAddOns.map((a) => a?.label || '').sort().join(',');
-  const instanceId = `${item._id || 'item'}_${spiceLevel || 'none'}_${addOnSig}`;
+  const itemId = (item as any)._id || item.id || 'item';
+  const instanceId = `${itemId}_${spiceLevel || 'none'}_${addOnSig}`;
 
   const existingIndex = current.findIndex((ci) => ci.id === instanceId);
 

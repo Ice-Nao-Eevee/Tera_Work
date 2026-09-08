@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { TableModel } from '@/lib/models';
+import prisma from '@/lib/prisma';
 
-// DELETE /api/tables/[id] — delete a table by MongoDB _id
+// DELETE /api/tables/[id] — delete a table by Prisma id (cuid)
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     await connectDB();
-    const table = await TableModel.findByIdAndDelete(params.id).lean();
-    if (!table) {
+    await prisma.restaurantTable.delete({ where: { id: params.id } });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    if (err?.code === 'P2025') {
       return NextResponse.json({ error: 'Meja tidak ditemukan' }, { status: 404 });
     }
-    return NextResponse.json({ success: true });
-  } catch (err) {
     console.error('DELETE /api/tables/[id] error:', err);
     return NextResponse.json({ error: 'Gagal menghapus meja' }, { status: 500 });
   }

@@ -4,19 +4,19 @@
  * It is safe to import from client components.
  */
 
-import type { ICategory, IMenuItem, IPromo, ISettings } from './models';
+import type { ICategory, IMenuItem, IPromo, ISettings } from './types';
 
 export const STATIC_CATEGORIES: ICategory[] = [
-  { _id: 'cat-1', name: 'Semua Menu', slug: 'semua', sortOrder: 0 },
-  { _id: 'cat-2', name: 'Makanan Utama', slug: 'makanan', sortOrder: 1 },
-  { _id: 'cat-3', name: 'Minuman', slug: 'minuman', sortOrder: 2 },
-  { _id: 'cat-4', name: 'Cemilan', slug: 'cemilan', sortOrder: 3 },
-  { _id: 'cat-5', name: 'Dessert', slug: 'dessert', sortOrder: 4 },
+  { id: 'cat-1', _id: 'cat-1', name: 'Semua Menu', slug: 'semua', sortOrder: 0 },
+  { id: 'cat-2', _id: 'cat-2', name: 'Makanan Utama', slug: 'makanan', sortOrder: 1 },
+  { id: 'cat-3', _id: 'cat-3', name: 'Minuman', slug: 'minuman', sortOrder: 2 },
+  { id: 'cat-4', _id: 'cat-4', name: 'Cemilan', slug: 'cemilan', sortOrder: 3 },
+  { id: 'cat-5', _id: 'cat-5', name: 'Dessert', slug: 'dessert', sortOrder: 4 },
 ];
 
 export const STATIC_MENU_ITEMS: IMenuItem[] = [
   {
-    _id: 'item-1',
+    id: 'item-1', _id: 'item-1',
     name: 'Nasi Goreng Spesial',
     description: 'Wok-fried rice with secret heritage spices, sunny egg, and chicken satay',
     price: 45000,
@@ -36,7 +36,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
     isActive: true,
   },
   {
-    _id: 'item-2',
+    id: 'item-2', _id: 'item-2',
     name: 'Sate Ayam Madura',
     description: 'Char-grilled chicken skewers smothered in rich, sweet peanut sauce',
     price: 38000,
@@ -55,7 +55,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
     isActive: true,
   },
   {
-    _id: 'item-3',
+    id: 'item-3', _id: 'item-3',
     name: 'Soto Ayam Ambengan',
     description: 'Clear, aromatic yellow chicken soup served with koya powder',
     price: 35000,
@@ -74,7 +74,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
     isActive: true,
   },
   {
-    _id: 'item-4',
+    id: 'item-4', _id: 'item-4',
     name: 'Es Teh Manis',
     description: 'Signature brewed black tea served chilled with pure cane sugar',
     price: 12000,
@@ -89,7 +89,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
     isActive: true,
   },
   {
-    _id: 'item-5',
+    id: 'item-5', _id: 'item-5',
     name: 'Gado-Gado Batavia',
     description: 'Mixed vegetable salad with classic peanut sauce and crackers',
     price: 32000,
@@ -108,7 +108,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
     isActive: true,
   },
   {
-    _id: 'item-6',
+    id: 'item-6', _id: 'item-6',
     name: 'Rendang Daging Sapi',
     description: 'Slow-cooked beef in rich coconut milk and signature spices',
     price: 55000,
@@ -124,7 +124,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
     isActive: true,
   },
   {
-    _id: 'item-7',
+    id: 'item-7', _id: 'item-7',
     name: 'Pisang Goreng Madu',
     description: 'Crispy honey-glazed banana fritters, a perfect sweet ending',
     price: 22000,
@@ -142,7 +142,7 @@ export const STATIC_MENU_ITEMS: IMenuItem[] = [
 
 export const STATIC_PROMOS: IPromo[] = [
   {
-    _id: 'promo-1',
+    id: 'promo-1', _id: 'promo-1',
     title: 'Paket Hemat! Ayam + Lalapan + Es Teh',
     description:
       'Yuk, sekalian pesan paket hemat untuk keluarga di rumah agar santap makan lebih lengkap dan meriah!',

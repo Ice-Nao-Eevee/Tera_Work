@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { TableModel } from '@/lib/models';
 import { generateTableToken } from '@/lib/jwt';
+import prisma from '@/lib/prisma';
 
-// GET /api/tables — list all tables
+// GET /api/tables
 export async function GET() {
   try {
     await connectDB();
-    const tables = await TableModel.find().sort({ tableNumber: 1 }).lean();
+    const tables = await prisma.restaurantTable.findMany({ orderBy: { tableNumber: 'asc' } });
     return NextResponse.json({ tables });
   } catch (err) {
     console.error('GET /api/tables error:', err);
@@ -15,14 +15,16 @@ export async function GET() {
   }
 }
 
-// POST /api/tables — create a new table
+// POST /api/tables
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const { tableNumber } = await req.json();
     const id = `table-${tableNumber}`;
     const qrToken = generateTableToken(id, tableNumber);
-    const table = await TableModel.create({ tableNumber, qrToken, isActive: true });
+    const table = await prisma.restaurantTable.create({
+      data: { tableNumber: Number(tableNumber), qrToken, isActive: true },
+    });
     return NextResponse.json({ table }, { status: 201 });
   } catch (err) {
     console.error('POST /api/tables error:', err);

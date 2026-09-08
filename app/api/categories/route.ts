@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
-import { CategoryModel } from '@/lib/models';
+import prisma from '@/lib/prisma';
 
 // GET /api/categories — list all categories sorted by sortOrder
 export async function GET() {
   try {
     await connectDB();
-    const categories = await CategoryModel.find().sort({ sortOrder: 1 }).lean();
+    const categories = await prisma.category.findMany({
+      orderBy: { sortOrder: 'asc' },
+    });
     return NextResponse.json({ categories });
   } catch (err) {
     console.error('GET /api/categories error:', err);
@@ -19,19 +21,15 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    // Generate slug from name if not provided
     if (!body.slug) {
-      body.slug = body.name
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+      body.slug = body.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     }
-    // Assign next sortOrder
     if (body.sortOrder === undefined) {
-      const count = await CategoryModel.countDocuments();
-      body.sortOrder = count;
+      body.sortOrder = await prisma.category.count();
     }
-    const category = await CategoryModel.create(body);
+    const category = await prisma.category.create({
+      data: { name: body.name, slug: body.slug, sortOrder: body.sortOrder },
+    });
     return NextResponse.json({ category }, { status: 201 });
   } catch (err) {
     console.error('POST /api/categories error:', err);
