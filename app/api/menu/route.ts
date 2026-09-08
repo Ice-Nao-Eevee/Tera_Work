@@ -3,11 +3,12 @@ import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
 // GET /api/menu — list all active menu items + all categories
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
+    const includeInactive = req.nextUrl.searchParams.get('all') === 'true';
     const [menuItems, categories] = await Promise.all([
-      prisma.menuItem.findMany({ where: { isActive: true }, orderBy: { createdAt: 'asc' } }),
+      prisma.menuItem.findMany({ where: includeInactive ? undefined : { isActive: true }, orderBy: { createdAt: 'asc' } }),
       prisma.category.findMany({ orderBy: { sortOrder: 'asc' } }),
     ]);
     return NextResponse.json({ menuItems, categories });

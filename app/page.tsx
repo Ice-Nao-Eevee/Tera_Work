@@ -13,10 +13,6 @@ export default function HomePage() {
           fill
           priority
           className="object-cover object-center"
-          onError={(e) => {
-            // Fallback if foodbg image fails
-            (e.target as HTMLElement).style.display = 'none';
-          }}
         />
       </div>
 

@@ -3,10 +3,11 @@ import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
 // GET /api/promos
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    const promos = await prisma.promo.findMany({ where: { isActive: true } });
+    const includeInactive = req.nextUrl.searchParams.get('all') === 'true';
+    const promos = await prisma.promo.findMany({ where: includeInactive ? undefined : { isActive: true } });
     return NextResponse.json({ promos });
   } catch (err) {
     console.error('GET /api/promos error:', err);

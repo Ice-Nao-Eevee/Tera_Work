@@ -26,6 +26,10 @@ interface Restaurant { name: string; description?: string; phone?: string; email
 interface AppSettings { taxRatePercent: number; serviceChargeRatePercent: number; restaurantInfo: Restaurant; }
 interface AdminUser { name: string; username: string; password: string; avatar: string; }
 
+function withAdminId<T extends { id?: string; _id?: string }>(value: T): T & { _id: string } {
+  return { ...value, _id: value._id ?? value.id ?? '' };
+}
+
 // ── Local-only helpers (session / notifications / admin login) ───────────────
 const SS_PREFIX = 'ss_admin_';
 const DEFAULTS = {
@@ -307,13 +311,13 @@ function DashboardPage({ onToast }: { onToast: (m: string) => void }) {
   const refresh = useCallback(async () => {
     try {
       const [mData, oData, cData] = await Promise.all([
-        apiFetch<{ menuItems: Product[] }>('/api/menu'),
+        apiFetch<{ menuItems: Product[] }>('/api/menu?all=true'),
         apiFetch<{ orders: Order[] }>('/api/orders'),
         apiFetch<{ categories: Category[] }>('/api/categories'),
       ]);
-      setProducts(mData.menuItems || []);
+      setProducts((mData.menuItems || []).map(withAdminId));
       setOrders(oData.orders || []);
-      setCategories(cData.categories || []);
+      setCategories((cData.categories || []).map(withAdminId));
     } catch (err) {
       console.error('Dashboard fetch error', err);
     } finally {
@@ -354,11 +358,11 @@ function ProductsPage({ onToast }: { onToast: (m: string) => void }) {
   const refresh = useCallback(async () => {
     try {
       const [mData, cData] = await Promise.all([
-        apiFetch<{ menuItems: Product[] }>('/api/menu'),
+        apiFetch<{ menuItems: Product[] }>('/api/menu?all=true'),
         apiFetch<{ categories: Category[] }>('/api/categories'),
       ]);
-      setProducts(mData.menuItems || []);
-      setCategories(cData.categories || []);
+      setProducts((mData.menuItems || []).map(withAdminId));
+      setCategories((cData.categories || []).map(withAdminId));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, []);
@@ -411,8 +415,8 @@ function CategoriesPage({ onToast }: { onToast: (m: string) => void }) {
         apiFetch<{ categories: Category[] }>('/api/categories'),
         apiFetch<{ menuItems: Product[] }>('/api/menu'),
       ]);
-      setCategories(cData.categories || []);
-      setProducts(mData.menuItems || []);
+      setCategories((cData.categories || []).map(withAdminId));
+      setProducts((mData.menuItems || []).map(withAdminId));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, []);
@@ -506,8 +510,8 @@ function PromotionsPage({ onToast }: { onToast: (m: string) => void }) {
   const refresh = useCallback(async () => {
     try {
       // Fetch ALL promos (including inactive) for admin view
-      const data = await apiFetch<{ promos: Promotion[] }>('/api/promos');
-      setPromos(data.promos || []);
+      const data = await apiFetch<{ promos: Promotion[] }>('/api/promos?all=true');
+      setPromos((data.promos || []).map(withAdminId));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, []);
@@ -540,7 +544,7 @@ function InventoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiFetch<{ menuItems: Product[] }>('/api/menu').then(d => { setProducts(d.menuItems || []); setLoading(false); }).catch(() => setLoading(false));
+    apiFetch<{ menuItems: Product[] }>('/api/menu?all=true').then(d => { setProducts((d.menuItems || []).map(withAdminId)); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="text-[#827a73] text-sm">Memuat inventori...</div>;
@@ -756,13 +760,6 @@ export default function AdminPage() {
     setPage('dashboard');
   }, []);
 
-  if (!mounted) return null;
-  if (!isAuth) return <LoginPage onLogin={() => setIsAuth(true)} />;
-
-  const notifications = ssGet<Notification[]>('notifications');
-  const unread = notifications.filter(n => !n.read).length;
-  const admin = ssGet<AdminUser>('admin');
-
   const renderPage = useCallback(() => {
     switch (page) {
       case 'dashboard': return <DashboardPage onToast={addToast} />;
@@ -777,6 +774,13 @@ export default function AdminPage() {
       default: return <DashboardPage onToast={addToast} />;
     }
   }, [page, addToast]);
+
+  if (!mounted) return null;
+  if (!isAuth) return <LoginPage onLogin={() => setIsAuth(true)} />;
+
+  const notifications = ssGet<Notification[]>('notifications');
+  const unread = notifications.filter(n => !n.read).length;
+  const admin = ssGet<AdminUser>('admin');
 
   return (
     <>
