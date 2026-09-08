@@ -73,33 +73,117 @@ export default function MenuPage() {
     addToCart(item, 1, defaultSpice, []);
   };
 
+  // Category icon mapping (emoji as placeholder, replace with real images later)
+  const categoryIcons: Record<string, { emoji: string; label: string }> = {
+    semua:   { emoji: '🍽️', label: 'Semua' },
+    makanan: { emoji: '🍛', label: 'Makanan' },
+    minuman: { emoji: '🥤', label: 'Minuman' },
+    cemilan: { emoji: '🍟', label: 'Cemilan' },
+    dessert: { emoji: '🍮', label: 'Dessert' },
+  };
+
   return (
     <main className="min-h-screen pb-32 bg-[#faf7f2]">
-      {/* ─── TOP HEADER SECTION ─── */}
-      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-8">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-          {/* Title & Subtitle */}
-          <div>
-            <h1 className="font-serif font-bold text-4xl md:text-5xl text-[#1a1207] leading-tight">
-              Rasa Nusantara
-              <br />
-              <span className="text-[#8c5b3f] italic">Sepenuh Hati</span>
-            </h1>
-            <p className="text-sm md:text-base text-[#7a6a5a] mt-3 font-normal max-w-lg">
-              Setiap hidangan lahir dari resep turun-temurun dan bumbu rempah asli Indonesia.
-            </p>
-          </div>
 
-          
+      {/* ─── HERO / SLOGAN BANNER ─── */}
+      <section className="bg-[#fdf6f0] border-b border-[#ece8e3]">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div className="relative rounded-2xl overflow-hidden bg-[#f5ede7] flex flex-col md:flex-row items-center justify-between min-h-[220px] md:min-h-[260px] my-5 shadow-sm">
+
+            {/* Left: Text Content */}
+            <div className="relative z-10 flex flex-col justify-center px-8 py-10 md:py-0 md:pl-10 md:w-1/2">
+              {/* LIMITED TIME badge */}
+              <span className="inline-flex items-center self-start px-3 py-1 mb-4 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-[11px] font-semibold text-[#7a2323] uppercase tracking-wider">
+                Limited Time
+              </span>
+
+              {/* Main headline */}
+              <h1 className="font-serif font-extrabold text-3xl md:text-4xl text-[#1a1207] leading-tight mb-2">
+                Rasa Segar.{' '}
+                <span className="text-[#7a2323]">Racikan Istimewa.</span>
+              </h1>
+
+              {/* Sub-headline */}
+              <p className="text-sm md:text-base text-[#7a6a5a] font-normal max-w-sm mb-6">
+                Bumbu asli Nusantara, diolah segar setiap hari dengan cinta.
+              </p>
+
+              {/* CTA */}
+              <Link
+                href="#menu-grid"
+                className="inline-flex items-center gap-2 self-start px-6 py-3 bg-[#7a2323] hover:bg-[#631c1c] text-white font-semibold text-sm rounded-full shadow-md transition-all"
+              >
+                <span>Pesan Sekarang</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            {/* Right: Slogan image placeholder */}
+            <div className="md:w-1/2 flex items-end justify-center md:justify-end h-full px-6 pb-0 md:pr-8 pt-6 md:pt-0">
+              {/* ↓↓ GANTI src ini dengan gambar slogan asli ↓↓ */}
+              <div className="relative w-full max-w-xs md:max-w-sm h-44 md:h-56 rounded-xl overflow-hidden bg-[#ecddd5] flex items-center justify-center border-2 border-dashed border-[#c9a99a]">
+                <div className="text-center text-[#a87b6e] select-none">
+                  <div className="text-4xl mb-2">🖼️</div>
+                  <p className="text-xs font-medium">Gambar Slogan</p>
+                  <p className="text-[10px] opacity-70 mt-0.5">akan ditambah manual</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-            {/* ─── FILTER + CART ROW ─── */}
-            <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-6 sticky top-[60px] z-30 shadow-sm">
+      {/* ─── CIRCULAR CATEGORY ICONS ─── */}
+      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-6">
         <div className="max-w-7xl mx-auto">
+          <div className="flex items-start justify-center gap-6 md:gap-10 overflow-x-auto scrollbar-none pb-1">
+            {(categories || []).map((cat) => {
+              const isActive = selectedCategory === cat.slug;
+              const icon = categoryIcons[cat.slug] ?? { emoji: '🍴', label: cat.name };
+              return (
+                <button
+                  key={cat.slug}
+                  onClick={() => setSelectedCategory(cat.slug)}
+                  className="flex flex-col items-center gap-2 flex-shrink-0 group"
+                >
+                  {/* Circle image placeholder */}
+                  <div
+                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all shadow-sm ${
+                      isActive
+                        ? 'border-[#7a2323] ring-2 ring-[#7a2323]/30 bg-[#fce9e4]'
+                        : 'border-[#e0d5cf] bg-[#f5ede7] group-hover:border-[#c9a99a] group-hover:bg-[#fce9e4]'
+                    }`}
+                  >
+                    {/* ↓↓ Replace with <Image> when real category images are ready ↓↓ */}
+                    <span className="text-2xl md:text-3xl select-none">{icon.emoji}</span>
+                  </div>
 
-          {/* Search Bar (pindahan dari header) */}
-          <div className="w-full lg:w-80 mb-5">
+                  {/* Category label */}
+                  <span
+                    className={`text-xs md:text-sm font-semibold transition-colors ${
+                      isActive ? 'text-[#7a2323]' : 'text-[#5a423a] group-hover:text-[#7a2323]'
+                    }`}
+                  >
+                    {icon.label}
+                  </span>
+
+                  {/* Active underline */}
+                  {isActive && (
+                    <div className="w-5 h-0.5 rounded-full bg-[#7a2323]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SEARCH + CART ROW ─── */}
+      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-4 sticky top-[60px] z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+
+          {/* Search Bar */}
+          <div className="w-full lg:w-80">
             <div className="relative flex items-center">
               <Search className="w-4 h-4 text-[#7a2323] absolute left-4" />
               <input
@@ -112,68 +196,46 @@ export default function MenuPage() {
             </div>
           </div>
 
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 flex-1">
-              {(categories || []).map((cat) => {
-                const isActive = selectedCategory === cat.slug;
-                return (
-                  <button
-                    key={cat.slug}
-                    onClick={() => setSelectedCategory(cat.slug)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
-                      isActive
-                        ? 'bg-[#3d2010] text-white shadow-md'
-                        : 'bg-white text-[#5a423a] border border-[#d6c8be] hover:bg-[#fce9e4]'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Cart Box — Desktop: inline at top right */}
-            {isMounted && (
-              <div className="hidden lg:block flex-shrink-0">
-                <div className="bg-[#7a2323] text-white rounded-2xl px-5 py-3 shadow-lg min-w-[260px]">
-                  <div className="text-[10px] uppercase tracking-widest text-[#f5c7bc] font-semibold mb-0.5">
-                    Keranjangmu
-                  </div>
-                  <div className="font-serif italic font-bold text-xl mb-3">
-                    {cartCount} Items • {formatRupiah(cartTotal)}
-                  </div>
-
-                  {cartItems.length > 0 && (
-                    <div className="space-y-1.5 mb-3 max-h-28 overflow-y-auto border-t border-[#8c2c22] pt-2.5">
-                      {cartItems.map((ci) => {
-                        if (!ci || !ci.menuItem || !ci.menuItem.name) return null;
-                        return (
-                          <div key={ci.id} className="flex justify-between items-center text-xs text-[#fdf1ee]">
-                            <span className="truncate pr-2">{ci.menuItem.name}</span>
-                            <span className="font-semibold text-white whitespace-nowrap">{formatRupiah(ci.lineTotal || 0)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <Link
-                    href="/cart"
-                    className="w-full py-2.5 bg-white hover:bg-[#fdf1ee] text-[#7a2323] font-bold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm transition-colors"
-                  >
-                    <span>Buka Keranjang</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Link>
+          {/* Cart Box — Desktop: inline at top right */}
+          {isMounted && (
+            <div className="hidden lg:block flex-shrink-0">
+              <div className="bg-[#7a2323] text-white rounded-2xl px-5 py-3 shadow-lg min-w-[260px]">
+                <div className="text-[10px] uppercase tracking-widest text-[#f5c7bc] font-semibold mb-0.5">
+                  Keranjangmu
                 </div>
+                <div className="font-serif italic font-bold text-xl mb-3">
+                  {cartCount} Items • {formatRupiah(cartTotal)}
+                </div>
+
+                {cartItems.length > 0 && (
+                  <div className="space-y-1.5 mb-3 max-h-28 overflow-y-auto border-t border-[#8c2c22] pt-2.5">
+                    {cartItems.map((ci) => {
+                      if (!ci || !ci.menuItem || !ci.menuItem.name) return null;
+                      return (
+                        <div key={ci.id} className="flex justify-between items-center text-xs text-[#fdf1ee]">
+                          <span className="truncate pr-2">{ci.menuItem.name}</span>
+                          <span className="font-semibold text-white whitespace-nowrap">{formatRupiah(ci.lineTotal || 0)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <Link
+                  href="/cart"
+                  className="w-full py-2.5 bg-white hover:bg-[#fdf1ee] text-[#7a2323] font-bold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm transition-colors"
+                >
+                  <span>Buka Keranjang</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* ─── MENU GRID ─── */}
-      <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8">
+      <div id="menu-grid" className="max-w-7xl mx-auto px-6 md:px-10 pt-8">
         <h2 className="font-serif italic font-bold text-2xl md:text-3xl text-[#2a1a15] mb-6">
           Paling Populer
         </h2>
