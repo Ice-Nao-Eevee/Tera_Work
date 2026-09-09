@@ -130,10 +130,29 @@ export default function MenuPage() {
         </div>
       </section>
 
-            {/* ─── FILTER + CART ROW ─── */}
-            <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-6 sticky top-[60px] z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-start justify-center gap-6 md:gap-10 overflow-x-auto scrollbar-none pb-1">
+      {/* ─── SEARCH BAR + CIRCULAR CATEGORIES (satu baris sticky) ─── */}
+      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-4 sticky top-[60px] z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center gap-4 overflow-x-auto scrollbar-none">
+
+          {/* Search Bar — fixed width, tidak ikut scroll */}
+          <div className="flex-shrink-0 w-52 md:w-64">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-[#7a2323] absolute left-3.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari hidangan..."
+                className="w-full pl-10 pr-3 py-2.5 bg-[#fce9e4]/70 border border-[#f5c7bc] rounded-full text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#7a2323] focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="flex-shrink-0 w-px h-10 bg-[#ece8e3]" />
+
+          {/* Circular Category Icons — scrollable ke kanan jika terlalu banyak */}
+          <div className="flex items-center gap-5 md:gap-7 overflow-x-auto scrollbar-none pb-0.5">
             {(categories || []).map((cat) => {
               const isActive = selectedCategory === cat.slug;
               const icon = categoryIcons[cat.slug] ?? { emoji: '🍴', label: cat.name };
@@ -141,93 +160,36 @@ export default function MenuPage() {
                 <button
                   key={cat.slug}
                   onClick={() => setSelectedCategory(cat.slug)}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 group"
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
                 >
-                  {/* Circle image placeholder */}
+                  {/* Circle — lebih kecil agar proporsional dengan search bar */}
                   <div
-                    className={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all shadow-sm ${
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all ${
                       isActive
-                        ? 'border-[#7a2323] ring-2 ring-[#7a2323]/30 bg-[#fce9e4]'
+                        ? 'border-[#7a2323] ring-2 ring-[#7a2323]/25 bg-[#fce9e4]'
                         : 'border-[#e0d5cf] bg-[#f5ede7] group-hover:border-[#c9a99a] group-hover:bg-[#fce9e4]'
                     }`}
                   >
-                    {/* ↓↓ Replace with <Image> when real category images are ready ↓↓ */}
-                    <span className="text-2xl md:text-3xl select-none">{icon.emoji}</span>
+                    {/* ↓↓ Ganti dengan <Image> saat gambar kategori siap ↓↓ */}
+                    <span className="text-xl md:text-2xl select-none">{icon.emoji}</span>
                   </div>
 
-                  {/* Category label */}
+                  {/* Label */}
                   <span
-                    className={`text-xs md:text-sm font-semibold transition-colors ${
+                    className={`text-[11px] md:text-xs font-semibold transition-colors whitespace-nowrap ${
                       isActive ? 'text-[#7a2323]' : 'text-[#5a423a] group-hover:text-[#7a2323]'
                     }`}
                   >
                     {icon.label}
                   </span>
 
-                  {/* Active underline */}
-                  {isActive && (
-                    <div className="w-5 h-0.5 rounded-full bg-[#7a2323]" />
-                  )}
+                  {/* Active dot */}
+                  <div className={`w-1 h-1 rounded-full transition-all ${isActive ? 'bg-[#7a2323]' : 'bg-transparent'}`} />
                 </button>
               );
             })}
           </div>
-        </div>
-      </section>
 
-      {/* ─── SEARCH + CART ROW ─── */}
-      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-4 sticky top-[60px] z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-
-          {/* Search Bar */}
-          <div className="w-full lg:w-80">
-            <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-[#7a2323] absolute left-4" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari hidangan favoritmu..."
-                className="w-full pl-11 pr-4 py-3 bg-[#fce9e4]/70 border border-[#f5c7bc] rounded-full text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#7a2323] focus:bg-white transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Cart Box — Desktop: inline at top right */}
-          {isMounted && (
-            <div className="hidden lg:block flex-shrink-0">
-              <div className="bg-[#7a2323] text-white rounded-2xl px-5 py-3 shadow-lg min-w-[260px]">
-                <div className="text-[10px] uppercase tracking-widest text-[#f5c7bc] font-semibold mb-0.5">
-                  Keranjangmu
-                </div>
-                <div className="font-serif italic font-bold text-xl mb-3">
-                  {cartCount} Items • {formatRupiah(cartTotal)}
-                </div>
-
-                {cartItems.length > 0 && (
-                  <div className="space-y-1.5 mb-3 max-h-28 overflow-y-auto border-t border-[#8c2c22] pt-2.5">
-                    {cartItems.map((ci) => {
-                      if (!ci || !ci.menuItem || !ci.menuItem.name) return null;
-                      return (
-                        <div key={ci.id} className="flex justify-between items-center text-xs text-[#fdf1ee]">
-                          <span className="truncate pr-2">{ci.menuItem.name}</span>
-                          <span className="font-semibold text-white whitespace-nowrap">{formatRupiah(ci.lineTotal || 0)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <Link
-                  href="/cart"
-                  className="w-full py-2.5 bg-white hover:bg-[#fdf1ee] text-[#7a2323] font-bold text-xs rounded-full flex items-center justify-center gap-1.5 shadow-sm transition-colors"
-                >
-                  <span>Buka Keranjang</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
