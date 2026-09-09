@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AIChatPanel from '@/components/AIChatPanel';
+import FloatingCart from '@/components/FloatingCart';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isAiOpen, setIsAiOpen] = useState<boolean>(false);
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const pathname = usePathname();
 
@@ -27,12 +29,16 @@ export default function ClientLayoutWrapper({ children }: { children: React.Reac
 
   return (
     <>
-      <Header onToggleAiChat={() => setIsAiOpen((prev) => !prev)} />
+      <Header
+        onToggleAiChat={() => setIsAiOpen((prev) => !prev)}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
       <div className="flex-1">
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
       <Footer />
       {isMounted && <AIChatPanel isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />}
+      {isMounted && <FloatingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />}
     </>
   );
 }

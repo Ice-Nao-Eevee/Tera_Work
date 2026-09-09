@@ -7,9 +7,10 @@ import { getCartItems, getTableSession, storeEvents, CartItem, TableSession } fr
 
 interface HeaderProps {
   onToggleAiChat?: () => void;
+  onOpenCart?: () => void;
 }
 
-export default function Header({ onToggleAiChat }: HeaderProps) {
+export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   const [cartCount, setCartCount] = useState<number>(0);
   const [tableSession, setTableSession] = useState<TableSession>({ tableId: 'table-5', tableNumber: 5 });
   const [isMounted, setIsMounted] = useState<boolean>(false);
@@ -86,8 +87,8 @@ export default function Header({ onToggleAiChat }: HeaderProps) {
         </div>
 
         {/* Cart Icon */}
-        <Link
-          href="/cart"
+        <button
+          onClick={onOpenCart}
           className="p-2.5 rounded-full hover:bg-[#f8dbd4] transition-colors relative text-[#7a2323]"
           aria-label="Keranjang Belanja"
         >
@@ -97,7 +98,7 @@ export default function Header({ onToggleAiChat }: HeaderProps) {
               {cartCount}
             </span>
           )}
-        </Link>
+        </button>
       </div>
     </header>
   );
