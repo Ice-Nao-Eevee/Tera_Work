@@ -78,22 +78,22 @@ function TableLandingContent() {
 
       {/* Loading State */}
       {isValidating && (
-        <div className="relative z-10 bg-[#fdf1ee] border border-[#f5c7bc] rounded-3xl p-8 md:p-12 max-w-md w-full text-center shadow-2xl">
-          <div className="w-10 h-10 border-4 border-[#f5c7bc] border-t-[#7a2323] rounded-full animate-spin mx-auto mb-4" />
+        <div className="relative z-10 bg-[#fcf8f2] border border-[#d4bc8c] rounded-3xl p-8 md:p-12 max-w-md w-full text-center shadow-2xl">
+          <div className="w-10 h-10 border-4 border-[#d4bc8c] border-t-[#b45309] rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#5a423a] text-sm font-medium">Memverifikasi QR Code...</p>
         </div>
       )}
 
       {/* Invalid QR State */}
       {!isValidating && !isValid && (
-        <div className="relative z-10 bg-[#fdf1ee] border border-[#f5c7bc] rounded-3xl p-8 md:p-12 max-w-md w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
-          <div className="w-16 h-16 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-[#7a2323] flex items-center justify-center mx-auto mb-6">
+        <div className="relative z-10 bg-[#fcf8f2] border border-[#d4bc8c] rounded-3xl p-8 md:p-12 max-w-md w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309] flex items-center justify-center mx-auto mb-6">
             <XCircle className="w-9 h-9 stroke-[2.2]" />
           </div>
           <span className="text-xs uppercase tracking-widest font-semibold text-[#8c5950] mb-2 block">
             QR Code Tidak Valid
           </span>
-          <h2 className="font-serif italic text-3xl md:text-4xl font-bold text-[#7a2323] mb-3">
+          <h2 className="font-serif italic text-3xl md:text-4xl font-bold text-[#b45309] mb-3">
             Akses Ditolak
           </h2>
           <p className="text-sm text-[#5a423a] leading-relaxed">
@@ -104,8 +104,8 @@ function TableLandingContent() {
 
       {/* Success State */}
       {!isValidating && isValid && (
-        <div className="relative z-10 bg-[#fdf1ee] border border-[#f5c7bc] rounded-3xl p-8 md:p-12 max-w-md w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
-          <div className="w-16 h-16 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-[#7a2323] flex items-center justify-center mx-auto mb-6 shadow-xs">
+        <div className="relative z-10 bg-[#fcf8f2] border border-[#d4bc8c] rounded-3xl p-8 md:p-12 max-w-md w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309] flex items-center justify-center mx-auto mb-6 shadow-xs">
             <CheckCircle2 className="w-9 h-9 stroke-[2.2]" />
           </div>
 
@@ -113,11 +113,11 @@ function TableLandingContent() {
             QR Code Terverifikasi
           </span>
 
-          <h2 className="font-serif italic text-3xl md:text-4xl font-bold text-[#7a2323] mb-3">
+          <h2 className="font-serif italic text-3xl md:text-4xl font-bold text-[#b45309] mb-3">
             Scan Berhasil!
           </h2>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-lg font-bold text-[#7a2323] mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-lg font-bold text-[#b45309] mb-6">
             <Utensils className="w-5 h-5" />
             <span>Selamat Datang di Meja {tableNumber}</span>
           </div>
@@ -128,7 +128,7 @@ function TableLandingContent() {
 
           <button
             onClick={handleGoToMenu}
-            className="w-full py-4 bg-[#7a2323] hover:bg-[#631c1c] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group"
+            className="w-full py-4 bg-[#b45309] hover:bg-[#631c1c] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group"
           >
             <span>Menu Utama</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -143,7 +143,7 @@ export default function TableLandingPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#2a1a15] text-[#fdf1ee]">
+        <div className="min-h-screen flex items-center justify-center bg-[#2a1a15] text-[#fcf8f2]">
           Memuat data meja...
         </div>
       }

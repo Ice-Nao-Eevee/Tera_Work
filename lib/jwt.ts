@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'selera-sambal-qr-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'warkop-betawa-qr-secret-key-2026';
 
 export interface TableTokenPayload {
   tableId: string;

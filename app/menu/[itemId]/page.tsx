@@ -51,7 +51,7 @@ export default function ItemDetailPage() {
 
   if (!item) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[#7a2323] font-medium">
+      <div className="min-h-screen flex items-center justify-center text-[#b45309] font-medium">
         Memuat detail hidangan...
       </div>
     );
@@ -84,7 +84,7 @@ export default function ItemDetailPage() {
       {/* Top Back Link matching desktop-item-detail screenshot */}
       <Link
         href="/menu"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#7a2323] hover:underline mb-8"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-[#b45309] hover:underline mb-8"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Kembali ke Menu Utama</span>
@@ -93,7 +93,7 @@ export default function ItemDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Product Image Left */}
         <div className="lg:col-span-6">
-          <div className="relative h-80 md:h-[450px] w-full rounded-3xl overflow-hidden shadow-soft border border-[#f5c7bc] bg-white">
+          <div className="relative h-80 md:h-[450px] w-full rounded-3xl overflow-hidden shadow-soft border border-[#d4bc8c] bg-white">
             <Image
               src={item.photoUrl}
               alt={item.name}
@@ -112,7 +112,7 @@ export default function ItemDetailPage() {
             <h1 className="font-serif italic font-bold text-3xl md:text-4xl text-[#2a1a15]">
               {item.name}
             </h1>
-            <div className="font-bold text-2xl text-[#7a2323] mt-2">
+            <div className="font-bold text-2xl text-[#b45309] mt-2">
               {formatRupiah(item.price)}
             </div>
             <p className="text-sm text-[#614a42] mt-3 leading-relaxed font-light">
@@ -120,7 +120,7 @@ export default function ItemDetailPage() {
             </p>
           </div>
 
-          <hr className="border-[#f3d9d3]" />
+          <hr className="border-[#e6cdac]" />
 
           {/* Spice Level Selector */}
           {item.spiceLevels && item.spiceLevels.length > 0 && (
@@ -138,8 +138,8 @@ export default function ItemDetailPage() {
                       onClick={() => setSelectedSpice(lvl.label)}
                       className={`px-5 py-2 rounded-full text-sm font-medium transition-all border ${
                         isSelected
-                          ? 'bg-[#7a2323] text-white border-[#7a2323] shadow-sm'
-                          : 'bg-white text-[#5a423a] border-[#f5c7bc] hover:bg-[#fce9e4]'
+                          ? 'bg-[#b45309] text-white border-[#b45309] shadow-sm'
+                          : 'bg-white text-[#5a423a] border-[#d4bc8c] hover:bg-[#f3e8d6]'
                       }`}
                     >
                       {lvl.label}
@@ -165,21 +165,21 @@ export default function ItemDetailPage() {
                       onClick={() => toggleAddOn(addOn)}
                       className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
                         isChecked
-                          ? 'bg-[#fce9e4] border-[#7a2323] text-[#7a2323]'
-                          : 'bg-white border-[#f5c7bc] text-[#2a1a15] hover:bg-[#fdf1ee]'
+                          ? 'bg-[#f3e8d6] border-[#b45309] text-[#b45309]'
+                          : 'bg-white border-[#d4bc8c] text-[#2a1a15] hover:bg-[#fcf8f2]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
-                            isChecked ? 'bg-[#7a2323] border-[#7a2323] text-white' : 'border-[#9e8d87] bg-white'
+                            isChecked ? 'bg-[#b45309] border-[#b45309] text-white' : 'border-[#9e8d87] bg-white'
                           }`}
                         >
                           {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
                         <span className="text-sm font-medium">{addOn.label}</span>
                       </div>
-                      <span className="text-sm font-bold text-[#7a2323]">
+                      <span className="text-sm font-bold text-[#b45309]">
                         +{formatRupiah(addOn.price)}
                       </span>
                     </label>
@@ -192,20 +192,20 @@ export default function ItemDetailPage() {
           {/* Quantity Stepper & Live Price CTA Button */}
           <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
             {/* Stepper */}
-            <div className="flex items-center bg-[#fce9e4] border border-[#f5c7bc] rounded-full p-1.5 shadow-xs">
+            <div className="flex items-center bg-[#f3e8d6] border border-[#d4bc8c] rounded-full p-1.5 shadow-xs">
               <button
                 type="button"
                 onClick={() => setQty(Math.max(1, qty - 1))}
-                className="w-9 h-9 rounded-full bg-white text-[#7a2323] flex items-center justify-center hover:bg-[#f8dbd4] transition-colors"
+                className="w-9 h-9 rounded-full bg-white text-[#b45309] flex items-center justify-center hover:bg-[#ebdbb7] transition-colors"
                 aria-label="Kurangi Jumlah"
               >
                 <Minus className="w-4 h-4 stroke-[2.5]" />
               </button>
-              <span className="w-12 text-center font-bold text-[#7a2323] text-base">{qty}</span>
+              <span className="w-12 text-center font-bold text-[#b45309] text-base">{qty}</span>
               <button
                 type="button"
                 onClick={() => setQty(qty + 1)}
-                className="w-9 h-9 rounded-full bg-[#7a2323] text-white flex items-center justify-center hover:bg-[#631c1c] transition-colors"
+                className="w-9 h-9 rounded-full bg-[#b45309] text-white flex items-center justify-center hover:bg-[#631c1c] transition-colors"
                 aria-label="Tambah Jumlah"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -216,7 +216,7 @@ export default function ItemDetailPage() {
             <button
               type="button"
               onClick={handleAddToCart}
-              className="flex-1 w-full py-4 bg-[#7a2323] hover:bg-[#631c1c] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              className="flex-1 w-full py-4 bg-[#b45309] hover:bg-[#631c1c] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
             >
               <ShoppingBag className="w-5 h-5" />
               <span>

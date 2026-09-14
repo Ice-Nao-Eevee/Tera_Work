@@ -1,8 +1,8 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
-// GET /api/menu — list all active menu items + all categories
+// GET /api/menu  list all active menu items + all categories
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/menu — create a new menu item (admin)
+// POST /api/menu  create a new menu item (admin)
 export async function POST(req: NextRequest) {
   try {
     await connectDB();

@@ -33,7 +33,7 @@ function withAdminId<T extends { id?: string; _id?: string }>(value: T): T & { _
 // ── Local-only helpers (session / notifications / admin login) ───────────────
 const SS_PREFIX = 'ss_admin_';
 const DEFAULTS = {
-  settings: { taxRatePercent: 10, serviceChargeRatePercent: 5, restaurantInfo: { name: 'Selera Sambal', address: '', whatsapp: '', instagram: '', email: '' } } as AppSettings,
+  settings: { taxRatePercent: 10, serviceChargeRatePercent: 5, restaurantInfo: { name: 'Warkop Betawa', address: '', whatsapp: '', instagram: '', email: '' } } as AppSettings,
   admin: { name: 'Admin Selera', username: 'admin', password: 'admin123', avatar: '' } as AdminUser,
 };
 function ssGet<T>(key: string): T { try { return JSON.parse(localStorage.getItem(SS_PREFIX + key) ?? 'null') ?? (DEFAULTS as any)[key] ?? []; } catch { return (DEFAULTS as any)[key] ?? [] as any; } }
@@ -194,7 +194,7 @@ function OrderDetailModal({ order, onClose, onSaved }: { order: Order; onClose: 
   return (
     <>{' '}
       <Modal title={`Order ${order.orderCode}`} onClose={onClose}>
-        <h2 className="font-bold text-center mb-1">SELERA SAMBAL</h2>
+        <h2 className="font-bold text-center mb-1">Warkop Betawa</h2>
         <p className="text-[#827a73] text-xs text-center mb-3">{fmtDate(order.createdAt || '')} · Meja {order.tableNumber}</p>
         <hr className="border-[#e9e3dc] mb-3" />
         {order.items.map((item, i) => <div key={i} className="flex justify-between text-sm mb-2"><span>{item.name} × {item.qty}</span><b>{rupiah(item.price * item.qty)}</b></div>)}
@@ -336,7 +336,7 @@ function DashboardPage({ onToast }: { onToast: (m: string) => void }) {
 
   return (
     <div>
-      <PageHeading title="Selamat datang, Admin" desc="Ringkasan operasional Selera Sambal hari ini." action={<button onClick={() => setShowPF(true)} className={bPri}>+ Tambah Menu</button>} />
+      <PageHeading title="Selamat datang, Admin" desc="Ringkasan operasional Warkop Betawa hari ini." action={<button onClick={() => setShowPF(true)} className={bPri}>+ Tambah Menu</button>} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5"><StatCard icon="▣" label="Total Menu" value={products.length} /><StatCard icon="◉" label="Menu Terjual" value={sold} /><StatCard icon="Rp" label="Pendapatan" value={rupiah(revenue)} /><StatCard icon="▤" label="Pesanan" value={orders.length} /></div>
       <div className="grid grid-cols-1 md:grid-cols-[1.55fr_1fr] gap-[18px] mb-5">
         <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)]"><div className="flex items-center justify-between mb-4"><h2 className="font-bold text-base m-0">Pesanan Terbaru</h2><span className="text-[#827a73] text-xs">{orders.length} total</span></div>{recent.length ? <DataTable headers={['Kode','Meja','Item','Total','Status','Waktu']} rows={recent.map(o => [<b key="i">{o.orderCode}</b>, `Meja ${o.tableNumber}`, o.items.map(i => `${i.name} x${i.qty}`).join(', '), rupiah(o.total), <Badge key="s" status={o.status} />, fmtDate(o.createdAt || '')])} /> : <EmptyState title="Belum ada aktivitas" text="Pesanan dari pelanggan akan tampil di sini." />}</section>
@@ -393,7 +393,7 @@ function ProductsPage({ onToast }: { onToast: (m: string) => void }) {
         <select className={iCls} value={catF} onChange={e => setCatF(e.target.value)}><option value="">Semua kategori</option>{categories.filter(c => c.slug !== 'semua').map(c => <option key={c._id} value={c.slug}>{c.name}</option>)}</select>
         <select className={iCls} value={statF} onChange={e => setStatF(e.target.value)}><option value="">Semua status</option><option value="Tersedia">Tersedia</option><option value="Nonaktif">Nonaktif</option></select>
       </div>
-      {shown.length ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[15px]">{shown.map(item => <article key={item._id} className="bg-white border border-[#e9e3dc] rounded-[16px] overflow-hidden relative"><div className="h-[116px] bg-[#f3e5de] flex items-center justify-center text-[30px] text-[#aa2027] overflow-hidden">{item.photoUrl ? <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover" /> : '♨'}</div><div className="p-[14px]"><h3 className="text-[15px] font-bold m-0 mb-1">{item.name}</h3><p className="text-[#827a73] text-xs m-0 mb-3">{item.category || 'Tanpa kategori'}</p><div className="flex items-center justify-between pt-[11px] border-t border-[#e9e3dc]"><b className="text-sm">{rupiah(item.price)}</b><Badge status={item.isActive ? 'Tersedia' : 'Nonaktif'} /></div><div className="flex gap-1 mt-2"><SmallBtn onClick={() => { setEditItem(item); setShowF(true); }}>Edit</SmallBtn><SmallBtn onClick={() => setDelItem(item)}>Hapus</SmallBtn></div></div></article>)}</div> : <EmptyState title="Belum ada menu" text="Tambahkan menu pertama untuk mulai mengelola Selera Sambal." action={<button onClick={() => { setEditItem(undefined); setShowF(true); }} className={bPri}>+ Tambah Menu</button>} />}
+      {shown.length ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[15px]">{shown.map(item => <article key={item._id} className="bg-white border border-[#e9e3dc] rounded-[16px] overflow-hidden relative"><div className="h-[116px] bg-[#f3e5de] flex items-center justify-center text-[30px] text-[#aa2027] overflow-hidden">{item.photoUrl ? <img src={item.photoUrl} alt={item.name} className="w-full h-full object-cover" /> : '♨'}</div><div className="p-[14px]"><h3 className="text-[15px] font-bold m-0 mb-1">{item.name}</h3><p className="text-[#827a73] text-xs m-0 mb-3">{item.category || 'Tanpa kategori'}</p><div className="flex items-center justify-between pt-[11px] border-t border-[#e9e3dc]"><b className="text-sm">{rupiah(item.price)}</b><Badge status={item.isActive ? 'Tersedia' : 'Nonaktif'} /></div><div className="flex gap-1 mt-2"><SmallBtn onClick={() => { setEditItem(item); setShowF(true); }}>Edit</SmallBtn><SmallBtn onClick={() => setDelItem(item)}>Hapus</SmallBtn></div></div></article>)}</div> : <EmptyState title="Belum ada menu" text="Tambahkan menu pertama untuk mulai mengelola Warkop Betawa." action={<button onClick={() => { setEditItem(undefined); setShowF(true); }} className={bPri}>+ Tambah Menu</button>} />}
       {showF && <ProductForm product={editItem} categories={categories} onClose={() => setShowF(false)} onSaved={m => { onToast(m); refresh(); }} />}
       {delItem && <ConfirmModal message={`Hapus menu "${delItem.name}"?`} onConfirm={() => handleDelete(delItem)} onClose={() => setDelItem(null)} />}
     </div>
@@ -797,7 +797,7 @@ export default function AdminPage() {
         <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 sticky top-0 h-screen self-start ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:sticky md:translate-x-0`} style={{ padding: '26px 14px' }}>
           <a href="#" onClick={e => { e.preventDefault(); setPage('dashboard'); setMobileOpen(false); }} className={`flex items-center gap-[10px] font-bold text-[16px] pb-[25px] text-[#f7f1eb] no-underline ${collapsed ? 'justify-center' : 'px-[10px]'}`}>
             <b className="w-[33px] h-[33px] rounded-[12px] bg-[#aa2027] flex items-center justify-center shrink-0 text-white" style={{ fontFamily: 'Playfair Display,serif' }}>SS</b>
-            {!collapsed && <span>Selera Sambal</span>}
+            {!collapsed && <span>Warkop Betawa</span>}
           </a>
           <nav className="flex flex-col flex-1">
             {NAV.map(({ key, icon, label, group }, idx) => {
@@ -836,7 +836,7 @@ export default function AdminPage() {
           </header>
           <div key={page} className="ss-page p-[clamp(22px,3vw,38px)] flex-1">{renderPage()}</div>
           <footer className="no-print p-4 border-t border-[#e9e3dc] bg-white text-center">
-            <Link href="/" className="text-xs text-[#827a73] hover:text-[#aa2027] underline transition-colors">← Kembali ke Selera Sambal</Link>
+            <Link href="/" className="text-xs text-[#827a73] hover:text-[#aa2027] underline transition-colors">← Kembali ke Warkop Betawa</Link>
           </footer>
         </main>
       </div>

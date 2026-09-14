@@ -18,7 +18,7 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
     {
       role: 'assistant',
       content:
-        'Halo! Saya Asisten AI Selera Sambal 🌶️. Bingung mau pesan apa atau ada pertanyaan seputar menu & tingkat pedas? Tanyakan saja pada saya!',
+        'Halo! Saya Asisten AI Warkop Betawa ☕. Bingung mau pesan apa atau ada pertanyaan seputar menu & tingkat pedas? Tanyakan saja pada saya!',
     },
   ]);
   const [input, setInput] = useState('');
@@ -76,21 +76,21 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
       />
 
       {/* Slide-over panel */}
-      <div className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-[#fdf1ee] border-l border-[#f5c7bc] z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+      <div className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-[#fcf8f2] border-l border-[#d4bc8c] z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
         {/* Panel Header */}
-        <div className="p-4 border-b border-[#f5c7bc] bg-[#fce9e4] flex items-center justify-between">
+        <div className="p-4 border-b border-[#d4bc8c] bg-[#f3e8d6] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 via-pink-500 to-amber-400 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 via-yellow-500 to-amber-400 flex items-center justify-center text-white">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-serif font-bold text-base text-[#7a2323]">Asisten Selera Sambal</h3>
+              <h3 className="font-serif font-bold text-base text-[#b45309]">Asisten Warkop Betawa</h3>
               <p className="text-[11px] text-[#8c5950]">Tanya rekomendasi menu & rempah</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-[#f3d9d3] text-[#7a2323] transition-colors"
+            className="p-1.5 rounded-full hover:bg-[#e6cdac] text-[#b45309] transition-colors"
             aria-label="Tutup"
           >
             <X className="w-5 h-5" />
@@ -109,8 +109,8 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                   m.role === 'user'
-                    ? 'bg-[#7a2323] text-white'
-                    : 'bg-[#fce9e4] text-[#7a2323] border border-[#f5c7bc]'
+                    ? 'bg-[#b45309] text-white'
+                    : 'bg-[#f3e8d6] text-[#b45309] border border-[#d4bc8c]'
                 }`}
               >
                 {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -119,8 +119,8 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-xs leading-relaxed ${
                   m.role === 'user'
-                    ? 'bg-[#7a2323] text-white rounded-tr-none'
-                    : 'bg-white text-[#2a1a15] border border-[#f3d9d3] rounded-tl-none'
+                    ? 'bg-[#b45309] text-white rounded-tr-none'
+                    : 'bg-white text-[#2a1a15] border border-[#e6cdac] rounded-tl-none'
                 }`}
               >
                 {m.content}
@@ -130,7 +130,7 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
 
           {isLoading && (
             <div className="flex items-center gap-2 text-xs text-[#8c5950] p-2">
-              <Sparkles className="w-4 h-4 animate-spin text-[#7a2323]" />
+              <Sparkles className="w-4 h-4 animate-spin text-[#b45309]" />
               <span>Asisten sedang berpikir...</span>
             </div>
           )}
@@ -138,18 +138,18 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleSend} className="p-3 bg-[#fce9e4] border-t border-[#f5c7bc] flex gap-2">
+        <form onSubmit={handleSend} className="p-3 bg-[#f3e8d6] border-t border-[#d4bc8c] flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Tanyakan menu, sambal, atau rekomendasi..."
-            className="flex-1 px-4 py-2.5 text-sm bg-white rounded-full border border-[#f5c7bc] focus:outline-none focus:border-[#7a2323] text-[#2a1a15] placeholder-[#9e8d87]"
+            className="flex-1 px-4 py-2.5 text-sm bg-white rounded-full border border-[#d4bc8c] focus:outline-none focus:border-[#b45309] text-[#2a1a15] placeholder-[#9e8d87]"
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="w-10 h-10 rounded-full bg-[#7a2323] hover:bg-[#631c1c] text-white flex items-center justify-center disabled:opacity-50 transition-colors shadow-sm"
+            className="w-10 h-10 rounded-full bg-[#b45309] hover:bg-[#631c1c] text-white flex items-center justify-center disabled:opacity-50 transition-colors shadow-sm"
           >
             <Send className="w-4 h-4" />
           </button>

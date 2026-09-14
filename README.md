@@ -1,4 +1,4 @@
-# Selera Sambal — Digital Menu & Order System
+# Warkop Betawa — Digital Menu & Order System
 
 A Next.js 14 restaurant ordering app with a full MongoDB backend.
 
@@ -30,7 +30,7 @@ npm install
 # 2. Create environment file
 copy .env.example .env.local
 # Edit .env.local — the default local URI works out of the box:
-# MONGODB_URI=mongodb://localhost:27017/selera-sambal
+# MONGODB_URI=mongodb://localhost:27017/warkop-betawa
 
 # 3. Start the dev server
 npm run dev
@@ -45,7 +45,7 @@ The database is **automatically seeded** on first startup (menu items, categorie
 Just change `MONGODB_URI` in `.env.local` — no code changes needed:
 
 ```env
-MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/selera-sambal?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/warkop-betawa?retryWrites=true&w=majority
 ```
 
 ---

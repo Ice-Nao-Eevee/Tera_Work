@@ -10,12 +10,12 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          bg: "#fdf1ee",
-          bgSoft: "#fce9e4",
-          red: "#7a2323",
-          redHover: "#631c1c",
+          bg: "#fcf8f2",
+          bgSoft: "#f3e8d6",
+          red: "#d97706",
+          redHover: "#b45309",
           dark: "#2a1a15",
-          bronze: "#922b21",
+          bronze: "#8b5a2b",
           gold: "#ca8a04",
           olive: "#15803d",
           creamCard: "#ffffff",
