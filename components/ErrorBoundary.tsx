@@ -27,11 +27,11 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-[#fdf1ee]">
-          <div className="w-16 h-16 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-[#7a2323] flex items-center justify-center mb-4 text-2xl font-bold">
-            🌶️
+        <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center bg-[#fcf8f2]">
+          <div className="w-16 h-16 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309] flex items-center justify-center mb-4 text-2xl font-bold">
+            ☕
           </div>
-          <h2 className="font-serif italic font-bold text-2xl text-[#7a2323] mb-2">
+          <h2 className="font-serif italic font-bold text-2xl text-[#b45309] mb-2">
             Terjadi Kendala Memuat Halaman
           </h2>
           <p className="text-sm text-[#735a52] max-w-md mb-6 leading-relaxed">
@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 window.location.href = '/menu';
               }
             }}
-            className="px-6 py-3 bg-[#7a2323] hover:bg-[#631c1c] text-white font-bold text-xs rounded-full shadow-md transition-colors"
+            className="px-6 py-3 bg-[#b45309] hover:bg-[#631c1c] text-white font-bold text-xs rounded-full shadow-md transition-colors"
           >
             Muat Ulang Menu Utama
           </button>

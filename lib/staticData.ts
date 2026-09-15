@@ -156,7 +156,7 @@ export const STATIC_SETTINGS: ISettings = {
   taxRatePercent: 10,
   serviceChargeRatePercent: 5,
   restaurantInfo: {
-    name: 'Selera Sambal',
+    name: 'Warkop Betawa',
     address: 'Jl. Nusantara No. 14, Jakarta',
     whatsapp: '+6281234567890',
     instagram: '@selerasambal',

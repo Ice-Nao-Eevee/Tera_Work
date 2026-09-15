@@ -90,14 +90,14 @@ export default function MenuPage() {
             {/* Left: Text Content */}
             <div className="relative z-10 flex flex-col justify-center px-8 py-10 md:py-0 md:pl-10 md:w-1/2">
               {/* LIMITED TIME badge */}
-              <span className="inline-flex items-center self-start px-3 py-1 mb-4 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-[11px] font-semibold text-[#7a2323] uppercase tracking-wider">
+              <span className="inline-flex items-center self-start px-3 py-1 mb-4 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[11px] font-semibold text-[#b45309] uppercase tracking-wider">
                 Limited Time
               </span>
 
               {/* Main headline */}
               <h1 className="font-serif font-extrabold text-3xl md:text-4xl text-[#1a1207] leading-tight mb-2">
                 Rasa Segar.{' '}
-                <span className="text-[#7a2323]">Racikan Istimewa.</span>
+                <span className="text-[#b45309]">Racikan Istimewa.</span>
               </h1>
 
               {/* Sub-headline */}
@@ -108,7 +108,7 @@ export default function MenuPage() {
               {/* CTA */}
               <Link
                 href="#menu-grid"
-                className="inline-flex items-center gap-2 self-start px-6 py-3 bg-[#7a2323] hover:bg-[#631c1c] text-white font-semibold text-sm rounded-full shadow-md transition-all"
+                className="inline-flex items-center gap-2 self-start px-6 py-3 bg-[#b45309] hover:bg-[#631c1c] text-white font-semibold text-sm rounded-full shadow-md transition-all"
               >
                 <span>Pesan Sekarang</span>
                 <ChevronRight className="w-4 h-4" />
@@ -137,13 +137,13 @@ export default function MenuPage() {
           {/* Search Bar — fixed width, tidak ikut scroll */}
           <div className="flex-shrink-0 w-52 md:w-64">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-[#7a2323] absolute left-3.5" />
+              <Search className="w-4 h-4 text-[#b45309] absolute left-3.5" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari hidangan..."
-                className="w-full pl-10 pr-3 py-2.5 bg-[#fce9e4]/70 border border-[#f5c7bc] rounded-full text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#7a2323] focus:bg-white transition-all"
+                className="w-full pl-10 pr-3 py-2.5 bg-[#f3e8d6]/70 border border-[#d4bc8c] rounded-full text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#b45309] focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -166,8 +166,8 @@ export default function MenuPage() {
                   <div
                     className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all ${
                       isActive
-                        ? 'border-[#7a2323] ring-2 ring-[#7a2323]/25 bg-[#fce9e4]'
-                        : 'border-[#e0d5cf] bg-[#f5ede7] group-hover:border-[#c9a99a] group-hover:bg-[#fce9e4]'
+                        ? 'border-[#b45309] ring-2 ring-[#b45309]/25 bg-[#f3e8d6]'
+                        : 'border-[#e0d5cf] bg-[#f5ede7] group-hover:border-[#c9a99a] group-hover:bg-[#f3e8d6]'
                     }`}
                   >
                     {/* ↓↓ Ganti dengan <Image> saat gambar kategori siap ↓↓ */}
@@ -177,14 +177,14 @@ export default function MenuPage() {
                   {/* Label */}
                   <span
                     className={`text-[11px] md:text-xs font-semibold transition-colors whitespace-nowrap ${
-                      isActive ? 'text-[#7a2323]' : 'text-[#5a423a] group-hover:text-[#7a2323]'
+                      isActive ? 'text-[#b45309]' : 'text-[#5a423a] group-hover:text-[#b45309]'
                     }`}
                   >
                     {icon.label}
                   </span>
 
                   {/* Active dot */}
-                  <div className={`w-1 h-1 rounded-full transition-all ${isActive ? 'bg-[#7a2323]' : 'bg-transparent'}`} />
+                  <div className={`w-1 h-1 rounded-full transition-all ${isActive ? 'bg-[#b45309]' : 'bg-transparent'}`} />
                 </button>
               );
             })}
@@ -200,14 +200,14 @@ export default function MenuPage() {
         </h2>
 
         {filteredItems.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-[#f5c7bc]">
+          <div className="bg-white rounded-3xl p-12 text-center border border-[#d4bc8c]">
             <p className="text-[#8c5950] font-medium">Hidangan tidak ditemukan.</p>
             <button
               onClick={() => {
                 setSelectedCategory('semua');
                 setSearchQuery('');
               }}
-              className="mt-4 text-xs font-semibold text-[#7a2323] underline"
+              className="mt-4 text-xs font-semibold text-[#b45309] underline"
             >
               Reset Filter
             </button>
@@ -226,7 +226,7 @@ export default function MenuPage() {
                     {item.badge && item.badge !== 'none' && (
                       <div className="absolute top-3 left-3 z-10">
                         {item.badge === 'best_seller' && (
-                          <span className="px-3 py-1 bg-[#7a2323] text-white text-[10px] font-bold rounded-full shadow">
+                          <span className="px-3 py-1 bg-[#b45309] text-white text-[10px] font-bold rounded-full shadow">
                             Best Seller
                           </span>
                         )}
@@ -255,7 +255,7 @@ export default function MenuPage() {
 
                   {/* Content */}
                   <div className="px-4 pt-4 pb-2">
-                    <h3 className="font-bold text-base text-[#1a1207] group-hover:text-[#7a2323] transition-colors leading-snug">
+                    <h3 className="font-bold text-base text-[#1a1207] group-hover:text-[#b45309] transition-colors leading-snug">
                       {item.name}
                     </h3>
                     <p className="text-xs text-[#7a6a5a] mt-1.5 line-clamp-2 leading-relaxed font-light">
@@ -271,7 +271,7 @@ export default function MenuPage() {
                   </span>
                   <button
                     onClick={(e) => handleQuickAdd(item, e)}
-                    className="w-8 h-8 rounded-full bg-[#fce9e4] hover:bg-[#7a2323] text-[#7a2323] hover:text-white flex items-center justify-center transition-colors shadow-xs"
+                    className="w-8 h-8 rounded-full bg-[#f3e8d6] hover:bg-[#b45309] text-[#b45309] hover:text-white flex items-center justify-center transition-colors shadow-xs"
                     title="Tambah ke Keranjang"
                     aria-label={`Tambah ${item.name}`}
                   >
@@ -287,14 +287,14 @@ export default function MenuPage() {
       {/* ─── MOBILE BOTTOM CART BAR ─── */}
       {isMounted && cartCount > 0 && (
         <div className="lg:hidden fixed bottom-4 left-4 right-4 z-40">
-          <div className="bg-[#7a2323] text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between border border-white/20">
+          <div className="bg-[#b45309] text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between border border-white/20">
             <div>
-              <div className="text-[11px] text-[#f5c7bc] uppercase font-semibold">Keranjangmu</div>
+              <div className="text-[11px] text-[#d4bc8c] uppercase font-semibold">Keranjangmu</div>
               <div className="font-serif font-bold text-lg">{cartCount} Items • {formatRupiah(cartTotal)}</div>
             </div>
             <Link
               href="/cart"
-              className="px-5 py-2.5 bg-white text-[#7a2323] font-bold text-xs rounded-full shadow-sm flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-white text-[#b45309] font-bold text-xs rounded-full shadow-sm flex items-center gap-1.5"
             >
               <span>Lihat</span>
               <ChevronRight className="w-4 h-4" />

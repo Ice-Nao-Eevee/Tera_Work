@@ -8,10 +8,10 @@ export default function Footer() {
         {/* Brand Info */}
         <div className="md:col-span-2 space-y-4">
           <h3 className="font-serif italic font-bold text-2xl md:text-3xl text-white tracking-wide">
-            Selera Sambal
+            Warkop Betawa
           </h3>
           <p className="text-sm leading-relaxed text-[#c2b2ac] max-w-lg">
-            Berdiri sejak 14 November 2023, Selera Sambal hadir membawa racikan sambal ulek khas Nusantara yang autentik. Dibuat dari rempah segar pilihan dan resep rumahan, kami siap bikin momen makan nasi hangatmu jadi jauh lebih nikmat.
+            Berdiri sejak 14 November 2023, Warkop Betawa hadir membawa racikan sambal ulek khas Nusantara yang autentik. Dibuat dari rempah segar pilihan dan resep rumahan, kami siap bikin momen makan nasi hangatmu jadi jauh lebih nikmat.
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-[#3d2720]/60 flex flex-col md:flex-row items-center justify-between text-xs text-[#9e8d87] gap-4">
-        <p>&copy; 2026 Selera Sambal Nusantara. Hak Cipta Dilindungi.</p>
+        <p>&copy; 2026 Warkop Betawa Nusantara. Hak Cipta Dilindungi.</p>
         <div className="flex gap-4">
           <Link href="/admin" className="hover:text-white transition-colors underline">
             Staff Portal / Admin Dashboard

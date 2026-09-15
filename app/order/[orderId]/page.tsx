@@ -65,8 +65,8 @@ export default function OrderStatusPage() {
   return (
     <main className="min-h-screen pt-8 pb-24 px-4 md:px-8 max-w-3xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-8 border border-[#f5c7bc] shadow-card text-center mb-8 relative overflow-hidden">
-        <div className="w-16 h-16 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-[#7a2323] flex items-center justify-center mx-auto mb-4 shadow-xs">
+      <div className="bg-white rounded-3xl p-8 border border-[#d4bc8c] shadow-card text-center mb-8 relative overflow-hidden">
+        <div className="w-16 h-16 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309] flex items-center justify-center mx-auto mb-4 shadow-xs">
           <CheckCircle2 className="w-9 h-9 stroke-[2.2]" />
         </div>
 
@@ -74,25 +74,25 @@ export default function OrderStatusPage() {
           Status Pesanan Realtime
         </span>
 
-        <h1 className="font-serif italic font-bold text-3xl md:text-4xl text-[#7a2323] mb-2">
+        <h1 className="font-serif italic font-bold text-3xl md:text-4xl text-[#b45309] mb-2">
           Pesanan Berhasil!
         </h1>
 
         <div className="font-mono text-sm font-semibold text-[#5a423a] mb-6">
-          Kode Pesanan: <span className="text-[#7a2323] font-bold">{decodedOrderCode}</span>
+          Kode Pesanan: <span className="text-[#b45309] font-bold">{decodedOrderCode}</span>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fce9e4] border border-[#f5c7bc] text-xs md:text-sm font-medium text-[#7a2323]">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-xs md:text-sm font-medium text-[#b45309]">
           <Clock className="w-4 h-4" />
           <span>Estimasi waktu tunggu: 15–20 menit</span>
         </div>
       </div>
 
       {/* Live Status Stepper */}
-      <div className="bg-white rounded-3xl p-8 border border-[#f5c7bc] shadow-card mb-8">
+      <div className="bg-white rounded-3xl p-8 border border-[#d4bc8c] shadow-card mb-8">
         <h2 className="font-bold text-lg text-[#2a1a15] mb-6">Progres Pesanan</h2>
 
-        <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#f3d9d3]">
+        <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#e6cdac]">
           {statusSteps.map((step, idx) => {
             const isPassed = currentStep > idx;
             const isCurrent = currentStep === idx;
@@ -103,8 +103,8 @@ export default function OrderStatusPage() {
                 <div
                   className={`absolute -left-6 top-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
                     isPassed || isCurrent
-                      ? 'bg-[#7a2323] border-[#7a2323] text-white shadow-sm'
-                      : 'bg-white border-[#f5c7bc] text-[#9e8d87]'
+                      ? 'bg-[#b45309] border-[#b45309] text-white shadow-sm'
+                      : 'bg-white border-[#d4bc8c] text-[#9e8d87]'
                   }`}
                 >
                   {idx + 1}
@@ -113,7 +113,7 @@ export default function OrderStatusPage() {
                 <div className="ml-3">
                   <h3
                     className={`font-bold text-base transition-colors ${
-                      isCurrent ? 'text-[#7a2323]' : isPassed ? 'text-[#2a1a15]' : 'text-[#9e8d87]'
+                      isCurrent ? 'text-[#b45309]' : isPassed ? 'text-[#2a1a15]' : 'text-[#9e8d87]'
                     }`}
                   >
                     {step.label}
@@ -128,10 +128,10 @@ export default function OrderStatusPage() {
 
       {/* Order Itemized Summary Card */}
       {order && (
-        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#f5c7bc] shadow-card mb-8 space-y-4">
-          <div className="flex justify-between items-center pb-4 border-b border-[#f3d9d3]">
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#d4bc8c] shadow-card mb-8 space-y-4">
+          <div className="flex justify-between items-center pb-4 border-b border-[#e6cdac]">
             <span className="font-bold text-base text-[#2a1a15]">Ringkasan Item</span>
-            <span className="text-xs font-semibold text-[#7a2323]">Meja {order.tableNumber}</span>
+            <span className="text-xs font-semibold text-[#b45309]">Meja {order.tableNumber}</span>
           </div>
 
           <div className="space-y-3">
@@ -145,9 +145,9 @@ export default function OrderStatusPage() {
             ))}
           </div>
 
-          <hr className="border-[#f3d9d3]" />
+          <hr className="border-[#e6cdac]" />
 
-          <div className="flex justify-between items-baseline font-bold text-lg text-[#7a2323]">
+          <div className="flex justify-between items-baseline font-bold text-lg text-[#b45309]">
             <span>Total Pembayaran</span>
             <span>{formatRupiah(order.total)}</span>
           </div>
@@ -161,7 +161,7 @@ export default function OrderStatusPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <Link
           href="/menu"
-          className="flex-1 py-4 bg-[#7a2323] hover:bg-[#631c1c] text-white font-medium text-sm rounded-full shadow-md text-center transition-colors flex items-center justify-center gap-2"
+          className="flex-1 py-4 bg-[#b45309] hover:bg-[#631c1c] text-white font-medium text-sm rounded-full shadow-md text-center transition-colors flex items-center justify-center gap-2"
         >
           <span>Pesan Lagi (Lihat Menu)</span>
           <ArrowRight className="w-4 h-4" />

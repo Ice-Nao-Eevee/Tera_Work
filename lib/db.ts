@@ -1,5 +1,5 @@
 /**
- * lib/db.ts — Database utilities for Selera Sambal.
+ * lib/db.ts — Database utilities for Warkop Betawa.
  *
  * Uses Prisma + Supabase PostgreSQL.
  * getMemoryStore() provides a static fallback when no DB connection is available.

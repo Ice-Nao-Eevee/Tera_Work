@@ -32,26 +32,26 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   }, [refreshData]);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#fdf1ee]/95 backdrop-blur-md border-b border-[#f3d9d3] px-4 md:px-8 py-3.5 flex items-center justify-between transition-all">
+    <header className="sticky top-0 z-40 bg-[#fcf8f2]/95 backdrop-blur-md border-b border-[#e6cdac] px-4 md:px-8 py-3.5 flex items-center justify-between transition-all">
       {/* Brand Logo */}
       <Link href="/" className="flex items-center gap-2.5 group">
-        <div className="w-8 h-8 rounded-full bg-[#7a2323] flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
-          🌶️
+        <div className="w-8 h-8 rounded-full bg-[#b45309] flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
+          ☕
         </div>
-        <span className="font-serif italic font-bold text-xl md:text-2xl text-[#7a2323] tracking-tight">
-          Selera Sambal
+        <span className="font-serif italic font-bold text-xl md:text-2xl text-[#b45309] tracking-tight">
+          Warkop Betawa
         </span>
       </Link>
 
       {/* Nav Links (Desktop) */}
-      <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#4a342e]">
-        <Link href="/menu" className="hover:text-[#7a2323] transition-colors">
+      <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#3e2723]">
+        <Link href="/menu" className="hover:text-[#b45309] transition-colors">
           Menu Kami
         </Link>
-        <Link href="/menu#promo" className="hover:text-[#7a2323] transition-colors">
+        <Link href="/menu#promo" className="hover:text-[#b45309] transition-colors">
           Promo
         </Link>
-        <Link href="/#tentang" className="hover:text-[#7a2323] transition-colors">
+        <Link href="/#tentang" className="hover:text-[#b45309] transition-colors">
           Tentang Kami
         </Link>
       </nav>
@@ -61,8 +61,8 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
         {/* Gemini AI Sparkle Icon Button */}
         <button
           onClick={onToggleAiChat}
-          className="p-2 rounded-full hover:bg-[#f8dbd4] transition-colors relative group"
-          title="Tanya Asisten AI Selera Sambal"
+          className="p-2 rounded-full hover:bg-[#ebdbb7] transition-colors relative group"
+          title="Tanya Asisten AI Warkop Betawa"
           aria-label="Gemini AI Assistant"
         >
           <svg className="w-6 h-6 animate-pulse" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -81,7 +81,7 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
         </button>
 
         {/* Table Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#fce9e4] border border-[#f5c7bc] rounded-full text-xs md:text-sm font-semibold text-[#7a2323] shadow-xs">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f3e8d6] border border-[#d4bc8c] rounded-full text-xs md:text-sm font-semibold text-[#b45309] shadow-xs">
           <Utensils className="w-3.5 h-3.5" />
           <span>Meja {isMounted ? tableSession.tableNumber : 5}</span>
         </div>
@@ -89,12 +89,12 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
         {/* Cart Icon */}
         <button
           onClick={onOpenCart}
-          className="p-2.5 rounded-full hover:bg-[#f8dbd4] transition-colors relative text-[#7a2323]"
+          className="p-2.5 rounded-full hover:bg-[#ebdbb7] transition-colors relative text-[#b45309]"
           aria-label="Keranjang Belanja"
         >
           <ShoppingBag className="w-5 h-5 stroke-[2.2]" />
           {isMounted && cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#7a2323] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#fdf1ee] animate-bounce">
+            <span className="absolute -top-1 -right-1 bg-[#b45309] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#fcf8f2] animate-bounce">
               {cartCount}
             </span>
           )}

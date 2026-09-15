@@ -11,7 +11,7 @@
 
 body {
   font-family: var(--font-inter);
-  background-color: #fdf1ee;
+  background-color: #fcf8f2;
   color: #2a1a15;
   margin: 0;
   padding: 0;
@@ -27,12 +27,12 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #fce9e4;
+  background: #f3e8d6;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c59f97;
+  background: #d4af37;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #7a2323;
+  background: #b45309;
 }

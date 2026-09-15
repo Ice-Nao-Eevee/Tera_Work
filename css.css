@@ -29,7 +29,7 @@
   font-style: italic;
   font-weight: 700;
   font-size: 1.6rem;
-  color: #922b21; /* Merah gelap khas sambal */
+  color: #d97706; /* Merah gelap khas sambal */
 }
 
 .nav-links {
@@ -46,7 +46,7 @@
 }
 
 .nav-links a:hover {
-  color: #922b21;
+  color: #d97706;
 }
 
 .nav-actions {
@@ -56,8 +56,8 @@
 }
 
 .table-badge {
-  background-color: #fae6e4;
-  color: #922b21;
+  background-color: #fef3c7;
+  color: #d97706;
   padding: 0.5rem 1.2rem;
   border-radius: 50px;
   font-family: sans-serif;
@@ -121,7 +121,7 @@
 }
 
 .primary-btn {
-  background-color: #83271d; /* Merah gelap */
+  background-color: #b45309; /* Merah gelap */
   color: #ffffff;
   text-decoration: none;
   font-family: sans-serif;
@@ -134,7 +134,7 @@
 }
 
 .primary-btn:hover {
-  background-color: #6a1f17;
+  background-color: #92400e;
 }
 
 
@@ -242,7 +242,7 @@ body.light-bg {
   align-items: center;
   gap: 6px;
   background-color: #f3ece4;
-  color: #72231a;
+  color: #d97706;
   font-size: 0.85rem;
   font-weight: 700;
   padding: 6px 14px;
@@ -261,7 +261,7 @@ body.light-bg {
 }
 
 .split-title .highlight-red {
-  color: #83271d;
+  color: #b45309;
 }
 
 .split-lead {
@@ -301,7 +301,7 @@ body.light-bg {
 
 .table-badge svg {
   margin-right: 4px;
-  stroke: #922b21;
+  stroke: #d97706;
 }
 
 .primary-btn {
@@ -355,7 +355,7 @@ body.light-bg {
 .search-bar {
   display: flex;
   align-items: center;
-  background-color: #fdf3f2;
+  background-color: #fffbeb;
   padding: 0.8rem 1.5rem;
   border-radius: 50px;
   width: 320px;
@@ -491,7 +491,7 @@ body.light-bg {
   color: #fff;
 }
 
-.badge-red { background-color: #83271d; }
+.badge-red { background-color: #b45309; }
 .badge-yellow { background-color: #eab308; color: #422006; }
 
 .menu-info {
@@ -529,7 +529,7 @@ body.light-bg {
 }
 
 .add-cart-btn {
-  background-color: #fdf3f2;
+  background-color: #fffbeb;
   border: none;
   width: 36px;
   height: 36px;
@@ -537,16 +537,16 @@ body.light-bg {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #72231a;
+  color: #d97706;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.add-cart-btn:hover { background-color: #f5e1df; }
+.add-cart-btn:hover { background-color: #fef3c7; }
 
 /* Cart Summary Card (Keranjangmu) */
 .cart-summary-card {
-  background-color: #72231a;
+  background-color: #d97706;
   border-radius: 16px;
   padding: 1.8rem;
   color: #ffffff;
@@ -559,7 +559,7 @@ body.light-bg {
   font-size: 0.9rem;
   letter-spacing: 1px;
   margin-bottom: 0.5rem;
-  color: #fdf3f2;
+  color: #fffbeb;
 }
 
 .cart-total {
@@ -573,7 +573,7 @@ body.light-bg {
   flex-direction: column;
   gap: 0.8rem;
   font-size: 0.9rem;
-  color: #f5e1df;
+  color: #fef3c7;
   margin-bottom: 2rem;
 }
 
@@ -584,7 +584,7 @@ body.light-bg {
 
 .btn-buka-keranjang {
   background-color: #ffffff;
-  color: #72231a;
+  color: #d97706;
   border: none;
   padding: 0.8rem;
   border-radius: 50px;

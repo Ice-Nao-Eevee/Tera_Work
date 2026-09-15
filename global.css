@@ -2,10 +2,10 @@
    GLOBAL VARIABLES
    ========================================= */
 :root {
-  --primary-red: #922b21;
-  --dark-red: #83271d;
-  --darker-red: #6a1f17;
-  --badge-bg: #fae6e4;
+  --primary-red: #d97706;
+  --dark-red: #b45309;
+  --darker-red: #92400e;
+  --badge-bg: #fef3c7;
   --text-main: #333333;
   --text-light: #ffffff;
   --text-muted: #e0e0e0;

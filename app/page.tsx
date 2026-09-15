@@ -9,7 +9,7 @@ export default function HomePage() {
       <div className="absolute inset-0 z-0 opacity-70">
         <Image
           src="/foodbg.jpg"
-          alt="Selera Sambal Background"
+          alt="Warkop Betawa Background"
           fill
           priority
           className="object-cover object-center"
@@ -21,17 +21,17 @@ export default function HomePage() {
       {/* Hero Content Container */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-16 md:pt-28 pb-20 flex-1 flex flex-col justify-center items-center text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#fce9e4]/15 border border-[#fce9e4]/30 backdrop-blur-sm text-xs md:text-sm font-medium text-[#fce9e4] mb-8">
-          <Star className="w-3.5 h-3.5 fill-[#f5c7bc] text-[#f5c7bc]" />
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f3e8d6]/15 border border-[#f3e8d6]/30 backdrop-blur-sm text-xs md:text-sm font-medium text-[#f3e8d6] mb-8">
+          <Star className="w-3.5 h-3.5 fill-[#d4bc8c] text-[#d4bc8c]" />
           <span>100+ Cita Rasa Istimewa</span>
         </div>
 
         {/* Main Headline */}
         <h1 className="font-serif italic text-5xl md:text-7xl font-bold tracking-tight text-white mb-4 leading-tight">
-          Selera Sambal
+          Warkop Betawa
         </h1>
 
-        <div className="font-serif italic text-4xl md:text-6xl text-[#f3d9d3] mb-6">
+        <div className="font-serif italic text-4xl md:text-6xl text-[#e6cdac] mb-6">
           Rasa Favoritmu
         </div>
 
@@ -42,7 +42,7 @@ export default function HomePage() {
         {/* CTA Button matching reference screenshot */}
         <Link
           href="/menu"
-          className="inline-flex items-center gap-3 px-8 py-4 bg-[#7a2323] hover:bg-[#631c1c] text-white font-medium text-lg rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all"
+          className="inline-flex items-center gap-3 px-8 py-4 bg-[#b45309] hover:bg-[#631c1c] text-white font-medium text-lg rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all"
         >
           <span>Lihat Menu</span>
           <ArrowRight className="w-5 h-5" />

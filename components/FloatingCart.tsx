@@ -104,7 +104,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
       >
 
         {/* ═══ HEADER ═══ */}
-        <div className="flex-none relative overflow-hidden bg-gradient-to-br from-[#7a2323] via-[#8b2e2e] to-[#a03535]">
+        <div className="flex-none relative overflow-hidden bg-gradient-to-br from-[#b45309] via-[#8b2e2e] to-[#a03535]">
           {/* Decorative circles */}
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
           <div className="absolute -bottom-6 -left-4 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
@@ -149,10 +149,10 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
             /* ── Empty State ── */
             <div className="flex flex-col items-center justify-center min-h-[320px] px-8 text-center gap-5">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#fce9e4] to-[#f8d5cc] flex items-center justify-center shadow-inner">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#f3e8d6] to-[#f8d5cc] flex items-center justify-center shadow-inner">
                   <ShoppingCart className="w-10 h-10 text-[#c48c82]" strokeWidth={1.5} />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#fdf1ee] border-2 border-white flex items-center justify-center text-lg">
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#fcf8f2] border-2 border-white flex items-center justify-center text-lg">
                   😢
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
               </div>
               <button
                 onClick={() => { onClose(); router.push('/menu'); }}
-                className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-[#7a2323] to-[#a03535] text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-[#b45309] to-[#a03535] text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
               >
                 Mulai Belanja
                 <ArrowRight className="w-4 h-4" />
@@ -198,14 +198,14 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
                         <img
                           src={imgSrc}
                           alt={item.menuItem.name}
-                          className="w-[72px] h-[72px] rounded-xl object-cover bg-[#fce9e4]"
+                          className="w-[72px] h-[72px] rounded-xl object-cover bg-[#f3e8d6]"
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src =
                               `https://placehold.co/72x72/fce9e4/7a2323?text=${encodeURIComponent(item.menuItem.name[0])}`;
                           }}
                         />
                         {/* Qty badge on image */}
-                        <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#7a2323] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                        <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-[#b45309] text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
                           {item.qty}
                         </div>
                       </div>
@@ -219,7 +219,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
                         {/* Tags: spice + addons */}
                         <div className="flex flex-wrap gap-1 mt-1">
                           {item.spiceLevel && item.spiceLevel !== 'none' && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] bg-[#fce9e4] text-[#7a2323] px-1.5 py-0.5 rounded-full font-medium">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] bg-[#f3e8d6] text-[#b45309] px-1.5 py-0.5 rounded-full font-medium">
                               🌶 {item.spiceLevel}
                             </span>
                           )}
@@ -238,7 +238,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
 
                         {/* Price row */}
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-[#7a2323] font-bold text-sm">
+                          <span className="text-[#b45309] font-bold text-sm">
                             {formatRupiah(item.lineTotal)}
                           </span>
                           <span className="text-[#b0907a] text-xs">
@@ -254,7 +254,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
                       <button
                         onClick={() => handleRemove(item.id)}
                         aria-label={`Hapus ${item.menuItem.name}`}
-                        className="flex items-center gap-1 text-xs text-[#b54141] hover:text-[#7a2323] transition-colors py-1 px-2 rounded-lg hover:bg-[#fce9e4]"
+                        className="flex items-center gap-1 text-xs text-[#b54141] hover:text-[#b45309] transition-colors py-1 px-2 rounded-lg hover:bg-[#f3e8d6]"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Hapus
@@ -265,7 +265,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
                         <button
                           onClick={() => handleQtyChange(item.id, -1)}
                           aria-label={`Kurangi ${item.menuItem.name}`}
-                          className="w-6 h-6 flex items-center justify-center rounded-full bg-[#fdf1ee] hover:bg-[#f8dbd4] transition-colors text-[#7a2323] font-bold"
+                          className="w-6 h-6 flex items-center justify-center rounded-full bg-[#fcf8f2] hover:bg-[#ebdbb7] transition-colors text-[#b45309] font-bold"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
@@ -275,7 +275,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
                         <button
                           onClick={() => handleQtyChange(item.id, 1)}
                           aria-label={`Tambah ${item.menuItem.name}`}
-                          className="w-6 h-6 flex items-center justify-center rounded-full bg-[#7a2323] hover:bg-[#5e1a1a] transition-colors text-white"
+                          className="w-6 h-6 flex items-center justify-center rounded-full bg-[#b45309] hover:bg-[#5e1a1a] transition-colors text-white"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -315,7 +315,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
             {/* Grand total */}
             <div className="flex items-center justify-between px-5 mb-4">
               <span className="font-bold text-[#2a1a15]">Total Belanja</span>
-              <span className="text-xl font-extrabold text-[#7a2323]">
+              <span className="text-xl font-extrabold text-[#b45309]">
                 {formatRupiah(total)}
               </span>
             </div>
@@ -324,7 +324,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
             <div className="px-4 pb-5">
               <button
                 onClick={() => { onClose(); router.push('/checkout'); }}
-                className="w-full relative overflow-hidden py-3.5 bg-gradient-to-r from-[#7a2323] to-[#a03535] text-white font-bold text-sm rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full relative overflow-hidden py-3.5 bg-gradient-to-r from-[#b45309] to-[#a03535] text-white font-bold text-sm rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <span>Lanjut Checkout</span>
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
@@ -333,7 +333,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
               </button>
               <button
                 onClick={onClose}
-                className="w-full mt-2 py-2 text-[#7a2323] text-sm font-medium hover:text-[#5e1a1a] transition-colors"
+                className="w-full mt-2 py-2 text-[#b45309] text-sm font-medium hover:text-[#5e1a1a] transition-colors"
               >
                 Lanjutkan Belanja
               </button>

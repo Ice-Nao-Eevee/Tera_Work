@@ -1,8 +1,8 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
-// GET /api/categories — list all categories sorted by sortOrder
+// GET /api/categories  list all categories sorted by sortOrder
 export async function GET() {
   try {
     await connectDB();
@@ -16,7 +16,7 @@ export async function GET() {
   }
 }
 
-// POST /api/categories — create a new category
+// POST /api/categories  create a new category
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
