@@ -1,14 +1,15 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    const item = await prisma.menuItem.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const item = await prisma.menuItem.findUnique({ where: { id } });
     if (!item) return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
     return NextResponse.json({ item });
   } catch (err) {
@@ -19,13 +20,14 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
+    const { id } = await params;
     const body = await req.json();
     const item = await prisma.menuItem.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(body.name !== undefined && { name: body.name }),
         ...(body.description !== undefined && { description: body.description }),
@@ -48,11 +50,12 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    await prisma.menuItem.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.menuItem.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     if (err?.code === 'P2025') return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });

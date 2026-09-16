@@ -5,11 +5,12 @@ import prisma from '@/lib/prisma';
 // DELETE /api/tables/[id] — delete a table by Prisma id (cuid)
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    await prisma.restaurantTable.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.restaurantTable.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     if (err?.code === 'P2025') {
