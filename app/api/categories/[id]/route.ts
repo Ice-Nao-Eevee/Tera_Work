@@ -5,13 +5,14 @@ import prisma from '@/lib/prisma';
 // PUT /api/categories/[id] — update a category
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
+    const { id } = await params;
     const body = await req.json();
     const category = await prisma.category.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(body.name !== undefined && { name: body.name }),
         ...(body.slug !== undefined && { slug: body.slug }),
@@ -31,11 +32,12 @@ export async function PUT(
 // DELETE /api/categories/[id] — delete a category
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    await prisma.category.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.category.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     if (err?.code === 'P2025') {

@@ -5,13 +5,14 @@ import prisma from '@/lib/prisma';
 // PUT /api/promos/[id] — update a promo
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
+    const { id } = await params;
     const body = await req.json();
     const promo = await prisma.promo.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(body.title !== undefined && { title: body.title }),
         ...(body.description !== undefined && { description: body.description }),
@@ -33,11 +34,12 @@ export async function PUT(
 // DELETE /api/promos/[id] — delete a promo
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
-    await prisma.promo.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.promo.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (err: any) {
     if (err?.code === 'P2025') {
