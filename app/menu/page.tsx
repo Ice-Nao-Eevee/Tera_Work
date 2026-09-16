@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, ShoppingCart, Plus, ChevronRight } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
-import { getCartItems, addToCart, storeEvents, CartItem } from '@/lib/store';
+import { getCartItems, addToCart, storeEvents, searchEvents, CartItem } from '@/lib/store';
 import { STATIC_MENU_ITEMS, STATIC_CATEGORIES } from '@/lib/staticData';
 import { IMenuItem, ICategory } from '@/lib/types';
 
@@ -38,15 +38,19 @@ export default function MenuPage() {
       .catch(() => console.log('Using default menu items'));
   }, []);
 
-  // Synchronize local cart state — stable ref so storeEvents subscription is not stale
+  // Synchronize local cart state & top search query
   const refreshCart = useCallback(() => {
     setCartItems(getCartItems());
   }, []);
 
   useEffect(() => {
     refreshCart();
-    const unsubscribe = storeEvents.subscribe(refreshCart);
-    return () => unsubscribe();
+    const unsubscribeCart = storeEvents.subscribe(refreshCart);
+    const unsubscribeSearch = searchEvents.subscribe((q) => setSearchQuery(q));
+    return () => {
+      unsubscribeCart();
+      unsubscribeSearch();
+    };
   }, [refreshCart]);
 
   // Filter menu items
@@ -83,14 +87,25 @@ export default function MenuPage() {
     <main className="min-h-screen pb-32 bg-[#faf7f2]">
 
       {/* ─── HERO / SLOGAN BANNER ─── */}
-      <section className="bg-[#fdf6f0] border-b border-[#ece8e3]">
+      <section className="bg-[#faf7f2]">
         <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <div className="relative rounded-2xl overflow-hidden bg-[#f5ede7] flex flex-col md:flex-row items-center justify-between min-h-[220px] md:min-h-[260px] my-5 shadow-sm">
+          <div className="relative rounded-2xl overflow-hidden bg-[#2a1a15] flex items-center min-h-[240px] md:min-h-[280px] my-5 shadow-md">
+
+            {/* Background Image filling the entire box */}
+            <div className="absolute inset-0 z-0">
+              <img
+                src="/menu-teh.jpg"
+                alt="Rasa Segar Racikan Istimewa"
+                className="w-full h-full object-cover object-center"
+              />
+              {/* Warm gradient overlay so text on left stays clear while photo covers full box to slogan text */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#fdf6f0] via-[#fdf6f0]/90 md:via-[#fdf6f0]/75 to-transparent" />
+            </div>
 
             {/* Left: Text Content */}
-            <div className="relative z-10 flex flex-col justify-center px-8 py-10 md:py-0 md:pl-10 md:w-1/2">
+            <div className="relative z-10 flex flex-col justify-center px-8 py-8 md:px-12 max-w-xl">
               {/* LIMITED TIME badge */}
-              <span className="inline-flex items-center self-start px-3 py-1 mb-4 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[11px] font-semibold text-[#b45309] uppercase tracking-wider">
+              <span className="inline-flex items-center self-start px-3 py-1 mb-3 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[11px] font-semibold text-[#b45309] uppercase tracking-wider shadow-xs">
                 Limited Time
               </span>
 
@@ -101,95 +116,63 @@ export default function MenuPage() {
               </h1>
 
               {/* Sub-headline */}
-              <p className="text-sm md:text-base text-[#7a6a5a] font-normal max-w-sm mb-6">
+              <p className="text-sm md:text-base text-[#5a4638] font-medium max-w-md mb-6 leading-relaxed">
                 Bumbu asli Nusantara, diolah segar setiap hari dengan cinta.
               </p>
 
               {/* CTA */}
               <Link
                 href="#menu-grid"
-                className="inline-flex items-center gap-2 self-start px-6 py-3 bg-[#b45309] hover:bg-[#631c1c] text-white font-semibold text-sm rounded-full shadow-md transition-all"
+                className="inline-flex items-center gap-2 self-start px-6 py-3 bg-[#b45309] hover:bg-[#631c1c] text-white font-semibold text-sm rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
               >
                 <span>Pesan Sekarang</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
 
-            {/* Right: Slogan image placeholder */}
-            <div className="md:w-1/2 flex items-end justify-center md:justify-end h-full px-6 pb-0 md:pr-8 pt-6 md:pt-0">
-              {/* ↓↓ GANTI src ini dengan gambar slogan asli ↓↓ */}
-              <div className="relative w-full max-w-xs md:max-w-sm h-44 md:h-56 rounded-xl overflow-hidden bg-[#ecddd5] flex items-center justify-center border-2 border-dashed border-[#c9a99a]">
-                <div className="text-center text-[#a87b6e] select-none">
-                  <div className="text-4xl mb-2">🖼️</div>
-                  <p className="text-xs font-medium">Gambar Slogan</p>
-                  <p className="text-[10px] opacity-70 mt-0.5">akan ditambah manual</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ─── SEARCH BAR + CIRCULAR CATEGORIES (satu baris sticky) ─── */}
-      <section className="bg-white border-b border-[#ece8e3] px-6 md:px-10 py-4 sticky top-[60px] z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center gap-4 overflow-x-auto scrollbar-none">
-
-          {/* Search Bar — fixed width, tidak ikut scroll */}
-          <div className="flex-shrink-0 w-52 md:w-64">
-            <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-[#b45309] absolute left-3.5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari hidangan..."
-                className="w-full pl-10 pr-3 py-2.5 bg-[#f3e8d6]/70 border border-[#d4bc8c] rounded-full text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#b45309] focus:bg-white transition-all"
-              />
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="flex-shrink-0 w-px h-10 bg-[#ece8e3]" />
-
-          {/* Circular Category Icons — scrollable ke kanan jika terlalu banyak */}
-          <div className="flex items-center gap-5 md:gap-7 overflow-x-auto scrollbar-none pb-0.5">
-            {(categories || []).map((cat) => {
-              const isActive = selectedCategory === cat.slug;
-              const icon = categoryIcons[cat.slug] ?? { emoji: '🍴', label: cat.name };
-              return (
-                <button
-                  key={cat.slug}
-                  onClick={() => setSelectedCategory(cat.slug)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
+      {/* ─── CIRCULAR CATEGORIES (Filter Bar) ─── */}
+      <section className="px-6 md:px-10 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-5 sm:gap-8 md:gap-10 overflow-x-auto scrollbar-none py-1">
+          {(categories || []).map((cat) => {
+            const isActive = selectedCategory === cat.slug;
+            const icon = categoryIcons[cat.slug] ?? { emoji: '🍴', label: cat.name };
+            return (
+              <button
+                key={cat.slug}
+                onClick={() => setSelectedCategory(cat.slug)}
+                className="flex flex-col items-center gap-2 flex-shrink-0 group transition-transform active:scale-95"
+              >
+                {/* Circle — Enlarged without white background box */}
+                <div
+                  className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden border-2 md:border-3 transition-all duration-300 ${
+                    isActive
+                      ? 'border-[#b45309] ring-4 ring-[#b45309]/20 bg-[#f3e8d6] shadow-md scale-105'
+                      : 'border-[#e0d5cf] bg-[#f5ede7] group-hover:border-[#b45309]/50 group-hover:bg-[#f3e8d6]/60 group-hover:shadow-sm'
+                  }`}
                 >
-                  {/* Circle — lebih kecil agar proporsional dengan search bar */}
-                  <div
-                    className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all ${
-                      isActive
-                        ? 'border-[#b45309] ring-2 ring-[#b45309]/25 bg-[#f3e8d6]'
-                        : 'border-[#e0d5cf] bg-[#f5ede7] group-hover:border-[#c9a99a] group-hover:bg-[#f3e8d6]'
-                    }`}
-                  >
-                    {/* ↓↓ Ganti dengan <Image> saat gambar kategori siap ↓↓ */}
-                    <span className="text-xl md:text-2xl select-none">{icon.emoji}</span>
-                  </div>
-
-                  {/* Label */}
-                  <span
-                    className={`text-[11px] md:text-xs font-semibold transition-colors whitespace-nowrap ${
-                      isActive ? 'text-[#b45309]' : 'text-[#5a423a] group-hover:text-[#b45309]'
-                    }`}
-                  >
-                    {icon.label}
+                  <span className="text-3xl sm:text-4xl md:text-5xl select-none transition-transform group-hover:scale-110 duration-200">
+                    {icon.emoji}
                   </span>
+                </div>
 
-                  {/* Active dot */}
-                  <div className={`w-1 h-1 rounded-full transition-all ${isActive ? 'bg-[#b45309]' : 'bg-transparent'}`} />
-                </button>
-              );
-            })}
-          </div>
+                {/* Label */}
+                <span
+                  className={`text-xs sm:text-sm font-bold transition-colors whitespace-nowrap ${
+                    isActive ? 'text-[#b45309]' : 'text-[#5a423a] group-hover:text-[#b45309]'
+                  }`}
+                >
+                  {icon.label}
+                </span>
 
+                {/* Active indicator dot */}
+                <div className={`w-1.5 h-1.5 rounded-full transition-all ${isActive ? 'bg-[#b45309] scale-100' : 'bg-transparent scale-0'}`} />
+              </button>
+            );
+          })}
         </div>
       </section>
 

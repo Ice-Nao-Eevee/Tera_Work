@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Utensils } from 'lucide-react';
-import { getCartItems, getTableSession, storeEvents, CartItem, TableSession } from '@/lib/store';
+import { ShoppingBag, Utensils, Search } from 'lucide-react';
+import { getCartItems, getTableSession, storeEvents, searchEvents, CartItem, TableSession } from '@/lib/store';
 
 interface HeaderProps {
   onToggleAiChat?: () => void;
@@ -13,6 +13,7 @@ interface HeaderProps {
 export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   const [cartCount, setCartCount] = useState<number>(0);
   const [tableSession, setTableSession] = useState<TableSession>({ tableId: 'table-5', tableNumber: 5 });
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   const refreshData = useCallback(() => {
@@ -27,21 +28,45 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   useEffect(() => {
     setIsMounted(true);
     refreshData();
-    const unsubscribe = storeEvents.subscribe(refreshData);
-    return () => unsubscribe();
+    const unsubscribeStore = storeEvents.subscribe(refreshData);
+    const unsubscribeSearch = searchEvents.subscribe((q) => setSearchQuery(q));
+    return () => {
+      unsubscribeStore();
+      unsubscribeSearch();
+    };
   }, [refreshData]);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    searchEvents.setQuery(q);
+  };
+
   return (
-    <header className="sticky top-0 z-40 bg-[#fcf8f2]/95 backdrop-blur-md border-b border-[#e6cdac] px-4 md:px-8 py-3.5 flex items-center justify-between transition-all">
-      {/* Brand Logo */}
-      <Link href="/" className="flex items-center gap-2.5 group">
-        <div className="w-8 h-8 rounded-full bg-[#b45309] flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
-          ☕
+    <header className="sticky top-0 z-40 bg-[#fcf8f2]/95 backdrop-blur-md border-b border-[#e6cdac] px-4 md:px-8 py-3 flex items-center justify-between gap-3 md:gap-6 transition-all">
+      {/* Brand Logo & Top Searchbar */}
+      <div className="flex items-center gap-3 sm:gap-4 md:gap-6 flex-1 max-w-xl">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
+          <div className="w-8 h-8 rounded-full bg-[#b45309] flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
+            ☕
+          </div>
+          <span className="font-serif italic font-bold text-lg sm:text-xl md:text-2xl text-[#b45309] tracking-tight whitespace-nowrap">
+            Warkop Betawa
+          </span>
+        </Link>
+
+        {/* Search Bar next to Logo */}
+        <div className="relative flex-1 max-w-[180px] sm:max-w-xs md:max-w-sm">
+          <Search className="w-4 h-4 text-[#b45309] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            placeholder="Cari hidangan..."
+            className="w-full pl-9 pr-3 py-1.5 md:py-2 bg-[#f3e8d6]/70 border border-[#d4bc8c] rounded-full text-xs md:text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#b45309] focus:bg-white transition-all shadow-xs"
+          />
         </div>
-        <span className="font-serif italic font-bold text-xl md:text-2xl text-[#b45309] tracking-tight">
-          Warkop Betawa
-        </span>
-      </Link>
+      </div>
 
       {/* Nav Links (Desktop) */}
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#3e2723]">

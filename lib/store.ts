@@ -38,6 +38,30 @@ class StoreEvents {
 
 export const storeEvents = new StoreEvents();
 
+class SearchEvents {
+  private listeners: ((q: string) => void)[] = [];
+  private currentQuery: string = '';
+
+  subscribe(listener: (q: string) => void) {
+    this.listeners.push(listener);
+    listener(this.currentQuery);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
+  }
+
+  setQuery(q: string) {
+    this.currentQuery = q;
+    this.listeners.forEach((listener) => listener(q));
+  }
+
+  getQuery() {
+    return this.currentQuery;
+  }
+}
+
+export const searchEvents = new SearchEvents();
+
 export function getCartItems(): CartItem[] {
   if (typeof window === 'undefined') return [];
   try {

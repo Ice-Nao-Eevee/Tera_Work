@@ -46,12 +46,6 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
   }, [refreshCart]);
 
   useEffect(() => {
-    if (!isMounted) return;
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen, isMounted]);
-
-  useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
@@ -77,29 +71,19 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
 
   return (
     <>
-      {/* Overlay — no blur */}
-      <div
-        aria-hidden="true"
-        onClick={onClose}
-        className={[
-          'fixed inset-0 z-50 bg-black/50 transition-opacity duration-300',
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
-        ].join(' ')}
-      />
-
-      {/* Sidebar */}
+      {/* Sidebar (No dark overlay so left menu remains 100% visible & scrollable) */}
       <aside
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-label="Keranjang Belanja"
-        style={{ boxShadow: '-8px 0 40px rgba(122,35,35,0.13), -2px 0 12px rgba(0,0,0,0.10)' }}
+        style={{ boxShadow: '-12px 0 40px rgba(0,0,0,0.15), -4px 0 16px rgba(0,0,0,0.08)' }}
         className={[
           'fixed top-0 right-0 z-50 h-screen',
           'w-[92vw] sm:w-[380px] md:w-[410px] lg:w-[430px]',
           'flex flex-col',
-          'bg-white',
+          'bg-white border-l border-[#ece8e3]',
           'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform',
-          isOpen ? 'translate-x-0' : 'translate-x-full',
+          isOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none',
         ].join(' ')}
       >
 
@@ -143,7 +127,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
         </div>
 
         {/* ═══ PRODUCT LIST ═══ */}
-        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 max-h-[50vh] bg-[#fafafa]">
+        <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 bg-[#fafafa]">
 
           {items.length === 0 ? (
             /* ── Empty State ── */
