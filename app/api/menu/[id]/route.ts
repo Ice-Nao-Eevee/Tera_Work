@@ -26,10 +26,22 @@ export async function PUT(
     await connectDB();
     const { id } = await params;
     const body = await req.json();
+
+    if (body.price !== undefined) {
+      const priceNum = Number(body.price);
+      if (isNaN(priceNum) || priceNum < 0) {
+        return NextResponse.json({ error: 'Harga harus berupa angka dan tidak boleh negatif' }, { status: 400 });
+      }
+    }
+
+    if (body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) {
+      return NextResponse.json({ error: 'Nama menu tidak boleh kosong' }, { status: 400 });
+    }
+
     const item = await prisma.menuItem.update({
       where: { id },
       data: {
-        ...(body.name !== undefined && { name: body.name }),
+        ...(body.name !== undefined && { name: body.name.trim() }),
         ...(body.description !== undefined && { description: body.description }),
         ...(body.price !== undefined && { price: Number(body.price) }),
         ...(body.category !== undefined && { category: body.category }),

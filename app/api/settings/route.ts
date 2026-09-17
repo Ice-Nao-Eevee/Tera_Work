@@ -21,6 +21,27 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
+
+    if (body.taxRatePercent !== undefined) {
+      const tax = Number(body.taxRatePercent);
+      if (isNaN(tax) || tax < 0 || tax > 100) {
+        return NextResponse.json(
+          { error: 'Persentase pajak harus berupa angka antara 0 dan 100' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (body.serviceChargeRatePercent !== undefined) {
+      const service = Number(body.serviceChargeRatePercent);
+      if (isNaN(service) || service < 0 || service > 100) {
+        return NextResponse.json(
+          { error: 'Persentase biaya layanan harus berupa angka antara 0 dan 100' },
+          { status: 400 }
+        );
+      }
+    }
+
     const existing = await prisma.settings.findFirst();
     const settings = existing
       ? await prisma.settings.update({
@@ -33,8 +54,8 @@ export async function PUT(req: NextRequest) {
         })
       : await prisma.settings.create({
           data: {
-            taxRatePercent: body.taxRatePercent ?? STATIC_SETTINGS.taxRatePercent,
-            serviceChargeRatePercent: body.serviceChargeRatePercent ?? STATIC_SETTINGS.serviceChargeRatePercent,
+            taxRatePercent: body.taxRatePercent !== undefined ? Number(body.taxRatePercent) : STATIC_SETTINGS.taxRatePercent,
+            serviceChargeRatePercent: body.serviceChargeRatePercent !== undefined ? Number(body.serviceChargeRatePercent) : STATIC_SETTINGS.serviceChargeRatePercent,
             restaurantInfo: body.restaurantInfo ?? STATIC_SETTINGS.restaurantInfo,
           },
         });

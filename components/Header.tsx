@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, Utensils, Search } from 'lucide-react';
-import { getCartItems, getTableSession, storeEvents, searchEvents, CartItem, TableSession } from '@/lib/store';
+import { getCartItems, getManualTableNumber, storeEvents, searchEvents, CartItem } from '@/lib/store';
 
 interface HeaderProps {
   onToggleAiChat?: () => void;
@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   const [cartCount, setCartCount] = useState<number>(0);
-  const [tableSession, setTableSession] = useState<TableSession>({ tableId: 'table-5', tableNumber: 5 });
+  const [manualTableNumber, setManualTableNumber] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -20,9 +20,7 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
     const items = getCartItems();
     const totalQty = items.reduce((acc: number, item: CartItem) => acc + item.qty, 0);
     setCartCount(totalQty);
-
-    const session = getTableSession();
-    setTableSession(session);
+    setManualTableNumber(getManualTableNumber());
   }, []);
 
   useEffect(() => {
@@ -105,10 +103,14 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
           </svg>
         </button>
 
-        {/* Table Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f3e8d6] border border-[#d4bc8c] rounded-full text-xs md:text-sm font-semibold text-[#b45309] shadow-xs">
+        {/* Table Badge — shows 'Pilih Meja' when no table entered yet */}
+        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold shadow-xs transition-all ${
+          isMounted && manualTableNumber > 0
+            ? 'bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309]'
+            : 'bg-[#f3e8d6]/50 border border-[#d4bc8c]/50 text-[#b45309]/50'
+        }`}>
           <Utensils className="w-3.5 h-3.5" />
-          <span>Meja {isMounted ? tableSession.tableNumber : 5}</span>
+          <span>{isMounted && manualTableNumber > 0 ? `Meja ${manualTableNumber}` : 'Pilih Meja'}</span>
         </div>
 
         {/* Cart Icon */}

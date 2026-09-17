@@ -3,11 +3,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, ShoppingBag, Plus, Minus, Trash2, ShoppingCart, ArrowRight, Tag, Utensils } from 'lucide-react';
+import { formatRupiah } from '@/lib/format';
 import {
   getCartItems,
   updateCartQty,
   removeCartItem,
-  getTableSession,
+  getManualTableNumber,
   storeEvents,
   CartItem,
 } from '@/lib/store';
@@ -17,25 +18,17 @@ interface FloatingCartProps {
   onClose: () => void;
 }
 
-function formatRupiah(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
   const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [tableNumber, setTableNumber] = useState<number>(5);
+  const [tableNumber, setTableNumber] = useState<number>(0);
 
   const refreshCart = useCallback(() => {
     setItems(getCartItems());
-    setTableNumber(getTableSession().tableNumber);
+    setTableNumber(getManualTableNumber());
   }, []);
 
   useEffect(() => {
@@ -108,11 +101,13 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {/* Table badge */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/20 border border-white/20">
+              {/* Table badge — shows neutral state until table is entered at checkout */}
+              <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
+                tableNumber > 0 ? 'bg-white/20 border-white/20' : 'bg-white/10 border-white/10 opacity-70'
+              }`}>
                 <Utensils className="w-3 h-3 text-white/80" />
                 <span className="text-white text-xs font-semibold leading-none">
-                  Meja {tableNumber}
+                  {tableNumber > 0 ? `Meja ${tableNumber}` : 'Pilih Meja'}
                 </span>
               </div>
               <button

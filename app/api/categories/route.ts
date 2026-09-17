@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
@@ -21,14 +21,20 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    if (!body.slug) {
-      body.slug = body.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+    if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
+      return NextResponse.json({ error: 'Nama kategori wajib diisi' }, { status: 400 });
     }
-    if (body.sortOrder === undefined) {
-      body.sortOrder = await prisma.category.count();
+
+    const name = body.name.trim();
+    let slug = body.slug;
+    if (!slug) {
+      slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     }
+    const sortOrder = body.sortOrder !== undefined ? Number(body.sortOrder) : await prisma.category.count();
+
     const category = await prisma.category.create({
-      data: { name: body.name, slug: body.slug, sortOrder: body.sortOrder },
+      data: { name, slug, sortOrder },
     });
     return NextResponse.json({ category }, { status: 201 });
   } catch (err) {

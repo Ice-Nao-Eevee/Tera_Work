@@ -19,6 +19,8 @@ export interface TableSession {
 const CART_KEY = 'selera_sambal_cart';
 const TABLE_KEY = 'selera_sambal_table_session';
 const NOTES_KEY = 'selera_sambal_order_notes';
+// Stores the manually entered table number for the current order session
+const MANUAL_TABLE_KEY = 'selera_sambal_manual_table';
 
 // Event emitter helper for reactive updates across components
 class StoreEvents {
@@ -161,6 +163,7 @@ export function clearCart(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(CART_KEY);
   localStorage.removeItem(NOTES_KEY);
+  localStorage.removeItem(MANUAL_TABLE_KEY); // clear per-order table number on order completion
   storeEvents.notify();
 }
 
@@ -175,13 +178,35 @@ export function saveOrderNotes(notes: string): void {
 }
 
 export function getTableSession(): TableSession {
-  if (typeof window === 'undefined') return { tableId: 'table-5', tableNumber: 5 };
+  if (typeof window === 'undefined') return { tableId: '', tableNumber: 0 };
   try {
     const raw = localStorage.getItem(TABLE_KEY);
-    return raw ? JSON.parse(raw) : { tableId: 'table-5', tableNumber: 5 };
+    return raw ? JSON.parse(raw) : { tableId: '', tableNumber: 0 };
   } catch (err) {
-    return { tableId: 'table-5', tableNumber: 5 };
+    return { tableId: '', tableNumber: 0 };
   }
+}
+
+/**
+ * Gets the manually entered table number for the current order session.
+ * Returns 0 if not set (customer hasn't entered a table number yet).
+ */
+export function getManualTableNumber(): number {
+  if (typeof window === 'undefined') return 0;
+  const raw = localStorage.getItem(MANUAL_TABLE_KEY);
+  const num = parseInt(raw || '0', 10);
+  return isNaN(num) || num < 1 ? 0 : num;
+}
+
+/** Persists the customer's manually entered table number. */
+export function saveManualTableNumber(num: number): void {
+  if (typeof window === 'undefined') return;
+  if (num > 0) {
+    localStorage.setItem(MANUAL_TABLE_KEY, String(num));
+  } else {
+    localStorage.removeItem(MANUAL_TABLE_KEY);
+  }
+  storeEvents.notify();
 }
 
 export function saveTableSession(session: TableSession): void {
