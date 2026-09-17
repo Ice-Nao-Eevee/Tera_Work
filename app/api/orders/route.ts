@@ -46,8 +46,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Fetch tax/service rates from DB (server-authoritative) ───────────
-    const settings = await prisma.settings.findFirst();
+    // ── Batch fetch settings, menu items, and promos in parallel ───────
+    const promoIds: string[] = Array.from(
+      new Set(
+        body.items
+          .map((i: any) => String(i.menuItemId ?? ''))
+          .filter((id: string) => id.startsWith('promo_'))
+          .map((id: string) => id.replace(/^promo_/, ''))
+      )
+    );
+    const regularIds: string[] = Array.from(
+      new Set(
+        body.items
+          .map((i: any) => String(i.menuItemId ?? ''))
+          .filter((id: string) => !id.startsWith('promo_') && id.length > 0)
+      )
+    );
+
+    const [settings, dbMenuItems, dbPromos] = await Promise.all([
+      prisma.settings.findFirst(),
+      regularIds.length > 0
+        ? prisma.menuItem.findMany({ where: { id: { in: regularIds } } })
+        : [],
+      promoIds.length > 0
+        ? prisma.promo.findMany({ where: { id: { in: promoIds } } })
+        : [],
+    ]);
+
+    const menuItemMap = new Map(dbMenuItems.map((m) => [m.id, m]));
+    const promoMap = new Map(dbPromos.map((p) => [p.id, p]));
+
     const taxRatePercent = settings?.taxRatePercent ?? 10;
     const serviceRatePercent = settings?.serviceChargeRatePercent ?? 5;
 
@@ -68,9 +96,9 @@ export async function POST(req: NextRequest) {
       const menuItemId = String(rawItem.menuItemId ?? '');
 
       if (menuItemId.startsWith('promo_')) {
-        // ── Promo item: look up in promos table ──────────────────────────
+        // ── Promo item: look up in pre-fetched map ──────────────────────────
         const promoId = menuItemId.replace(/^promo_/, '');
-        const promo = await prisma.promo.findUnique({ where: { id: promoId } });
+        const promo = promoMap.get(promoId);
         if (!promo || !promo.isActive) {
           return NextResponse.json(
             { error: `Promo "${rawItem.name || '(tidak dikenal)'}" sudah tidak tersedia.` },
@@ -89,8 +117,8 @@ export async function POST(req: NextRequest) {
           lineTotal,
         });
       } else {
-        // ── Regular menu item: look up in menu_items table ───────────────
-        const menuItem = await prisma.menuItem.findUnique({ where: { id: menuItemId } });
+        // ── Regular menu item: look up in pre-fetched map ───────────────────
+        const menuItem = menuItemMap.get(menuItemId);
         if (!menuItem || !menuItem.isActive) {
           return NextResponse.json(
             { error: `Menu "${rawItem.name || '(tidak dikenal)'}" tidak tersedia. Harap perbarui keranjang Anda.` },

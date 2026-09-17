@@ -29,20 +29,21 @@ export function getMemoryStore() {
   };
 }
 
-// ── Seed tracker (run once per process) ──────────────────────────────────────
-let _seeded = false;
+// ── Seed tracker (run once per process lifetime) ─────────────────────────────
+const globalForDb = globalThis as unknown as { _dbSeeded?: boolean };
 
 /**
  * Call at the top of any route handler to ensure the DB is seeded.
- * Safe to call multiple times — seeds only once per process lifetime.
+ * Safe to call multiple times — seeds only once per process lifetime,
+ * persisted across Next.js dev server hot module re-evaluations.
  */
 export async function connectDB(): Promise<void> {
-  if (_seeded) return;
-  _seeded = true;
+  if (globalForDb._dbSeeded) return;
+  globalForDb._dbSeeded = true;
   try {
     await seedDatabaseIfEmpty();
   } catch (err) {
-    _seeded = false; // allow retry on next request
+    globalForDb._dbSeeded = false; // allow retry on failure
     console.error('❌ DB seed failed:', err);
   }
 }

@@ -1,6 +1,7 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { invalidateMenuCache } from '@/lib/menuCache';
 
 // GET /api/categories  list all categories sorted by sortOrder
 export async function GET() {
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
     const category = await prisma.category.create({
       data: { name, slug, sortOrder },
     });
+    invalidateMenuCache();
     return NextResponse.json({ category }, { status: 201 });
   } catch (err) {
     console.error('POST /api/categories error:', err);

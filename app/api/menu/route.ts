@@ -1,17 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { getCachedMenu, setCachedMenu, invalidateMenuCache } from '@/lib/menuCache';
 
 // GET /api/menu  list all active menu items + all categories
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
     const includeInactive = req.nextUrl.searchParams.get('all') === 'true';
+
+    // Serve from in-memory cache for public customer view (<10ms response)
+    if (!includeInactive) {
+      const cached = getCachedMenu();
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+        });
+      }
+    }
+
+    await connectDB();
+
     const [menuItems, categories] = await Promise.all([
-      prisma.menuItem.findMany({ where: includeInactive ? undefined : { isActive: true }, orderBy: { createdAt: 'asc' } }),
-      prisma.category.findMany({ orderBy: { sortOrder: 'asc' } }),
+      prisma.menuItem.findMany({
+        where: includeInactive ? undefined : { isActive: true },
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          category: true,
+          photoUrl: true,
+          badge: true,
+          spiceLevels: true,
+          addOns: true,
+          isActive: true,
+          createdAt: true,
+        },
+      }),
+      prisma.category.findMany({
+        orderBy: { sortOrder: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          sortOrder: true,
+        },
+      }),
     ]);
-    return NextResponse.json({ menuItems, categories });
+
+    const result = { menuItems, categories };
+
+    if (!includeInactive) {
+      setCachedMenu(result);
+    }
+
+    return NextResponse.json(result, {
+      headers: { 'X-Cache': 'MISS' },
+    });
   } catch (err) {
     console.error('GET /api/menu error:', err);
     return NextResponse.json({ error: 'Gagal memuat menu' }, { status: 500 });
@@ -50,6 +96,10 @@ export async function POST(req: NextRequest) {
         isActive: body.isActive ?? true,
       },
     });
+
+    // Invalidate menu cache so changes appear immediately
+    invalidateMenuCache();
+
     return NextResponse.json({ item }, { status: 201 });
   } catch (err) {
     console.error('POST /api/menu error:', err);

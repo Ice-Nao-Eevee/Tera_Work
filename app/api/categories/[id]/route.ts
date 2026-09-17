@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { invalidateMenuCache } from '@/lib/menuCache';
 
 // PUT /api/categories/[id] — update a category
 export async function PUT(
@@ -19,6 +20,7 @@ export async function PUT(
         ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
       },
     });
+    invalidateMenuCache();
     return NextResponse.json({ category });
   } catch (err: any) {
     if (err?.code === 'P2025') {
@@ -38,6 +40,7 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
     await prisma.category.delete({ where: { id } });
+    invalidateMenuCache();
     return NextResponse.json({ success: true });
   } catch (err: any) {
     if (err?.code === 'P2025') {

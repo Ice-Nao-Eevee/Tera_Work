@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { invalidateMenuCache } from '@/lib/menuCache';
 
 export async function GET(
   _req: NextRequest,
@@ -52,6 +53,7 @@ export async function PUT(
         ...(body.isActive !== undefined && { isActive: body.isActive }),
       },
     });
+    invalidateMenuCache();
     return NextResponse.json({ item });
   } catch (err: any) {
     if (err?.code === 'P2025') return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
@@ -68,6 +70,7 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
     await prisma.menuItem.delete({ where: { id } });
+    invalidateMenuCache();
     return NextResponse.json({ success: true });
   } catch (err: any) {
     if (err?.code === 'P2025') return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
