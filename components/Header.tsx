@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ShoppingBag, Utensils, Search } from 'lucide-react';
-import { getCartItems, getManualTableNumber, storeEvents, searchEvents, CartItem } from '@/lib/store';
+import { ShoppingBag, Search } from 'lucide-react';
+import { getCartItems, storeEvents, searchEvents, CartItem } from '@/lib/store';
 
 interface HeaderProps {
   onToggleAiChat?: () => void;
@@ -12,7 +12,6 @@ interface HeaderProps {
 
 export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   const [cartCount, setCartCount] = useState<number>(0);
-  const [manualTableNumber, setManualTableNumber] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -20,7 +19,6 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
     const items = getCartItems();
     const totalQty = items.reduce((acc: number, item: CartItem) => acc + item.qty, 0);
     setCartCount(totalQty);
-    setManualTableNumber(getManualTableNumber());
   }, []);
 
   useEffect(() => {
@@ -68,13 +66,13 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
 
       {/* Nav Links (Desktop) */}
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#3e2723]">
-        <Link href="/menu" className="hover:text-[#b45309] transition-colors">
+        <Link href="/" className="hover:text-[#b45309] transition-colors">
           Menu Kami
         </Link>
-        <Link href="/menu#promo" className="hover:text-[#b45309] transition-colors">
+        <Link href="/promo" className="hover:text-[#b45309] transition-colors">
           Promo
         </Link>
-        <Link href="/#tentang" className="hover:text-[#b45309] transition-colors">
+        <Link href="/tentang" className="hover:text-[#b45309] transition-colors">
           Tentang Kami
         </Link>
       </nav>
@@ -102,16 +100,6 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
             </defs>
           </svg>
         </button>
-
-        {/* Table Badge — shows 'Pilih Meja' when no table entered yet */}
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold shadow-xs transition-all ${
-          isMounted && manualTableNumber > 0
-            ? 'bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309]'
-            : 'bg-[#f3e8d6]/50 border border-[#d4bc8c]/50 text-[#b45309]/50'
-        }`}>
-          <Utensils className="w-3.5 h-3.5" />
-          <span>{isMounted && manualTableNumber > 0 ? `Meja ${manualTableNumber}` : 'Pilih Meja'}</span>
-        </div>
 
         {/* Cart Icon */}
         <button

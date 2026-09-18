@@ -168,6 +168,13 @@ export default function OrderStatusPage() {
             ))}
           </div>
 
+          {order.couponCode && (
+            <div className="flex justify-between text-sm text-[#15803d] font-semibold pt-2 border-t border-[#f3e8d6]">
+              <span>Diskon Kupon ({order.couponCode})</span>
+              <span>-{formatRupiah(order.discountAmount || 0)}</span>
+            </div>
+          )}
+
           <hr className="border-[#e6cdac]" />
 
           <div className="flex justify-between items-baseline font-bold text-lg text-[#b45309]">

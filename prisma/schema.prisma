@@ -64,6 +64,8 @@ model Order {
   subtotal            Int
   taxAmount           Int
   serviceChargeAmount Int
+  couponCode          String?
+  discountAmount      Int      @default(0)
   total               Int
   status              String   @default("received")
   createdAt           DateTime @default(now())
@@ -71,6 +73,27 @@ model Order {
 
   @@index([status, createdAt])
   @@map("orders")
+}
+
+model Coupon {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  title             String
+  description       String
+  discountType      String    // "PERCENTAGE" or "FIXED"
+  discountValue     Int
+  minOrderAmount    Int       @default(0)
+  maxDiscountAmount Int?
+  startDate         DateTime
+  endDate           DateTime
+  isActive          Boolean   @default(true)
+  lastUsedDate      DateTime?
+  usedToday         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([code, isActive])
+  @@map("coupons")
 }
 
 model Settings {

@@ -42,9 +42,49 @@ export async function connectDB(): Promise<void> {
   globalForDb._dbSeeded = true;
   try {
     await seedDatabaseIfEmpty();
+    await seedCouponsIfEmpty();
   } catch (err) {
     globalForDb._dbSeeded = false; // allow retry on failure
     console.error('❌ DB seed failed:', err);
+  }
+}
+
+async function seedCouponsIfEmpty() {
+  try {
+    const couponCount = await prisma.coupon.count();
+    if (couponCount === 0) {
+      await prisma.coupon.create({
+        data: {
+          code: 'BETAWAHEMAT',
+          title: 'Kupon Hemat 20%',
+          description: 'Potongan 20% untuk semua pesanan makan di tempat. Maksimal potongan Rp 15.000, minimal belanja Rp 30.000.',
+          discountType: 'PERCENTAGE',
+          discountValue: 20,
+          minOrderAmount: 30000,
+          maxDiscountAmount: 15000,
+          startDate: new Date('2025-01-01'),
+          endDate: new Date('2028-12-31'),
+          isActive: true,
+        },
+      });
+      await prisma.coupon.create({
+        data: {
+          code: 'KASIH10K',
+          title: 'Potongan Langsung Rp 10.000',
+          description: 'Potongan langsung Rp 10.000 dengan minimal belanja Rp 50.000.',
+          discountType: 'FIXED',
+          discountValue: 10000,
+          minOrderAmount: 50000,
+          maxDiscountAmount: null,
+          startDate: new Date('2025-01-01'),
+          endDate: new Date('2028-12-31'),
+          isActive: true,
+        },
+      });
+      console.log('✅ Initial coupons seeded.');
+    }
+  } catch (e) {
+    console.error('Coupons seed error:', e);
   }
 }
 

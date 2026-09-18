@@ -74,10 +74,31 @@ export interface IOrder {
   subtotal: number;
   taxAmount: number;
   serviceChargeAmount: number;
+  couponCode?: string | null;
+  discountAmount?: number;
   total: number;
   status: 'received' | 'preparing' | 'ready' | 'completed';
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface ICoupon {
+  id: string;
+  _id?: string;
+  code: string;
+  title: string;
+  description: string;
+  discountType: 'PERCENTAGE' | 'FIXED' | string;
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount?: number | null;
+  startDate: string | Date;
+  endDate: string | Date;
+  isActive: boolean;
+  lastUsedDate?: string | Date | null;
+  usedToday?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface IRestaurantInfo {

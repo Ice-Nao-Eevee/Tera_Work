@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 type ActivePage =
   | 'dashboard' | 'products' | 'categories' | 'orders' | 'customers'
-  | 'analytics' | 'promotions' | 'inventory' | 'reviews' | 'notifications' | 'settings';
+  | 'analytics' | 'promotions' | 'coupons' | 'inventory' | 'reviews' | 'notifications' | 'settings';
 
 // ── Types matching the MongoDB models ────────────────────────────────────────
 interface Product {
@@ -18,8 +18,27 @@ interface Product {
 }
 interface Category { _id: string; id?: string; name: string; slug: string; sortOrder: number; description?: string; createdAt?: string; }
 interface OrderItem { name: string; qty: number; price: number; lineTotal: number; spiceLevel?: string; addOns?: { label: string; price: number }[]; }
-interface Order { _id?: string; id?: string; orderCode: string; tableNumber: number; items: OrderItem[]; notes?: string; subtotal: number; taxAmount: number; serviceChargeAmount: number; total: number; status: string; createdAt?: string; updatedAt?: string; }
+interface Order { _id?: string; id?: string; orderCode: string; tableNumber: number; items: OrderItem[]; notes?: string; subtotal: number; taxAmount: number; serviceChargeAmount: number; couponCode?: string; discountAmount?: number; total: number; status: string; createdAt?: string; updatedAt?: string; }
 interface Promotion { _id: string; title: string; description: string; originalPrice: number; discountedPrice: number; isActive: boolean; createdAt?: string; }
+interface Coupon {
+  _id: string;
+  id?: string;
+  code: string;
+  title: string;
+  description: string;
+  discountType: 'PERCENTAGE' | 'FIXED' | string;
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount?: number | null;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  isAvailableToday?: boolean;
+  lastUsedDate?: string | null;
+  usedToday?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
 interface Review { id: string; customer: string; menu: string; rating: number; comment: string; status: string; createdAt: string; }
 interface Notification { id: string; text: string; read: boolean; createdAt: string; }
 interface Restaurant { name: string; description?: string; phone?: string; email: string; address: string; hours?: string; instagram: string; whatsapp: string; logo?: string; }
@@ -200,6 +219,12 @@ function OrderDetailModal({ order, onClose, onSaved }: { order: Order; onClose: 
         {order.items.map((item, i) => <div key={i} className="flex justify-between text-sm mb-2"><span>{item.name} × {item.qty}</span><b>{rupiah(item.price * item.qty)}</b></div>)}
         <hr className="border-[#e9e3dc] my-3" />
         <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Subtotal</span><span>{rupiah(order.subtotal)}</span></div>
+        {order.couponCode && (
+          <div className="flex justify-between text-sm mb-1 text-[#25805b] font-medium">
+            <span>Diskon Kupon ({order.couponCode})</span>
+            <span>-{rupiah(order.discountAmount || 0)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Pajak + Service</span><span>{rupiah((order.taxAmount || 0) + (order.serviceChargeAmount || 0))}</span></div>
         <div className="flex justify-between text-sm font-bold mb-4"><b>Total</b><b>{rupiah(order.total)}</b></div>
         <label className="grid text-xs font-bold gap-[6px] mb-4">Status Pesanan<select className={iCls} value={status} onChange={e => setStatus(e.target.value)}>{['received','preparing','ready','completed'].map(s => <option key={s} value={s}>{s}</option>)}</select></label>
@@ -257,6 +282,180 @@ function PromoForm({ promo, onClose, onSaved }: { promo?: Promotion; onClose: ()
           <label className="grid text-xs font-bold gap-[6px] sm:col-span-2">Deskripsi<textarea className={`${iCls} min-h-[80px] resize-y`} value={f.description} onChange={e => set('description', e.target.value)} /></label>
         </div>
         <div className="flex justify-end gap-[9px] mt-[22px]"><button type="button" onClick={onClose} className={bSec}>Batal</button><button type="submit" className={bPri} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Promo'}</button></div>
+      </form>
+    </Modal>
+  );
+}
+
+// ── CouponForm (wired to /api/admin/coupons) ─────────────────────────────────
+function CouponForm({ coupon, onClose, onSaved }: { coupon?: Coupon; onClose: () => void; onSaved: (m: string) => void }) {
+  const toDateInput = (d?: string | Date) => {
+    if (!d) return '';
+    try { return new Date(d).toISOString().split('T')[0]; } catch { return ''; }
+  };
+
+  const defaultStart = toDateInput(new Date());
+  const defaultEnd = toDateInput(new Date(Date.now() + 30 * 86400000));
+
+  const [f, sf] = useState({
+    code: coupon?.code || '',
+    title: coupon?.title || '',
+    description: coupon?.description || '',
+    discountType: coupon?.discountType || 'PERCENTAGE',
+    discountValue: coupon?.discountValue ?? '',
+    minOrderAmount: coupon?.minOrderAmount ?? 0,
+    maxDiscountAmount: coupon?.maxDiscountAmount ?? '',
+    startDate: coupon?.startDate ? toDateInput(coupon.startDate) : defaultStart,
+    endDate: coupon?.endDate ? toDateInput(coupon.endDate) : defaultEnd,
+    isActive: coupon?.isActive ?? true,
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (k: string, v: any) => sf(x => ({ ...x, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        ...f,
+        code: f.code.trim().toUpperCase(),
+        discountValue: Number(f.discountValue),
+        minOrderAmount: Number(f.minOrderAmount) || 0,
+        maxDiscountAmount: f.discountType === 'PERCENTAGE' && f.maxDiscountAmount !== '' ? Number(f.maxDiscountAmount) : null,
+        startDate: new Date(f.startDate).toISOString(),
+        endDate: new Date(f.endDate + 'T23:59:59.999Z').toISOString(),
+      };
+      if (coupon?._id) {
+        await apiFetch(`/api/admin/coupons/${coupon._id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        onSaved('Kupon berhasil diperbarui');
+      } else {
+        await apiFetch('/api/admin/coupons', { method: 'POST', body: JSON.stringify(payload) });
+        onSaved('Kupon berhasil ditambahkan');
+      }
+      onClose();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan kupon');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title={coupon ? 'Edit Kupon' : 'Tambah Kupon'} onClose={onClose}>
+      <form onSubmit={submit}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
+          <label className="grid text-xs font-bold gap-[6px]">
+            Kode Kupon
+            <input
+              className={`${iCls} uppercase font-mono font-bold tracking-wider`}
+              required
+              placeholder="CONTOH: DISKON50"
+              value={f.code}
+              onChange={e => set('code', e.target.value.toUpperCase())}
+            />
+          </label>
+          <label className="grid text-xs font-bold gap-[6px]">
+            Judul Kupon
+            <input
+              className={iCls}
+              required
+              placeholder="Contoh: Diskon Makan Siang"
+              value={f.title}
+              onChange={e => set('title', e.target.value)}
+            />
+          </label>
+          <label className="grid text-xs font-bold gap-[6px]">
+            Tipe Diskon
+            <select
+              className={iCls}
+              value={f.discountType}
+              onChange={e => set('discountType', e.target.value)}
+            >
+              <option value="PERCENTAGE">Persentase (%)</option>
+              <option value="FIXED">Nominal Tetap (Rp)</option>
+            </select>
+          </label>
+          <label className="grid text-xs font-bold gap-[6px]">
+            {f.discountType === 'PERCENTAGE' ? 'Besar Diskon (%)' : 'Besar Diskon (Rp)'}
+            <input
+              className={iCls}
+              type="number"
+              min="1"
+              max={f.discountType === 'PERCENTAGE' ? '100' : undefined}
+              required
+              value={f.discountValue}
+              onChange={e => set('discountValue', e.target.value)}
+            />
+          </label>
+          {f.discountType === 'PERCENTAGE' && (
+            <label className="grid text-xs font-bold gap-[6px]">
+              Maksimal Diskon (Rp, Kosongkan bila tanpa batas)
+              <input
+                className={iCls}
+                type="number"
+                min="0"
+                placeholder="Contoh: 25000"
+                value={f.maxDiscountAmount}
+                onChange={e => set('maxDiscountAmount', e.target.value)}
+              />
+            </label>
+          )}
+          <label className="grid text-xs font-bold gap-[6px]">
+            Minimal Belanja Subtotal (Rp)
+            <input
+              className={iCls}
+              type="number"
+              min="0"
+              required
+              value={f.minOrderAmount}
+              onChange={e => set('minOrderAmount', e.target.value)}
+            />
+          </label>
+          <label className="grid text-xs font-bold gap-[6px]">
+            Tanggal Mulai
+            <input
+              className={iCls}
+              type="date"
+              required
+              value={f.startDate}
+              onChange={e => set('startDate', e.target.value)}
+            />
+          </label>
+          <label className="grid text-xs font-bold gap-[6px]">
+            Tanggal Selesai
+            <input
+              className={iCls}
+              type="date"
+              required
+              value={f.endDate}
+              onChange={e => set('endDate', e.target.value)}
+            />
+          </label>
+          <label className="grid text-xs font-bold gap-[6px] sm:col-span-2">
+            Status Aktif
+            <select
+              className={iCls}
+              value={f.isActive ? 'true' : 'false'}
+              onChange={e => set('isActive', e.target.value === 'true')}
+            >
+              <option value="true">Aktif</option>
+              <option value="false">Nonaktif</option>
+            </select>
+          </label>
+          <label className="grid text-xs font-bold gap-[6px] sm:col-span-2">
+            Deskripsi (Syarat & Ketentuan)
+            <textarea
+              className={`${iCls} min-h-[70px] resize-y`}
+              placeholder="Contoh: Berlaku untuk makan di tempat, maksimal pemakaian 1x per hari..."
+              value={f.description}
+              onChange={e => set('description', e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="flex justify-end gap-[9px] mt-[22px]">
+          <button type="button" onClick={onClose} className={bSec}>Batal</button>
+          <button type="submit" className={bPri} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Kupon'}</button>
+        </div>
       </form>
     </Modal>
   );
@@ -538,6 +737,182 @@ function PromotionsPage({ onToast }: { onToast: (m: string) => void }) {
   );
 }
 
+// ── CouponsPage ───────────────────────────────────────────────────────────────
+function CouponsPage({ onToast }: { onToast: (m: string) => void }) {
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [editCoupon, setEditCoupon] = useState<Coupon | undefined>();
+  const [showF, setShowF] = useState(false);
+  const [delCoupon, setDelCoupon] = useState<Coupon | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ coupons: Coupon[] }>('/api/admin/coupons');
+      setCoupons((data.coupons || []).map(withAdminId));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const toggleActive = async (c: Coupon) => {
+    try {
+      await apiFetch(`/api/admin/coupons/${c._id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isActive: !c.isActive }),
+      });
+      onToast(`Status kupon ${c.code} berhasil diubah`);
+      refresh();
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengubah status kupon');
+    }
+  };
+
+  const handleSoftDelete = async (coupon: Coupon) => {
+    try {
+      await apiFetch(`/api/admin/coupons/${coupon._id}`, { method: 'DELETE' });
+      onToast(`Kupon ${coupon.code} dinonaktifkan`);
+      refresh();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menonaktifkan kupon');
+    }
+  };
+
+  if (loading) return <div className="text-[#827a73] text-sm">Memuat kupon...</div>;
+
+  const filtered = coupons.filter(
+    (c) =>
+      c.code.toLowerCase().includes(search.toLowerCase()) ||
+      c.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div>
+      <PageHeading
+        title="Kupon Diskon"
+        desc="Kelola kupon promosi, diskon pesanan, dan limit harian."
+        action={
+          <button
+            onClick={() => {
+              setEditCoupon(undefined);
+              setShowF(true);
+            }}
+            className={bPri}
+          >
+            + Tambah Kupon
+          </button>
+        }
+      />
+      <div className="flex gap-[9px] mb-[18px]">
+        <input
+          className={iCls + ' max-w-[300px]'}
+          placeholder="Cari kode atau judul kupon..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+      {filtered.length ? (
+        <DataTable
+          headers={[
+            'Kode',
+            'Judul',
+            'Diskon',
+            'Min Belanja',
+            'Periode',
+            'Limit Hari Ini',
+            'Status',
+            'Aksi',
+          ]}
+          rows={filtered.map((c) => {
+            const discountDesc =
+              c.discountType === 'PERCENTAGE'
+                ? `${c.discountValue}% ${
+                    c.maxDiscountAmount ? `(Maks ${rupiah(c.maxDiscountAmount)})` : ''
+                  }`
+                : rupiah(c.discountValue);
+
+            const isAvailable = c.isAvailableToday ?? true;
+
+            return [
+              <b
+                key="code"
+                className="font-mono bg-[#f4efeb] px-2 py-1 rounded text-[#aa2027] font-bold tracking-wide"
+              >
+                {c.code}
+              </b>,
+              <div key="title">
+                <div className="font-bold text-[#292522]">{c.title}</div>
+                {c.description && (
+                  <div className="text-xs text-[#827a73] line-clamp-1">{c.description}</div>
+                )}
+              </div>,
+              <span key="disc" className="font-semibold text-[#25805b]">
+                {discountDesc}
+              </span>,
+              <span key="min">{rupiah(c.minOrderAmount)}</span>,
+              <span key="period" className="text-xs text-[#827a73]">
+                {fmtDate(c.startDate)} - {fmtDate(c.endDate)}
+              </span>,
+              <Badge
+                key="today"
+                status={isAvailable ? 'tersedia' : 'habis'}
+              />,
+              <button
+                key="toggle"
+                onClick={() => toggleActive(c)}
+                title="Klik untuk toggle aktif/nonaktif"
+                className="cursor-pointer border-0 bg-transparent p-0 hover:opacity-80 transition-opacity text-left"
+              >
+                <Badge status={c.isActive ? 'aktif' : 'nonaktif'} />
+              </button>,
+              <div key="act" className="flex gap-1">
+                <SmallBtn
+                  onClick={() => {
+                    setEditCoupon(c);
+                    setShowF(true);
+                  }}
+                >
+                  Edit
+                </SmallBtn>
+                <SmallBtn onClick={() => setDelCoupon(c)}>Hapus</SmallBtn>
+              </div>,
+            ];
+          })}
+        />
+      ) : (
+        <EmptyState
+          icon="🏷"
+          title="Belum ada kupon"
+          text="Buat kupon pertama untuk memberikan potongan harga kepada pelanggan."
+        />
+      )}
+      {showF && (
+        <CouponForm
+          coupon={editCoupon}
+          onClose={() => setShowF(false)}
+          onSaved={(m) => {
+            onToast(m);
+            refresh();
+          }}
+        />
+      )}
+      {delCoupon && (
+        <ConfirmModal
+          message={`Nonaktifkan kupon "${delCoupon.code}"? Kupon tidak akan dihapus permanen, melainkan dinonaktifkan.`}
+          onConfirm={() => handleSoftDelete(delCoupon)}
+          onClose={() => setDelCoupon(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── InventoryPage ─────────────────────────────────────────────────────────────
 function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -718,6 +1093,7 @@ const NAV: { key: ActivePage; icon: string; label: string; group: string }[] = [
   { key: 'orders', icon: '◉', label: 'Pesanan', group: 'MANAJEMEN' },
   { key: 'analytics', icon: '⌁', label: 'Analitik', group: 'BISNIS' },
   { key: 'promotions', icon: '✦', label: 'Promo', group: 'BISNIS' },
+  { key: 'coupons', icon: '🏷', label: 'Kupon', group: 'BISNIS' },
   { key: 'inventory', icon: '▤', label: 'Inventori', group: 'BISNIS' },
   { key: 'notifications', icon: '◌', label: 'Notifikasi', group: 'ENGAGEMENT' },
   { key: 'settings', icon: '⚙', label: 'Pengaturan', group: 'SISTEM' },
@@ -726,7 +1102,8 @@ const PAGE_LABELS: Record<ActivePage, [string, string]> = {
   dashboard: ['Dashboard', 'Overview'], products: ['Menu', 'Kelola hidangan'],
   categories: ['Kategori', 'Kelompokkan menu'], orders: ['Pesanan', 'Pantau pesanan masuk'],
   customers: ['Pelanggan', 'Riwayat pelanggan'], analytics: ['Analitik', 'Ringkasan bisnis'],
-  promotions: ['Promo', 'Penawaran restoran'], inventory: ['Inventori', 'Ketersediaan menu'],
+  promotions: ['Promo', 'Penawaran restoran'], coupons: ['Kupon', 'Kelola kode kupon & diskon'],
+  inventory: ['Inventori', 'Ketersediaan menu'],
   reviews: ['Ulasan', 'Suara pelanggan'], notifications: ['Notifikasi', 'Pusat pemberitahuan'],
   settings: ['Pengaturan', 'Restoran dan sistem'],
 };
@@ -768,6 +1145,7 @@ export default function AdminPage() {
       case 'orders': return <OrdersPage onToast={addToast} />;
       case 'analytics': return <AnalyticsPage />;
       case 'promotions': return <PromotionsPage onToast={addToast} />;
+      case 'coupons': return <CouponsPage onToast={addToast} />;
       case 'inventory': return <InventoryPage />;
       case 'notifications': return <NotificationsPage onToast={addToast} />;
       case 'settings': return <SettingsPage onToast={addToast} />;

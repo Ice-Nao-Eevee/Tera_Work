@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, ShoppingCart, Plus, ChevronRight, ChevronLeft, Star } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { getCartItems, addToCart, storeEvents, searchEvents, CartItem } from '@/lib/store';
 import { STATIC_MENU_ITEMS, STATIC_CATEGORIES } from '@/lib/staticData';
@@ -17,77 +17,8 @@ export default function MenuPage() {
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Auto-scroll logic for mobile
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    
-    const startScroll = () => {
-      intervalId = setInterval(() => {
-        const container = scrollContainerRef.current;
-        if (!container || container.children.length === 0) return;
-        
-        // Only auto-scroll on mobile devices
-        if (window.innerWidth < 768) {
-          const firstCard = container.children[0] as HTMLElement;
-          // card width + gap (gap-5 is 20px)
-          const scrollAmount = firstCard.offsetWidth + 20;
-          
-          // Check if reached the end
-          if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
-            container.scrollTo({ left: 0, behavior: 'smooth' });
-          } else {
-            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-          }
-        }
-      }, 3500);
-    };
-
-    startScroll();
-
-    const container = scrollContainerRef.current;
-    if (container) {
-      const handleInteractionStart = () => clearInterval(intervalId);
-      const handleInteractionEnd = () => startScroll();
-      
-      container.addEventListener('touchstart', handleInteractionStart, { passive: true });
-      container.addEventListener('touchend', handleInteractionEnd, { passive: true });
-      container.addEventListener('mouseenter', handleInteractionStart);
-      container.addEventListener('mouseleave', handleInteractionEnd);
-      
-      return () => {
-        clearInterval(intervalId);
-        container.removeEventListener('touchstart', handleInteractionStart);
-        container.removeEventListener('touchend', handleInteractionEnd);
-        container.removeEventListener('mouseenter', handleInteractionStart);
-        container.removeEventListener('mouseleave', handleInteractionEnd);
-      };
-    }
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  const scrollLeftBtn = () => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const firstCard = container.children[0] as HTMLElement;
-      // Scroll by 2 cards on desktop for faster navigation, or at least 1 card
-      const scrollAmount = firstCard ? (firstCard.offsetWidth + 20) * 2 : 300;
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRightBtn = () => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const firstCard = container.children[0] as HTMLElement;
-      const scrollAmount = firstCard ? (firstCard.offsetWidth + 20) * 2 : 300;
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
-
-  // Derived cart values — no redundant state, recalculated only when cartItems changes
+  // Derived cart values — recalculated only when cartItems changes
   const cartCount = useMemo(() => cartItems.reduce((sum, item) => sum + (item.qty || 0), 0), [cartItems]);
   const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0), [cartItems]);
 
@@ -143,7 +74,7 @@ export default function MenuPage() {
     addToCart(item, 1, defaultSpice, []);
   };
 
-  // Category icon mapping (emoji as placeholder, replace with real images later)
+  // Category icon mapping
   const categoryIcons: Record<string, { emoji: string; label: string }> = {
     semua:   { emoji: '🍽️', label: 'Semua' },
     makanan: { emoji: '🍛', label: 'Makanan' },
@@ -167,7 +98,7 @@ export default function MenuPage() {
                 alt="Rasa Segar Racikan Istimewa"
                 className="w-full h-full object-cover object-center"
               />
-              {/* Warm gradient overlay so text on left stays clear while photo covers full box to slogan text */}
+              {/* Warm gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-[#fdf6f0] via-[#fdf6f0]/90 md:via-[#fdf6f0]/75 to-transparent" />
             </div>
 
@@ -215,7 +146,7 @@ export default function MenuPage() {
                 onClick={() => setSelectedCategory(cat.slug)}
                 className="flex flex-col items-center gap-2 flex-shrink-0 group transition-transform active:scale-95"
               >
-                {/* Circle — Enlarged without white background box */}
+                {/* Circle */}
                 <div
                   className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center overflow-hidden border-2 md:border-3 transition-all duration-300 ${
                     isActive
@@ -245,14 +176,11 @@ export default function MenuPage() {
         </div>
       </section>
 
-      {/* ─── MENU GRID ─── */}
-      <div id="menu-grid" className="max-w-7xl mx-auto px-6 md:px-10 pt-8">
-        <div className="flex justify-end mb-6">
-          <Link href="/menu" className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-[#dcd1c4] bg-[#f5ebe0]/40 hover:bg-[#f3e8d6] text-[#8c5b3f] font-semibold text-sm transition-colors">
-            <span>View All</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
+      {/* ─── MENU GRID (5 Columns per row on desktop, flowing downwards) ─── */}
+      <div id="menu-grid" className="max-w-7xl mx-auto px-6 md:px-10 pt-4">
+        <h2 className="font-serif italic font-bold text-2xl md:text-3xl text-[#2a1a15] mb-6">
+          Daftar Menu
+        </h2>
 
         {filteredItems.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center border border-[#d4bc8c]">
@@ -268,125 +196,49 @@ export default function MenuPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-10">
-            {/* FIRST ROW CAROUSEL */}
-            <div className="relative group">
-              <button
-                onClick={scrollLeftBtn}
-                className="hidden md:flex absolute -left-5 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-[#ece8e3] text-[#b45309] shadow-lg rounded-full items-center justify-center z-10 transition-colors hover:bg-[#f3e8d6]"
-                aria-label="Scroll left"
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
+            {filteredItems.map((item) => (
+              <div
+                key={item.id || item._id}
+                className="bg-white rounded-2xl border border-[#ece8e3] overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-full group"
               >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={scrollRightBtn}
-                className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-[#ece8e3] text-[#b45309] shadow-lg rounded-full items-center justify-center z-10 transition-colors hover:bg-[#f3e8d6]"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-              <div 
-                ref={scrollContainerRef}
-                className="flex overflow-x-auto snap-x snap-mandatory gap-5 pb-4 [&::-webkit-scrollbar]:hidden"
-                style={{ scrollBehavior: 'smooth', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-              >
-                {filteredItems.map((item) => (
-                  <div
-                    key={`row1-${item.id || item._id}`}
-                    className="min-w-[85vw] sm:min-w-[45vw] md:min-w-[30vw] lg:min-w-[22vw] snap-center shrink-0 bg-white rounded-2xl border border-[#ece8e3] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-full"
-                  >
-                    <Link href={`/menu/${item.id || item._id}`} className="block relative h-48 w-full bg-[#f5ede7] overflow-hidden group">
-                      <Image
-                        src={item.photoUrl || 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80'}
-                        alt={item.name || 'Menu'}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        unoptimized
-                      />
-                    </Link>
-                    <div className="px-4 py-5 flex flex-col items-center flex-grow">
-                      <span className="font-bold text-[#8c5b3f] text-sm mb-1">
-                        {formatRupiah(item.price || 0)}
-                      </span>
-                      <Link href={`/menu/${item.id || item._id}`} className="text-center w-full">
-                        <h3 className="font-bold text-sm text-[#8c5b3f] uppercase mb-5 line-clamp-2 hover:text-[#b45309] transition-colors">
-                          {item.name}
-                        </h3>
-                      </Link>
-                      <div className="w-full flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-1.5 text-[#b45309] text-[11px] font-bold">
-                          <Star className="w-3.5 h-3.5 fill-[#d4bc8c] text-[#d4bc8c]" />
-                          <span>4,6</span>
-                        </div>
-                        <button
-                          onClick={(e) => handleQuickAdd(item, e)}
-                          className="hover:text-[#b45309] transition-colors"
-                          title="Tambah ke Keranjang"
-                        >
-                          <ChevronRight className="w-5 h-5 text-[#1a1207] hover:text-[#b45309]" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* Pagination Dots Below First Row */}
-              <div className="flex justify-center items-center gap-2 mt-4 mb-2">
-                <div className="w-2 h-2 rounded-full bg-[#8c5b3f]"></div>
-                <div className="w-2 h-2 rounded-full bg-[#8c5b3f]/30"></div>
-                <div className="w-2 h-2 rounded-full bg-[#8c5b3f]/30"></div>
-              </div>
-            </div>
+                {/* Menu Image */}
+                <Link href={`/menu/${item.id || item._id}`} className="block relative h-40 sm:h-44 w-full bg-[#f5ede7] overflow-hidden">
+                  <Image
+                    src={item.photoUrl || 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80'}
+                    alt={item.name || 'Menu'}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    unoptimized
+                  />
+                </Link>
 
-            {/* SECOND ROW CAROUSEL (Duplicate to match the mockup exactly) */}
-            <div className="relative group">
-              <div 
-                className="flex overflow-x-auto snap-x snap-mandatory gap-5 pb-4 [&::-webkit-scrollbar]:hidden"
-                style={{ scrollBehavior: 'smooth', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-              >
-                {filteredItems.map((item) => (
-                  <div
-                    key={`row2-${item.id || item._id}`}
-                    className="min-w-[85vw] sm:min-w-[45vw] md:min-w-[30vw] lg:min-w-[22vw] snap-center shrink-0 bg-white rounded-2xl border border-[#ece8e3] overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-full"
-                  >
-                    <Link href={`/menu/${item.id || item._id}`} className="block relative h-48 w-full bg-[#f5ede7] overflow-hidden group">
-                      <Image
-                        src={item.photoUrl || 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80'}
-                        alt={item.name || 'Menu'}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        unoptimized
-                      />
-                    </Link>
-                    <div className="px-4 py-5 flex flex-col items-center flex-grow">
-                      <span className="font-bold text-[#8c5b3f] text-sm mb-1">
-                        {formatRupiah(item.price || 0)}
-                      </span>
-                      <Link href={`/menu/${item.id || item._id}`} className="text-center w-full">
-                        <h3 className="font-bold text-sm text-[#8c5b3f] uppercase mb-5 line-clamp-2 hover:text-[#b45309] transition-colors">
-                          {item.name}
-                        </h3>
-                      </Link>
-                      <div className="w-full flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-1.5 text-[#b45309] text-[11px] font-bold">
-                          <Star className="w-3.5 h-3.5 fill-[#d4bc8c] text-[#d4bc8c]" />
-                          <span>4,6</span>
-                        </div>
-                        <button
-                          onClick={(e) => handleQuickAdd(item, e)}
-                          className="hover:text-[#b45309] transition-colors"
-                          title="Tambah ke Keranjang"
-                        >
-                          <ChevronRight className="w-5 h-5 text-[#1a1207] hover:text-[#b45309]" />
-                        </button>
-                      </div>
-                    </div>
+                {/* Menu Details: Name on top, Price below */}
+                <div className="px-3.5 py-4 flex flex-col items-center flex-grow">
+                  <Link href={`/menu/${item.id || item._id}`} className="text-center w-full">
+                    <h3 className="font-bold text-sm text-[#8c5b3f] uppercase mb-1.5 line-clamp-2 hover:text-[#b45309] transition-colors">
+                      {item.name}
+                    </h3>
+                  </Link>
+                  <span className="font-bold text-[#8c5b3f] text-sm mb-4">
+                    {formatRupiah(item.price || 0)}
+                  </span>
+
+                  {/* Bottom Action: Arrow to quick add */}
+                  <div className="w-full flex items-center justify-end mt-auto pt-1">
+                    <button
+                      onClick={(e) => handleQuickAdd(item, e)}
+                      className="p-1 rounded-full hover:bg-[#f3e8d6] text-[#1a1207] hover:text-[#b45309] transition-colors"
+                      title="Tambah ke Keranjang"
+                      aria-label={`Tambah ${item.name} ke keranjang`}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         )}
       </div>

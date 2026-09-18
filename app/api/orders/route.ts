@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { checkCouponRules } from '@/lib/coupon';
 
 function generateOrderCode(): string {
   const num = Math.floor(1000 + Math.random() * 9000);
@@ -156,10 +157,32 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Coupon Validation (Optional) ─────────────────────────────────────
+    const rawCouponCode = body.couponCode
+      ? String(body.couponCode).trim().toUpperCase()
+      : null;
+    let validatedCoupon: any = null;
+    let discountAmount = 0;
+
+    if (rawCouponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: rawCouponCode },
+      });
+      const couponCheck = checkCouponRules(coupon as any, subtotal);
+      if (!couponCheck.valid) {
+        return NextResponse.json(
+          { error: couponCheck.error },
+          { status: 400 }
+        );
+      }
+      validatedCoupon = coupon;
+      discountAmount = couponCheck.discountAmount;
+    }
+
     // ── Compute tax / service / total server-side ─────────────────────────
     const taxAmount = Math.round((subtotal * taxRatePercent) / 100);
     const serviceChargeAmount = Math.round((subtotal * serviceRatePercent) / 100);
-    const total = subtotal + taxAmount + serviceChargeAmount;
+    const total = Math.max(0, subtotal - discountAmount + taxAmount + serviceChargeAmount);
 
     // ── Generate unique order code ────────────────────────────────────────
     let orderCode = generateOrderCode();
@@ -169,23 +192,53 @@ export async function POST(req: NextRequest) {
       orderCode = generateOrderCode();
     }
 
-    const order = await prisma.order.create({
-      data: {
-        orderCode,
-        tableNumber,
-        items: validatedItems,
-        notes: String(body.notes ?? '').slice(0, 500),
-        subtotal,
-        taxAmount,
-        serviceChargeAmount,
-        total,
-        status: 'received',
-      },
+    const now = new Date();
+
+    // ── Create Order & Record Coupon Usage atomically in Transaction ──────
+    const order = await prisma.$transaction(async (tx) => {
+      if (validatedCoupon) {
+        // Re-check coupon availability inside transaction to prevent race conditions
+        const txCoupon = await tx.coupon.findUnique({
+          where: { id: validatedCoupon.id },
+        });
+        const reCheck = checkCouponRules(txCoupon as any, subtotal);
+        if (!reCheck.valid) {
+          throw new Error(reCheck.error);
+        }
+
+        // Mark coupon as used today
+        await tx.coupon.update({
+          where: { id: validatedCoupon.id },
+          data: {
+            lastUsedDate: now,
+            usedToday: true,
+          },
+        });
+      }
+
+      return tx.order.create({
+        data: {
+          orderCode,
+          tableNumber,
+          items: validatedItems,
+          notes: String(body.notes ?? '').slice(0, 500),
+          subtotal,
+          taxAmount,
+          serviceChargeAmount,
+          couponCode: validatedCoupon ? validatedCoupon.code : null,
+          discountAmount,
+          total,
+          status: 'received',
+        },
+      });
     });
 
     return NextResponse.json({ order }, { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
     console.error('POST /api/orders error:', err);
-    return NextResponse.json({ error: 'Gagal membuat pesanan' }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || 'Gagal membuat pesanan' },
+      { status: 500 }
+    );
   }
 }

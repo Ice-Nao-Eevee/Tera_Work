@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Utensils, Tag, ArrowRight, AlertCircle } from 'lucide-react';
+import { Utensils, Tag, ArrowRight, AlertCircle, Ticket, Check, X } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import {
   getCartItems,
@@ -34,6 +34,14 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState<string>('');
   const [taxRate, setTaxRate] = useState<number>(0.10);
   const [serviceRate, setServiceRate] = useState<number>(0.05);
+
+  // ── Coupon State ──
+  const [couponCodeInput, setCouponCodeInput] = useState<string>('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [couponLoading, setCouponLoading] = useState<boolean>(false);
+  const [couponError, setCouponError] = useState<string>('');
+  const [couponSuccess, setCouponSuccess] = useState<string>('');
 
   const refreshCart = useCallback(() => {
     setItems(getCartItems());
@@ -99,10 +107,81 @@ export default function CheckoutPage() {
 
   // Preview totals (for display only — server will recalculate authoritatively)
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+
+  // Auto-adjust or release coupon if subtotal changes
+  useEffect(() => {
+    if (appliedCoupon) {
+      if (subtotal < appliedCoupon.minOrderAmount) {
+        setCouponError(
+          `Subtotal (${formatRupiah(subtotal)}) kurang dari syarat minimal belanja (${formatRupiah(
+            appliedCoupon.minOrderAmount
+          )}). Kupon dilepas.`
+        );
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+        setCouponSuccess('');
+      } else {
+        let disc = 0;
+        if (appliedCoupon.discountType === 'PERCENTAGE') {
+          disc = Math.round((subtotal * appliedCoupon.discountValue) / 100);
+          if (appliedCoupon.maxDiscountAmount && appliedCoupon.maxDiscountAmount > 0) {
+            disc = Math.min(disc, appliedCoupon.maxDiscountAmount);
+          }
+        } else {
+          disc = appliedCoupon.discountValue;
+        }
+        setDiscountAmount(Math.max(0, Math.min(disc, subtotal)));
+      }
+    }
+  }, [subtotal, appliedCoupon]);
+
+  const handleApplyCoupon = async () => {
+    const trimmed = couponCodeInput.trim().toUpperCase();
+    if (!trimmed) {
+      setCouponError('Silakan ketik kode kupon Anda.');
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponSuccess('');
+
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: trimmed, subtotal }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.valid) {
+        setCouponError(data.error || 'Kupon tidak dapat digunakan.');
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+      } else {
+        setAppliedCoupon(data.coupon);
+        setDiscountAmount(data.discountAmount);
+        setCouponSuccess(`Kupon "${data.coupon.code}" berhasil diterapkan!`);
+      }
+    } catch (err: any) {
+      setCouponError(err.message || 'Gagal memvalidasi kupon.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponError('');
+    setCouponSuccess('');
+    setCouponCodeInput('');
+  };
+
   const taxAmount = Math.round(subtotal * taxRate);
   const serviceChargeAmount = Math.round(subtotal * serviceRate);
   const combinedTaxService = taxAmount + serviceChargeAmount;
-  const grandTotal = subtotal + combinedTaxService;
+  const grandTotal = Math.max(0, subtotal - discountAmount + combinedTaxService);
 
   const handleCreateOrder = async () => {
     if (items.length === 0 || isSubmitting) return;
@@ -131,6 +210,7 @@ export default function CheckoutPage() {
           lineTotal: ci.lineTotal,
         })),
         notes: fullNotes,
+        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         // NOTE: subtotal/tax/total below are hints only — server ignores and recalculates
         subtotal,
         taxAmount,
@@ -231,6 +311,99 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* ── Kode Kupon Input Card ── */}
+          <div className="bg-white rounded-3xl p-6 border border-[#d4bc8c] shadow-card space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#f3e8d6] text-[#b45309] flex items-center justify-center shrink-0 border border-[#d4bc8c]">
+                  <Ticket className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs uppercase tracking-widest font-bold text-[#8c5950] block">
+                    Kupon Diskon
+                  </span>
+                  <p className="text-xs text-[#735a52] font-light">
+                    Punya kode kupon promo? Terapkan untuk potongan harga
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/promo"
+                className="text-xs text-[#b45309] font-bold hover:underline"
+                target="_blank"
+              >
+                Lihat Kupon →
+              </Link>
+            </div>
+
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Check className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-sm text-emerald-900 uppercase">
+                        {appliedCoupon.code}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-800 font-medium">
+                        Aktif
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-700 mt-0.5">
+                      Hemat {formatRupiah(discountAmount)} ({appliedCoupon.title})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="px-3 py-1.5 rounded-xl border border-emerald-300 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Lepas</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCodeInput}
+                    onChange={(e) => {
+                      setCouponCodeInput(e.target.value.toUpperCase());
+                      if (couponError) setCouponError('');
+                    }}
+                    placeholder="Masukkan kode kupon (cth: DISKON50)"
+                    className="flex-1 p-3.5 rounded-2xl border border-[#d4bc8c] bg-[#fcf8f2]/50 text-sm uppercase font-mono font-bold text-[#2a1a15] placeholder-[#9e8d87] placeholder:normal-case placeholder:font-normal focus:outline-none focus:border-[#b45309] focus:bg-white transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponCodeInput.trim()}
+                    className="px-6 py-3.5 bg-[#b45309] hover:bg-[#78350f] text-white font-bold text-sm rounded-2xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  >
+                    {couponLoading ? 'Cek...' : 'Terapkan'}
+                  </button>
+                </div>
+
+                {couponError && (
+                  <p className="flex items-center gap-1.5 text-xs text-red-600 font-medium mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{couponError}</span>
+                  </p>
+                )}
+                {couponSuccess && (
+                  <p className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium mt-1">
+                    <Check className="w-3.5 h-3.5 shrink-0" />
+                    <span>{couponSuccess}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* ── Upsell Promo Card ── */}
           {promos.length > 0 && (
             <div className="bg-[#f3e8d6]/80 rounded-3xl p-6 border border-[#d4bc8c] shadow-card space-y-3">
@@ -324,6 +497,15 @@ export default function CheckoutPage() {
                 <span>Subtotal</span>
                 <span className="font-semibold text-[#2a1a15]">{formatRupiah(subtotal)}</span>
               </div>
+              {discountAmount > 0 && appliedCoupon && (
+                <div className="flex justify-between items-center text-emerald-700 font-semibold">
+                  <span className="flex items-center gap-1">
+                    <Ticket className="w-3.5 h-3.5" />
+                    Diskon Kupon ({appliedCoupon.code})
+                  </span>
+                  <span>-{formatRupiah(discountAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center text-xs text-[#735a52]">
                 <span>Pajak ({Math.round(taxRate * 100)}%) + Layanan ({Math.round(serviceRate * 100)}%)</span>
                 <span className="font-semibold text-[#2a1a15]">{formatRupiah(combinedTaxService)}</span>

@@ -1,0 +1,58 @@
+import Link from 'next/link';
+import Image from 'next/image';
+import { ArrowRight, Star } from 'lucide-react';
+
+export const metadata = {
+  title: 'Tentang Kami - Warkop Betawa',
+  description: 'Kenali lebih dekat Warkop Betawa dan racikan istimewa kuliner autentik khas Nusantara.',
+};
+
+export default function TentangPage() {
+  return (
+    <main className="min-h-[calc(100vh-80px)] flex flex-col justify-between relative bg-[#2a1a15] text-white overflow-hidden">
+      {/* Background Image with Dark Gradient Overlay matching desktop-welcome screenshot */}
+      <div className="absolute inset-0 z-0 opacity-70">
+        <Image
+          src="/foodbg.jpg"
+          alt="Warkop Betawa Background"
+          fill
+          priority
+          className="object-cover object-center"
+        />
+      </div>
+
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#2a1a15]/90 via-[#2a1a15]/20 to-transparent" />
+
+      {/* Hero Content Container */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-16 md:pt-28 pb-20 flex-1 flex flex-col justify-center items-center text-center">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f3e8d6]/15 border border-[#f3e8d6]/30 backdrop-blur-sm text-xs md:text-sm font-medium text-[#f3e8d6] mb-8">
+          <Star className="w-3.5 h-3.5 fill-[#d4bc8c] text-[#d4bc8c]" />
+          <span>100+ Cita Rasa Istimewa</span>
+        </div>
+
+        {/* Main Headline */}
+        <h1 className="font-serif italic text-5xl md:text-7xl font-bold tracking-tight text-white mb-4 leading-tight">
+          Warkop Betawa
+        </h1>
+
+        <div className="font-serif italic text-4xl md:text-6xl text-[#e6cdac] mb-6">
+          Rasa Favoritmu
+        </div>
+
+        <p className="text-base md:text-xl text-[#e5d5cf] font-light max-w-2xl mb-10 leading-relaxed">
+          Pilih menu yang kamu suka, lalu pesan! Setiap hidangan racikan khas Nusantara diolah dengan bumbu rempah segar istimewa.
+        </p>
+
+        {/* CTA Button */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-3 px-8 py-4 bg-[#b45309] hover:bg-[#631c1c] text-white font-medium text-lg rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all"
+        >
+          <span>Lihat Menu</span>
+          <ArrowRight className="w-5 h-5" />
+        </Link>
+      </section>
+    </main>
+  );
+}
