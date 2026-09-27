@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Sparkles, Bot, User } from 'lucide-react';
 
 interface AIChatPanelProps {
@@ -11,6 +11,47 @@ interface AIChatPanelProps {
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+/** Very lightweight markdown renderer: bold (**text**) and bullet lists (- item) */
+function renderMarkdown(text: string) {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      elements.push(<br key={i} />);
+      return;
+    }
+
+    // Bullet list item
+    if (/^[-*•]\s/.test(trimmed)) {
+      const content = trimmed.replace(/^[-*•]\s/, '');
+      elements.push(
+        <li key={i} className="ml-3 list-disc">
+          {renderInline(content)}
+        </li>
+      );
+    } else {
+      elements.push(<span key={i} className="block">{renderInline(trimmed)}</span>);
+    }
+  });
+
+  return <>{elements}</>;
+}
+
+function renderInline(text: string): React.ReactNode {
+  // Bold: **text**
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  if (parts.length === 1) return text;
+  return (
+    <>
+      {parts.map((part, i) =>
+        i % 2 === 1 ? <strong key={i} className="font-semibold">{part}</strong> : part
+      )}
+    </>
+  );
 }
 
 export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
@@ -24,48 +65,69 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-scroll to latest message
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
 
-  if (!isOpen) return null;
-
-  const handleSend = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userMsg = input.trim();
-    setInput('');
-    const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userMsg }];
-    setMessages(newMessages);
-    setIsLoading(true);
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'Maaf, gagal menghubungkan ke asisten. Silakan hubungi pelayan di meja Anda.',
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
+  // Focus input when panel opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 300);
     }
-  };
+  }, [isOpen]);
+
+  const handleSend = useCallback(
+    async (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      if (!input.trim() || isLoading) return;
+
+      const userMsg = input.trim();
+      setInput('');
+
+      const updatedMessages: ChatMessage[] = [...messages, { role: 'user', content: userMsg }];
+      setMessages(updatedMessages);
+      setIsLoading(true);
+
+      try {
+        // Build history (all messages except the last user message we just added)
+        const history = updatedMessages.slice(0, -1).map((m) => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content,
+        }));
+
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userMsg,
+            history,
+          }),
+        });
+
+        const data = await res.json();
+        const reply = data.reply ?? 'Maaf, ada gangguan. Coba tanya kasir ya.';
+        setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: 'Maaf, gagal menghubungkan ke asisten. Silakan hubungi pelayan di meja Anda.',
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [input, isLoading, messages]
+  );
+
+  if (!isOpen) return null;
 
   return (
     <>
@@ -85,7 +147,7 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
             </div>
             <div>
               <h3 className="font-serif font-bold text-base text-[#b45309]">Asisten Warkop Betawa</h3>
-              <p className="text-[11px] text-[#8c5950]">Tanya rekomendasi menu & rempah</p>
+              <p className="text-[11px] text-[#8c5950]">Tanya menu, promo, atau cara pesan</p>
             </div>
           </div>
           <button
@@ -123,15 +185,26 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
                     : 'bg-white text-[#2a1a15] border border-[#e6cdac] rounded-tl-none'
                 }`}
               >
-                {m.content}
+                {m.role === 'assistant' ? (
+                  <div className="space-y-0.5">{renderMarkdown(m.content)}</div>
+                ) : (
+                  m.content
+                )}
               </div>
             </div>
           ))}
 
+          {/* Typing indicator */}
           {isLoading && (
-            <div className="flex items-center gap-2 text-xs text-[#8c5950] p-2">
-              <Sparkles className="w-4 h-4 animate-spin text-[#b45309]" />
-              <span>Asisten sedang berpikir...</span>
+            <div className="flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-[#f3e8d6] text-[#b45309] border border-[#d4bc8c]">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div className="bg-white border border-[#e6cdac] rounded-2xl rounded-tl-none px-4 py-3 flex items-center gap-1">
+                <span className="w-2 h-2 bg-[#b45309] rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-[#b45309] rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-[#b45309] rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -140,11 +213,13 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
         {/* Input Form */}
         <form onSubmit={handleSend} className="p-3 bg-[#f3e8d6] border-t border-[#d4bc8c] flex gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Tanyakan menu, sambal, atau rekomendasi..."
             className="flex-1 px-4 py-2.5 text-sm bg-white rounded-full border border-[#d4bc8c] focus:outline-none focus:border-[#b45309] text-[#2a1a15] placeholder-[#9e8d87]"
+            disabled={isLoading}
           />
           <button
             type="submit"
@@ -158,3 +233,4 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
     </>
   );
 }
+

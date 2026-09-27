@@ -3,14 +3,14 @@ import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 
 interface Params {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // PUT /api/admin/coupons/[id] - Update coupon details
 export async function PUT(req: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
     await connectDB();
-    const { id } = params;
     const body = await req.json().catch(() => ({}));
 
     const existing = await prisma.coupon.findUnique({ where: { id } });
@@ -62,7 +62,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ coupon: updated });
   } catch (err: any) {
-    console.error(`PUT /api/admin/coupons/${params.id} error:`, err);
+    console.error('PUT /api/admin/coupons/[id] error:', err);
     return NextResponse.json({ error: err.message || 'Gagal memperbarui kupon' }, { status: 500 });
   }
 }
@@ -74,9 +74,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // DELETE /api/admin/coupons/[id] - Soft delete (set isActive = false)
 export async function DELETE(_req: NextRequest, { params }: Params) {
+  const { id } = await params;
   try {
     await connectDB();
-    const { id } = params;
 
     const existing = await prisma.coupon.findUnique({ where: { id } });
     if (!existing) {
@@ -95,7 +95,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       coupon: updated,
     });
   } catch (err: any) {
-    console.error(`DELETE /api/admin/coupons/${params.id} error:`, err);
+    console.error('DELETE /api/admin/coupons/[id] error:', err);
     return NextResponse.json({ error: err.message || 'Gagal menonaktifkan kupon' }, { status: 500 });
   }
 }

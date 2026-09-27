@@ -461,58 +461,76 @@ body.light-bg {
 /* Menu Cards */
 .menu-card {
   background-color: #ffffff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  border-radius: 24px;
+  padding: 14px 14px 16px 14px;
+  border: 1px solid rgba(236, 230, 223, 0.8);
+  box-shadow: 0 4px 20px rgba(42, 26, 21, 0.04);
   display: flex;
   flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(42, 26, 21, 0.08);
 }
 
 .menu-img-wrap {
   position: relative;
-  height: 180px;
   width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+  overflow: hidden;
+  background-color: #f5ede7;
 }
 
 .menu-img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.menu-card:hover .menu-img-wrap img {
+  transform: scale(1.05);
 }
 
 .menu-badge {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 10px;
+  left: 10px;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
   color: #fff;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.badge-red { background-color: #b45309; }
-.badge-yellow { background-color: #eab308; color: #422006; }
+.badge-red { background-color: #7a2318; }
+.badge-yellow { background-color: #d97706; color: #fff; }
 
 .menu-info {
-  padding: 1.2rem;
+  padding: 14px 2px 2px 2px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
 }
 
 .item-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #222;
-  margin-bottom: 0.4rem;
+  color: #1c1917;
+  margin-bottom: 0.35rem;
+  line-height: 1.35;
 }
 
 .item-desc {
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.4;
-  margin-bottom: 1.2rem;
+  font-size: 0.82rem;
+  color: #6b6560;
+  line-height: 1.45;
+  margin-bottom: 1rem;
   flex-grow: 1;
 }
 
@@ -520,29 +538,38 @@ body.light-bg {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: auto;
+  padding-top: 4px;
 }
 
 .item-price {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #8c5b3f;
+  color: #733e24;
 }
 
 .add-cart-btn {
-  background-color: #fffbeb;
+  background-color: #feece7;
   border: none;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #d97706;
+  color: #7a2318;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
 }
 
-.add-cart-btn:hover { background-color: #fef3c7; }
+.add-cart-btn:hover {
+  background-color: #fedbd2;
+  transform: scale(1.05);
+}
+
+.add-cart-btn:active {
+  transform: scale(0.95);
+}
 
 /* Cart Summary Card (Keranjangmu) */
 .cart-summary-card {

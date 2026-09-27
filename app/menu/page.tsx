@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ShoppingCart, Check } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { getCartItems, addToCart, storeEvents, searchEvents, CartItem } from '@/lib/store';
 import { STATIC_MENU_ITEMS, STATIC_CATEGORIES } from '@/lib/staticData';
@@ -17,6 +17,7 @@ export default function MenuPage() {
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
   // Derived cart values — recalculated only when cartItems changes
   const cartCount = useMemo(() => cartItems.reduce((sum, item) => sum + (item.qty || 0), 0), [cartItems]);
@@ -72,6 +73,27 @@ export default function MenuPage() {
     e.stopPropagation();
     const defaultSpice = item.spiceLevels && item.spiceLevels.length > 0 ? 'Sedang' : undefined;
     addToCart(item, 1, defaultSpice, []);
+
+    const itemId = item.id || item._id || '';
+    setJustAddedId(itemId);
+    setTimeout(() => {
+      setJustAddedId((curr) => (curr === itemId ? null : curr));
+    }, 900);
+  };
+
+  const getBadgeInfo = (badge?: string) => {
+    if (!badge || badge === 'none' || badge.trim() === '') return null;
+    const b = badge.toLowerCase().trim();
+    if (b === 'best_seller' || b === 'bestseller' || b === 'best seller') {
+      return { label: 'Best Seller', className: 'bg-[#7a2318] text-white' };
+    }
+    if (b === 'chefs_choice' || b === "chef's choice" || b === 'favorit') {
+      return { label: "Chef's Choice", className: 'bg-[#d97706] text-white' };
+    }
+    if (b === 'vegan_friendly' || b === 'vegan') {
+      return { label: 'Vegan Friendly', className: 'bg-[#15803d] text-white' };
+    }
+    return { label: badge, className: 'bg-[#7a2318] text-white' };
   };
 
   // Category icon mapping
@@ -196,49 +218,80 @@ export default function MenuPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
-            {filteredItems.map((item) => (
-              <div
-                key={item.id || item._id}
-                className="bg-white rounded-2xl border border-[#ece8e3] overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-full group"
-              >
-                {/* Menu Image */}
-                <Link href={`/menu/${item.id || item._id}`} className="block relative h-40 sm:h-44 w-full bg-[#f5ede7] overflow-hidden">
-                  <Image
-                    src={item.photoUrl || 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80'}
-                    alt={item.name || 'Menu'}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    unoptimized
-                  />
-                </Link>
+          <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-6">
+            {filteredItems.map((item) => {
+              const badgeInfo = getBadgeInfo(item.badge);
+              const isAdded = justAddedId === (item.id || item._id);
 
-                {/* Menu Details: Name on top, Price below */}
-                <div className="px-3.5 py-4 flex flex-col items-center flex-grow">
-                  <Link href={`/menu/${item.id || item._id}`} className="text-center w-full">
-                    <h3 className="font-bold text-sm text-[#8c5b3f] uppercase mb-1.5 line-clamp-2 hover:text-[#b45309] transition-colors">
-                      {item.name}
-                    </h3>
+              return (
+                <div
+                  key={item.id || item._id}
+                  className="bg-white rounded-[24px] p-3.5 border border-[#ece6df]/80 shadow-[0_4px_20px_rgba(42,26,21,0.04)] hover:shadow-[0_12px_32px_rgba(42,26,21,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group"
+                >
+                  {/* Menu Image Container */}
+                  <Link
+                    href={`/menu/${item.id || item._id}`}
+                    className="block relative w-full aspect-[4/3] rounded-[18px] overflow-hidden bg-[#f5ede7]"
+                  >
+                    <Image
+                      src={item.photoUrl || 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80'}
+                      alt={item.name || 'Menu'}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      unoptimized
+                    />
+                    {badgeInfo && (
+                      <span className={`absolute top-2.5 left-2.5 z-10 px-3 py-1 rounded-full text-xs font-semibold shadow-xs ${badgeInfo.className}`}>
+                        {badgeInfo.label}
+                      </span>
+                    )}
                   </Link>
-                  <span className="font-bold text-[#8c5b3f] text-sm mb-4">
-                    {formatRupiah(item.price || 0)}
-                  </span>
 
-                  {/* Bottom Action: Arrow to quick add */}
-                  <div className="w-full flex items-center justify-end mt-auto pt-1">
-                    <button
-                      onClick={(e) => handleQuickAdd(item, e)}
-                      className="p-1 rounded-full hover:bg-[#f3e8d6] text-[#1a1207] hover:text-[#b45309] transition-colors"
-                      title="Tambah ke Keranjang"
-                      aria-label={`Tambah ${item.name} ke keranjang`}
+                  {/* Content Container */}
+                  <div className="pt-3.5 px-0.5 pb-0.5 flex flex-col flex-grow">
+                    <Link
+                      href={`/menu/${item.id || item._id}`}
+                      className="group-hover:text-[#b45309] transition-colors"
                     >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
+                      <h3 className="font-bold text-[17px] text-[#1c1917] leading-snug line-clamp-1 mb-1.5">
+                        {item.name}
+                      </h3>
+                    </Link>
+
+                    {item.description && (
+                      <p className="text-[13px] text-[#6b6560] leading-relaxed line-clamp-2 mb-4 min-h-[38px]">
+                        {item.description}
+                      </p>
+                    )}
+
+                    {/* Bottom Row: Price on left, Circular Cart Button on right */}
+                    <div className="flex items-center justify-between mt-auto pt-1">
+                      <span className="font-bold text-lg text-[#733e24]">
+                        {formatRupiah(item.price || 0)}
+                      </span>
+
+                      <button
+                        onClick={(e) => handleQuickAdd(item, e)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-xs flex-shrink-0 active:scale-95 ${
+                          isAdded
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-[#feece7] hover:bg-[#fedbd2] text-[#7a2318]'
+                        }`}
+                        title="Tambah ke Keranjang"
+                        aria-label={`Tambah ${item.name} ke keranjang`}
+                      >
+                        {isAdded ? (
+                          <Check className="w-5 h-5 stroke-[2.5]" />
+                        ) : (
+                          <ShoppingCart className="w-[18px] h-[18px] stroke-[2.2]" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
