@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { ImagePlus, Upload, X, Search, Plus, Minus, Trash2 } from 'lucide-react';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 
 type ActivePage =
   | 'dashboard' | 'products' | 'categories' | 'orders' | 'customers'
@@ -949,23 +950,8 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
 }
 
 // ── AnalyticsPage ─────────────────────────────────────────────────────────────
-function AnalyticsPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch<{ orders: Order[] }>('/api/orders').then(d => { setOrders(d.orders || []); setLoading(false); }).catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className="text-[#827a73] text-sm">Memuat data...</div>;
-
-  const revenue = orders.filter(o => o.status !== 'completed').reduce((s, o) => s + Number(o.total), 0);
-  return (
-    <div>
-      <PageHeading title="Analitik" desc="Keputusan bisnis berdasarkan transaksi nyata." />
-      {orders.length ? <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><StatCard icon="Rp" label="Total Revenue" value={rupiah(revenue)} /><StatCard icon="▤" label="Total Pesanan" value={orders.length} /><StatCard icon="+" label="Rata-rata Pesanan" value={orders.length ? rupiah(revenue / orders.length) : 'Rp 0'} /></div> : <EmptyState title="Belum cukup data" text="Pesanan pelanggan akan membentuk data analitik di sini." />}
-    </div>
-  );
+function AnalyticsPage({ onToast }: { onToast?: (m: string) => void }) {
+  return <AnalyticsDashboard onToast={onToast} />;
 }
 
 // ── PromotionsPage ────────────────────────────────────────────────────────────
@@ -1329,9 +1315,15 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
     <main className="min-h-screen grid grid-cols-1 md:grid-cols-2" style={{ background: '#f3ede7', fontFamily: "'DM Sans',sans-serif" }}>
       <section className="hidden md:flex flex-col justify-center relative overflow-hidden" style={{ background: '#8f1d24', color: '#fff', padding: 'clamp(40px,9vw,130px)' }}>
         <div className="absolute bottom-[-90px] right-[-80px] w-[260px] h-[260px] rounded-full border-[80px] border-white/20 pointer-events-none" />
-        <div className="w-[46px] h-[46px] rounded-[12px] flex items-center justify-center text-[21px] font-bold mb-8 shrink-0" style={{ background: '#f5b264', color: '#fff', fontFamily: 'Playfair Display,serif' }}>SS</div>
+        <div className="mb-6 shrink-0">
+          <img
+            src="/warkop-betawa-logo.png"
+            alt="Warkop Betawa"
+            className="h-16 w-auto max-w-[200px] object-contain rounded-xl shadow-lg border border-white/20 bg-black/30 p-1"
+          />
+        </div>
         <p className="text-[11px] font-bold tracking-[0.1em] mb-4" style={{ color: '#f5b264' }}>ADMIN RESTORAN</p>
-        <h1 className="font-bold m-0 leading-[0.94] tracking-[-0.06em]" style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(50px,6vw,82px)' }}>Selera<br />Sambal.</h1>
+        <h1 className="font-bold m-0 leading-[0.94] tracking-[-0.06em]" style={{ fontFamily: 'Playfair Display,serif', fontSize: 'clamp(50px,6vw,82px)' }}>Warkop<br />Betawa.</h1>
         <p className="text-sm mt-6 leading-[1.7] max-w-[370px]" style={{ color: '#f5d9ca' }}>Ruang kerja sederhana untuk mengelola setiap rasa, pesanan, dan pelanggan.</p>
         <div className="mt-[34px] pt-4 border-t text-sm" style={{ borderColor: '#ffffff40', color: '#f5d9ca' }}>Pedasnya terukur, operasionalnya teratur.</div>
       </section>
@@ -1413,7 +1405,7 @@ export default function AdminPage() {
       case 'products': return <ProductsPage onToast={addToast} />;
       case 'categories': return <CategoriesPage onToast={addToast} />;
       case 'orders': return <OrdersPage onToast={addToast} />;
-      case 'analytics': return <AnalyticsPage />;
+      case 'analytics': return <AnalyticsPage onToast={addToast} />;
       case 'promotions': return <PromotionsPage onToast={addToast} />;
       case 'coupons': return <CouponsPage onToast={addToast} />;
       case 'inventory': return <InventoryPage />;
@@ -1446,8 +1438,12 @@ export default function AdminPage() {
       <div className="ss-admin flex min-h-screen bg-[#f8f6f2] text-[#292522]">
         <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 sticky top-0 h-screen self-start ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:sticky md:translate-x-0`} style={{ padding: '26px 14px' }}>
           <a href="#" onClick={e => { e.preventDefault(); setPage('dashboard'); setMobileOpen(false); }} className={`flex items-center gap-[10px] font-bold text-[16px] pb-[25px] text-[#f7f1eb] no-underline ${collapsed ? 'justify-center' : 'px-[10px]'}`}>
-            <b className="w-[33px] h-[33px] rounded-[12px] bg-[#aa2027] flex items-center justify-center shrink-0 text-white" style={{ fontFamily: 'Playfair Display,serif' }}>SS</b>
-            {!collapsed && <span>Warkop Betawa</span>}
+            <img
+              src="/warkop-betawa-logo.png"
+              alt="Warkop Betawa"
+              className="w-[36px] h-[36px] rounded-[10px] object-cover shrink-0 border border-amber-600/40 bg-black/40 shadow-sm"
+            />
+            {!collapsed && <span className="font-bold tracking-tight">Warkop Betawa</span>}
           </a>
           <nav className="flex flex-col flex-1">
             {NAV.map(({ key, icon, label, group }, idx) => {

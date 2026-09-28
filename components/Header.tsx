@@ -42,10 +42,12 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
     <header className="sticky top-0 z-40 bg-[#fcf8f2]/95 backdrop-blur-md border-b border-[#e6cdac] px-4 md:px-8 py-3 flex items-center justify-between gap-3 md:gap-6 transition-all">
       {/* Brand Logo & Top Searchbar */}
       <div className="flex items-center gap-3 sm:gap-4 md:gap-6 flex-1 max-w-xl">
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0 group">
-          <div className="w-8 h-8 rounded-full bg-[#b45309] flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-105 transition-transform">
-            ☕
-          </div>
+        <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
+          <img
+            src="/warkop-betawa-logo.png"
+            alt="Logo Warkop Betawa"
+            className="w-9 h-9 rounded-full object-cover border border-[#e6cdac] shadow-sm group-hover:scale-105 transition-transform"
+          />
           <span className="font-serif italic font-bold text-lg sm:text-xl md:text-2xl text-[#b45309] tracking-tight whitespace-nowrap">
             Warkop Betawa
           </span>
