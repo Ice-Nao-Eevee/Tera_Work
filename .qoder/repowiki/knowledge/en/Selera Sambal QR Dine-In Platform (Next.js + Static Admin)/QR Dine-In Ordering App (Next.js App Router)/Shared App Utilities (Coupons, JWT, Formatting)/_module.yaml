@@ -7,4 +7,5 @@ scope:
     - lib/format.ts
 source_files: []
 depends_on: []
-related_to: []
+related_to:
+    - path: nextjs_app/state_and_types

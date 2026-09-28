@@ -13,6 +13,7 @@ import {
   getOrderNotes,
   clearCart,
   addToCart,
+  saveOrderToHistory,
   storeEvents,
   CartItem,
 } from '@/lib/store';
@@ -247,6 +248,14 @@ export default function CheckoutPage() {
       }
 
       if (data.order?.orderCode) {
+        // Save order to local history BEFORE clearing cart (need cart data for summary)
+        saveOrderToHistory({
+          orderCode: data.order.orderCode,
+          tableNumber: manualTableNumber,
+          total: data.order.total || grandTotal,
+          itemCount: items.reduce((sum, ci) => sum + ci.qty, 0),
+          createdAt: new Date().toISOString(),
+        });
         clearCart(); // also clears MANUAL_TABLE_KEY
         router.push(`/order/${encodeURIComponent(data.order.orderCode)}`);
       } else {

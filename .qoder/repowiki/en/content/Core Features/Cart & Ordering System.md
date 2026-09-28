@@ -9,8 +9,16 @@
 - [types.ts](file://lib/types.ts)
 - [route.ts](file://app/api/orders/route.ts)
 - [route.ts](file://app/api/coupons/validate/route.ts)
+- [coupon.ts](file://lib/coupon.ts)
 - [page.tsx](file://app/order/[orderId]/page.tsx)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated checkout page section to document enhanced parallel data fetching using Promise.all()
+- Added comprehensive coupon handling documentation including robust validation rules and daily usage tracking
+- Enhanced user feedback mechanisms documentation covering improved visual indicators and error handling
+- Updated API route documentation to reflect server-side price recalculation and transaction safety
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -24,20 +32,20 @@
 9. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains the shopping cart and ordering workflow implemented in the application. It covers how cart state is managed using local storage, how item quantities are controlled, how prices are calculated, and how real-time updates are synchronized across components through an event-driven store. It also documents the checkout process, including order validation, coupon handling, server-side price recalculation, and the order confirmation flow with live status polling. Finally, it describes the floating cart component behavior, cross-component communication patterns, error handling, validation rules, and user experience considerations.
+This document explains the shopping cart and ordering workflow implemented in the application. It covers how cart state is managed using local storage, how item quantities are controlled, how prices are calculated, and how real-time updates are synchronized across components through an event-driven store. It also documents the checkout process, including order validation, robust coupon handling with business rule validation, parallel data fetching optimization, server-side price recalculation, and the order confirmation flow with live status polling. Finally, it describes the floating cart component behavior, cross-component communication patterns, error handling, validation rules, and enhanced user experience considerations.
 
 ## Project Structure
 The cart and ordering system spans client pages, a shared store, API routes, and types:
 
 - Client pages:
   - Cart page for reviewing items, adjusting quantities, and viewing totals.
-  - Checkout page for table number input, coupon application, upsell promos, and order submission.
+  - Checkout page for table number input, coupon application with parallel data fetching, upsell promos, and order submission.
   - Order status page for live order tracking and digital receipt.
 - Shared store:
   - Local storage-backed cart state, notes, manual table number, and an event emitter for reactive updates.
 - API routes:
-  - Order creation endpoint that validates inputs, verifies menu/promo items, applies coupons, recalculates totals, and persists orders atomically.
-  - Coupon validation endpoint used during checkout to preview discounts.
+  - Order creation endpoint that validates inputs, verifies menu/promo items, applies coupons with transaction safety, recalculates totals, and persists orders atomically.
+  - Coupon validation endpoint used during checkout to preview discounts with comprehensive business rule validation.
 - Types:
   - Shared TypeScript interfaces for menu items, add-ons, orders, coupons, settings, and related entities.
 
@@ -45,7 +53,7 @@ The cart and ordering system spans client pages, a shared store, API routes, and
 graph TB
 subgraph "Client Pages"
 CartPage["Cart Page<br/>Review items, notes, totals"]
-CheckoutPage["Checkout Page<br/>Table, coupons, submit"]
+CheckoutPage["Checkout Page<br/>Table, coupons, parallel fetch, submit"]
 OrderStatusPage["Order Status Page<br/>Live polling, receipt"]
 end
 subgraph "Shared Store"
@@ -53,7 +61,7 @@ Store["Local Storage Store<br/>cart, notes, table, events"]
 end
 subgraph "API Routes"
 OrdersAPI["POST /api/orders<br/>Validate, recalculate, persist"]
-CouponsAPI["POST /api/coupons/validate<br/>Preview discount"]
+CouponsAPI["POST /api/coupons/validate<br/>Business rules, daily tracking"]
 end
 CartPage --> Store
 CheckoutPage --> Store
@@ -85,14 +93,14 @@ OrderStatusPage --> OrdersAPI
 - Cart page:
   - Loads tax/service rates from settings, reads cart items and notes from the store, subscribes to store events for real-time updates, computes subtotal/tax/service/total, and navigates to checkout.
 - Checkout page:
-  - Reads cart items, manual table number, and notes; fetches promos, settings, and known tables; supports coupon validation and application; calculates preview totals; submits order via API; clears cart on success and redirects to order confirmation.
+  - Reads cart items, manual table number, and notes; fetches promos, settings, known tables, and active coupons in parallel using Promise.all(); supports comprehensive coupon validation with business rules; calculates preview totals; submits order via API; clears cart on success and redirects to order confirmation.
 - Floating cart:
   - Slides in/out as a sidebar; displays current cart items, quantity controls, remove actions, subtotal, and navigation to checkout; shows manual table badge when available.
 - Store:
   - Persists cart items, order notes, manual table number, and table session to local storage; provides functions to add/update/remove items; emits events to notify subscribers of changes.
 - API routes:
-  - Order creation validates inputs, verifies menu/promo items against database, validates add-ons, applies coupons, recalculates all monetary values, and creates orders atomically within a transaction.
-  - Coupon validation returns discount details based on current subtotal.
+  - Order creation validates inputs, verifies menu/promo items against database, validates add-ons, applies coupons with transaction safety, recalculates all monetary values, and creates orders atomically within a transaction.
+  - Coupon validation returns discount details based on current subtotal with comprehensive business rule enforcement.
 - Types:
   - Defines shared data models for menu items, add-ons, orders, coupons, settings, and promotions.
 
@@ -106,7 +114,7 @@ OrderStatusPage --> OrdersAPI
 - [types.ts:1-119](file://lib/types.ts#L1-L119)
 
 ## Architecture Overview
-The system uses a client-side store backed by local storage for cart persistence and an event emitter for reactive UI updates. The checkout flow integrates with backend APIs for coupon validation and order creation. All monetary calculations are authoritative on the server to prevent manipulation.
+The system uses a client-side store backed by local storage for cart persistence and an event emitter for reactive UI updates. The checkout flow integrates with backend APIs for coupon validation and order creation with parallel data fetching optimization. All monetary calculations are authoritative on the server to prevent manipulation.
 
 ```mermaid
 sequenceDiagram
@@ -123,7 +131,8 @@ Store-->>CartPage : Cart items
 CartPage->>CartPage : Compute subtotal/tax/service/total
 CartPage->>CheckoutPage : Navigate to checkout
 User->>CheckoutPage : Enter table number, apply coupon
-CheckoutPage->>CouponsAPI : Validate coupon code
+CheckoutPage->>CheckoutPage : Parallel fetch (promos, settings, tables, coupons)
+CheckoutPage->>CouponsAPI : Validate coupon code with business rules
 CouponsAPI-->>CheckoutPage : Discount amount
 CheckoutPage->>OrdersAPI : Submit order payload
 OrdersAPI-->>CheckoutPage : Created order with orderCode
@@ -261,12 +270,19 @@ ComponentB->>Store : getCartItems()
 - [page.tsx:71-73](file://app/checkout/page.tsx#L71-L73)
 - [FloatingCart.tsx:34-39](file://components/FloatingCart.tsx#L34-L39)
 
-### Checkout Process: Validation, Payment Integration Points, Confirmation Flow
+### Enhanced Checkout Process: Validation, Parallel Data Fetching, Payment Integration Points, Confirmation Flow
 - Validation:
   - Client ensures table number is provided and non-zero before submission.
   - Server validates items array, table number, menu/promo availability, add-ons, and coupon rules.
+- Parallel Data Fetching Optimization:
+  - Uses `Promise.all()` to simultaneously fetch promos, settings, known tables, and active coupons, reducing initial load time significantly.
+  - Each fetch operation has error handling with fallback defaults to ensure graceful degradation.
+- Robust Coupon Handling:
+  - Comprehensive business rule validation including date range checks, daily usage limits, minimum order amounts, and discount caps.
+  - Real-time coupon validation with immediate user feedback and automatic coupon release when conditions change.
+  - Transaction-safe coupon application prevents race conditions and double usage.
 - Payment processing integration points:
-  - The current implementation does not integrate a payment gateway; orders are created with status “received” and payment is handled at the cashier later.
+  - The current implementation does not integrate a payment gateway; orders are created with status "received" and payment is handled at the cashier later.
   - The order confirmation page indicates manual payment at the counter.
 - Order confirmation:
   - On successful order creation, the client clears cart and navigates to the order status page.
@@ -281,6 +297,7 @@ participant Store as "Store"
 participant OrderStatusPage as "Order Status Page"
 User->>CheckoutPage : Click "Create Order"
 CheckoutPage->>CheckoutPage : Validate table number
+CheckoutPage->>CheckoutPage : Parallel fetch (promos, settings, tables, coupons)
 CheckoutPage->>OrdersAPI : POST order payload
 OrdersAPI-->>CheckoutPage : { order : { orderCode } }
 CheckoutPage->>Store : clearCart()
@@ -298,6 +315,46 @@ OrdersAPI-->>OrderStatusPage : Updated order status
 - [page.tsx:186-245](file://app/checkout/page.tsx#L186-L245)
 - [route.ts:23-236](file://app/api/orders/route.ts#L23-L236)
 - [page.tsx:10-53](file://app/order/[orderId]/page.tsx#L10-L53)
+
+### Enhanced Coupon Handling System
+- Business Rule Validation:
+  - Date range validation ensures coupons are only valid within specified periods.
+  - Daily usage tracking prevents coupon reuse on the same calendar day.
+  - Minimum order amount requirements enforced with clear error messaging.
+  - Maximum discount caps prevent excessive discounts on percentage-based coupons.
+- Client-Side Experience:
+  - Real-time validation feedback with loading states and error/success messages.
+  - Automatic coupon release when subtotal falls below minimum requirements.
+  - Visual indicators showing applied coupon benefits and remaining discount value.
+- Server-Side Security:
+  - Transaction-safe coupon application prevents race conditions.
+  - Re-validation within database transactions ensures consistency.
+  - Comprehensive error handling with structured responses.
+
+```mermaid
+flowchart TD
+Start(["Coupon Input"]) --> ValidateInput["Validate input format"]
+ValidateInput --> FetchCoupon["Fetch coupon from database"]
+FetchCoupon --> CheckRules["Apply business rules"]
+CheckRules --> DateValid{"Date range valid?"}
+DateValid --> |No| Error1["Error: Invalid period"]
+DateValid --> |Yes| DailyUsed{"Used today?"}
+DailyUsed --> |Yes| Error2["Error: Used today"]
+DailyUsed --> |No| MinAmount{"Meets minimum?"}
+MinAmount --> |No| Error3["Error: Insufficient subtotal"]
+MinAmount --> |Yes| CalcDiscount["Calculate discount amount"]
+CalcDiscount --> ApplyCoupon["Apply coupon to cart"]
+ApplyCoupon --> Success["Success with discount"]
+```
+
+**Diagram sources**
+- [coupon.ts:80-132](file://lib/coupon.ts#L80-L132)
+- [route.ts:160-180](file://app/api/orders/route.ts#L160-L180)
+
+**Section sources**
+- [coupon.ts:1-133](file://lib/coupon.ts#L1-L133)
+- [route.ts:160-180](file://app/api/orders/route.ts#L160-L180)
+- [page.tsx:152-193](file://app/checkout/page.tsx#L152-L193)
 
 ### Floating Cart Component Behavior
 - Presentation:
@@ -361,6 +418,7 @@ CartPage["app/cart/page.tsx"] --> Store["lib/store.ts"]
 CheckoutPage["app/checkout/page.tsx"] --> Store
 CheckoutPage --> OrdersAPI["app/api/orders/route.ts"]
 CheckoutPage --> CouponsAPI["app/api/coupons/validate/route.ts"]
+CouponsAPI --> CouponLib["lib/coupon.ts"]
 FloatingCart["components/FloatingCart.tsx"] --> Store
 OrderStatusPage["app/order/[orderId]/page.tsx"] --> OrdersAPI
 Store --> Types["lib/types.ts"]
@@ -374,6 +432,7 @@ Store --> Types["lib/types.ts"]
 - [route.ts:1-4](file://app/api/orders/route.ts#L1-L4)
 - [route.ts:1-4](file://app/api/coupons/validate/route.ts#L1-L4)
 - [page.tsx:7-8](file://app/order/[orderId]/page.tsx#L7-L8)
+- [coupon.ts:1-2](file://lib/coupon.ts#L1-L2)
 
 **Section sources**
 - [page.tsx:9-17](file://app/cart/page.tsx#L9-L17)
@@ -383,6 +442,7 @@ Store --> Types["lib/types.ts"]
 - [route.ts:1-4](file://app/api/orders/route.ts#L1-L4)
 - [route.ts:1-4](file://app/api/coupons/validate/route.ts#L1-L4)
 - [page.tsx:7-8](file://app/order/[orderId]/page.tsx#L7-L8)
+- [coupon.ts:1-2](file://lib/coupon.ts#L1-L2)
 
 ## Performance Considerations
 - Local storage operations:
@@ -390,11 +450,14 @@ Store --> Types["lib/types.ts"]
 - Event notifications:
   - Batch updates where possible to reduce unnecessary re-renders.
 - API calls:
-  - Fetch settings, promos, and tables in parallel to minimize latency.
+  - Fetch settings, promos, and tables in parallel using Promise.all() to minimize latency.
+  - Implement proper error handling with fallbacks for each parallel fetch operation.
 - Image loading:
   - Use optimized image sizes and fallback placeholders to improve perceived performance.
 - Polling:
   - Order status polling interval should be balanced between responsiveness and network load.
+- Database queries:
+  - Use batch loading and Promise.all() for concurrent database operations to eliminate N+1 query problems.
 
 [No sources needed since this section provides general guidance]
 
@@ -405,10 +468,15 @@ Store --> Types["lib/types.ts"]
   - Client shows advisory or error messages; server rejects invalid table numbers with HTTP 400.
 - Coupon issues:
   - Client displays validation errors and success messages; server enforces coupon rules and prevents misuse.
+  - Common coupon errors include expired dates, daily usage limits, insufficient subtotals, and inactive coupons.
 - Network errors:
   - API endpoints return structured error responses; clients surface user-friendly messages.
+  - Parallel fetch operations have individual error handling to prevent complete failure.
 - Data integrity:
   - Store sanitizes cart items to prevent null pointer exceptions and inconsistent state.
+- Performance issues:
+  - Monitor parallel fetch completion times and implement proper loading states.
+  - Ensure database queries use batch operations to avoid N+1 problems.
 
 **Section sources**
 - [page.tsx:63-83](file://app/cart/page.tsx#L63-L83)
@@ -419,6 +487,6 @@ Store --> Types["lib/types.ts"]
 - [store.ts:75-90](file://lib/store.ts#L75-L90)
 
 ## Conclusion
-The cart and ordering system combines a robust client-side store with secure server-side validation and calculation. Local storage ensures persistence, while event-driven updates keep the UI consistent across components. The checkout flow emphasizes safety by ignoring client-provided totals and recomputing them server-side, with coupon validation integrated both for preview and final order creation. The floating cart enhances usability by providing quick access to cart management and checkout. Error handling and validation rules protect data integrity and provide clear user feedback throughout the workflow.
+The cart and ordering system combines a robust client-side store with secure server-side validation and calculation. Local storage ensures persistence, while event-driven updates keep the UI consistent across components. The checkout flow emphasizes safety by ignoring client-provided totals and recomputing them server-side, with enhanced coupon validation integrated both for preview and final order creation. The parallel data fetching optimization significantly improves initial load performance, while the floating cart enhances usability by providing quick access to cart management and checkout. Comprehensive error handling, validation rules, and enhanced user feedback mechanisms protect data integrity and provide clear user feedback throughout the workflow.
 
 [No sources needed since this section summarizes without analyzing specific files]

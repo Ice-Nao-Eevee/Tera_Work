@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: nextjs_app
-title: Warkop Betawa QR Dine-In Next.js App
+title: QR Dine-In Ordering App (Next.js App Router)
 scope:
     - app/
     - components/

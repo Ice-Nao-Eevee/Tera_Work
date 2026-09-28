@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: ""
-title: Warkop Betawa Restaurant Ordering Platform
+title: Selera Sambal QR Dine-In Platform (Next.js + Static Admin)
 scope:
     - README.md
     - package.json

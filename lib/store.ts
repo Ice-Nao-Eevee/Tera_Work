@@ -21,6 +21,16 @@ const TABLE_KEY = 'selera_sambal_table_session';
 const NOTES_KEY = 'selera_sambal_order_notes';
 // Stores the manually entered table number for the current order session
 const MANUAL_TABLE_KEY = 'selera_sambal_manual_table';
+// Stores order history (order codes + basic info) for the customer
+const ORDER_HISTORY_KEY = 'selera_sambal_order_history';
+
+export interface OrderHistoryEntry {
+  orderCode: string;
+  tableNumber: number;
+  total: number;
+  itemCount: number;
+  createdAt: string; // ISO date string
+}
 
 // Event emitter helper for reactive updates across components
 class StoreEvents {
@@ -212,5 +222,44 @@ export function saveManualTableNumber(num: number): void {
 export function saveTableSession(session: TableSession): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(TABLE_KEY, JSON.stringify(session));
+  storeEvents.notify();
+}
+
+// ── Order History Helpers ────────────────────────────────────────────────────
+
+/** Returns all saved order history entries (newest first). */
+export function getOrderHistory(): OrderHistoryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(ORDER_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Return newest first
+    return parsed.sort((a: OrderHistoryEntry, b: OrderHistoryEntry) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch {
+    return [];
+  }
+}
+
+/** Saves a new order to history (called after successful order creation). */
+export function saveOrderToHistory(entry: OrderHistoryEntry): void {
+  if (typeof window === 'undefined') return;
+  const history = getOrderHistory();
+  // Avoid duplicates
+  const filtered = history.filter(h => h.orderCode !== entry.orderCode);
+  filtered.unshift(entry); // newest first
+  // Keep max 50 entries
+  const trimmed = filtered.slice(0, 50);
+  localStorage.setItem(ORDER_HISTORY_KEY, JSON.stringify(trimmed));
+  storeEvents.notify();
+}
+
+/** Clears all order history (for debugging or reset). */
+export function clearOrderHistory(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(ORDER_HISTORY_KEY);
   storeEvents.notify();
 }

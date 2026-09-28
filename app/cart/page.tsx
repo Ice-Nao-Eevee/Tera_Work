@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Minus, Plus, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowRight, ShoppingBag, ClipboardList } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import {
   getCartItems,
@@ -12,8 +12,10 @@ import {
   removeCartItem,
   getOrderNotes,
   saveOrderNotes,
+  getOrderHistory,
   storeEvents,
   CartItem,
+  OrderHistoryEntry,
 } from '@/lib/store';
 
 export default function CartPage() {
@@ -22,6 +24,7 @@ export default function CartPage() {
   const [notes, setNotes] = useState<string>('');
   const [taxRate, setTaxRate] = useState<number>(0.10);
   const [serviceRate, setServiceRate] = useState<number>(0.05);
+  const [orderHistory, setOrderHistory] = useState<OrderHistoryEntry[]>([]);
 
   // Load tax/service rates from DB settings
   useEffect(() => {
@@ -39,6 +42,7 @@ export default function CartPage() {
   const refreshCart = () => {
     setItems(getCartItems());
     setNotes(getOrderNotes());
+    setOrderHistory(getOrderHistory());
   };
 
   useEffect(() => {
@@ -78,6 +82,15 @@ export default function CartPage() {
         >
           Lihat Menu Utama
         </Link>
+        {orderHistory.length > 0 && (
+          <Link
+            href={`/order/${encodeURIComponent(orderHistory[0].orderCode)}`}
+            className="mt-3 px-8 py-3 bg-white border border-[#d4bc8c] text-[#b45309] font-medium text-sm rounded-full shadow-sm hover:bg-[#fdf9f7] transition-colors flex items-center justify-center gap-2"
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span>List Pesanan ({orderHistory.length})</span>
+          </Link>
+        )}
       </main>
     );
   }
@@ -218,6 +231,16 @@ export default function CartPage() {
               <span>Lanjutkan Pembayaran</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            {orderHistory.length > 0 && (
+              <Link
+                href={`/order/${encodeURIComponent(orderHistory[0].orderCode)}`}
+                className="w-full py-3 bg-white border border-[#d4bc8c] text-[#b45309] font-medium text-sm rounded-full shadow-sm hover:bg-[#fdf9f7] transition-colors flex items-center justify-center gap-2"
+              >
+                <ClipboardList className="w-4 h-4" />
+                <span>List Pesanan ({orderHistory.length})</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -1,0 +1,1 @@
+Next.js App Router application that wires public pages, admin routes, and REST handlers around a Prisma/Supabase-backed QR table session with shared cart state and coupon logic.

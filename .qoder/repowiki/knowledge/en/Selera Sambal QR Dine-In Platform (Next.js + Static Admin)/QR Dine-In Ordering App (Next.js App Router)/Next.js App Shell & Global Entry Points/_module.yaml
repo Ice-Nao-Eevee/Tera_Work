@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: nextjs_app/customer_pages
-title: Next.js App Shell & Root Layout
+title: Next.js App Shell & Global Entry Points
 scope:
     - app/page.tsx
     - app/layout.tsx
