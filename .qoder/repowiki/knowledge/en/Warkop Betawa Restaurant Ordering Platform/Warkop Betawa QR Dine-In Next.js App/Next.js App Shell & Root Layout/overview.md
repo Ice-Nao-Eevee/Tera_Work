@@ -1,0 +1,1 @@
+Root Next.js App Router entry points that wire the global layout, metadata, Tailwind theme, and redirect the homepage to the menu page.

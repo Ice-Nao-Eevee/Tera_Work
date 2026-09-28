@@ -1,0 +1,1 @@
+Cross-cutting utility library providing coupon validation/discount calculation, QR table-token signing/verification via JSON Web Tokens, and Indonesian Rupiah/date formatting helpers.

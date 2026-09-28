@@ -1,0 +1,1 @@
+Frontend-only static admin dashboard for the Selera Sambal restaurant, providing CRUD over menu, orders, customers, analytics and settings persisted in localStorage.

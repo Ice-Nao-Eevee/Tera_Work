@@ -1,0 +1,1 @@
+No build or install step — deploy the extracted directory as static files. Default login credentials are hard-coded in `storage.js` defaults and documented on the login page: username `admin`, password `admin123`. Data can be exported/imported via the Settings page's JSON backup/restore controls.

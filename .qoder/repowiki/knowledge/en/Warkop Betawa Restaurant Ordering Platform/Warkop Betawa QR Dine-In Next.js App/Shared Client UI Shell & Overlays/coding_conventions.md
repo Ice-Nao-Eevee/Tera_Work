@@ -1,0 +1,5 @@
+- Client-side components opt into interactivity with a top-level `'use client'` directive and guard SSR hydration with an `isMounted` state flag before rendering DOM-only content.
+- Cross-component state (cart items, search query) is read through `getCartItems()` / `searchEvents` and kept in sync via `storeEvents.subscribe`, with subscriptions cleaned up in effect return functions.
+- Floating panels (`AIChatPanel`, `FloatingCart`) expose a uniform `isOpen` / `onClose` prop contract and render themselves conditionally based on that boolean.
+- Navigation uses Next.js `Link` for internal routes and plain `<a>` with `target="_blank" rel="noopener noreferrer"` for external links.
+- Visual styling relies on Tailwind utility classes with the project's custom color tokens (e.g. `bg-[#b45309]`, `text-[#2a1a15]`, `border-[#d4bc8c]`) rather than CSS modules or styled-components.

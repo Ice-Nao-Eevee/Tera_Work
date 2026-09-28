@@ -1,0 +1,1 @@
+Vanilla HTML5 + CSS3 + ES6 JavaScript with no frameworks or bundlers; data persisted in browser `localStorage` under the `ss_admin_` key prefix.

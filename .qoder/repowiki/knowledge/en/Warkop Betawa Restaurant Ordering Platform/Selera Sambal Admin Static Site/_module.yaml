@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: static_admin_site
+title: Selera Sambal Admin Static Site
+scope:
+    - admin-zip-extracted/
+source_files: []
+depends_on: []
+related_to: []

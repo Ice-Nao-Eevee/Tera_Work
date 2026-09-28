@@ -1,0 +1,1 @@
+JSON Web Tokens via the `jsonwebtoken` npm package; `Intl.DateTimeFormat`-style `toLocaleDateString('id-ID')` for Indonesian date rendering; no external currency library — Rupiah formatting is hand-rolled via regex on integer strings.

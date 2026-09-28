@@ -1,0 +1,3 @@
+- Public APIs are exposed as plain named function exports alongside TypeScript interface/type definitions in the same file, rather than class-based or module-class patterns.
+- Error-prone operations return a discriminated union result object (e.g. `{ valid: true, ... } | { valid: false, error: string }`) instead of throwing, letting callers branch on the `valid` flag.
+- User-facing messages and monetary values are localized to Indonesian — error strings use Bahasa Indonesia and amounts are rendered through `formatRupiah` rather than raw numbers.

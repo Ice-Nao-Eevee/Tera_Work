@@ -1,0 +1,1 @@
+Reusable Next.js client components that compose the public app shell (header, footer, layout wrapper) and floating overlays for the cart and AI assistant chat.

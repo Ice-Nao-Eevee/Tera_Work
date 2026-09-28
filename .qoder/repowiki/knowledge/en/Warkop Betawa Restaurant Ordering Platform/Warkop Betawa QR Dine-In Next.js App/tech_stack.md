@@ -1,0 +1,1 @@
+Next.js App Router (Route Handlers + Server Components), Prisma ORM for PostgreSQL, Supabase JS SDK for auth/storage, JSON Web Tokens for table-token signing, Tailwind CSS for styling.

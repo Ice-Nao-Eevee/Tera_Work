@@ -1,0 +1,1 @@
+TypeScript interfaces only (no runtime validation library); persistence via the browser `localStorage` API; a hand-rolled event emitter pattern instead of a state library like Zustand or Redux.

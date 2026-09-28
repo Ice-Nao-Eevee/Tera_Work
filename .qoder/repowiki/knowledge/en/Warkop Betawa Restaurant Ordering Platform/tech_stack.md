@@ -1,0 +1,1 @@
+Next.js 16 + React 18 + TypeScript, Tailwind CSS 3, Prisma 5 for the customer app's MongoDB data layer, Supabase SSR client for session/auth, Mongoose as an additional MongoDB driver, Google Generative AI SDK, and JSON Web Tokens.
