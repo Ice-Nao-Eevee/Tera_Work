@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: nextjs_app/state_and_types
+title: Shared Types, Store & Static Data
+scope:
+    - lib/store.ts
+    - lib/types.ts
+    - lib/staticData.ts
+source_files: []
+depends_on: []
+related_to:
+    - path: nextjs_app/shared_components

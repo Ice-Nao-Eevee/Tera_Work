@@ -1,0 +1,33 @@
+schema_version: 1
+module_path: ""
+title: Warkop Betawa Restaurant Ordering Platform
+scope:
+    - README.md
+    - package.json
+    - next.config.js
+    - tailwind.config.ts
+    - tsconfig.json
+    - .gitattributes
+    - AGENTS.md
+    - BACKEND_AUDIT.md
+    - CLAUDE.md
+    - Menu-list.html
+    - Menu.html
+    - html.html
+    - css.css
+    - global.css
+    - prisma-next.md
+    - skills-lock.json
+    - .mcp.json
+    - .gitignore
+    - Logo.jpeg
+    - foodbg.jpg
+    - logo.png
+    - next-env.d.ts
+    - package-lock.json
+    - postcss.config.js
+    - react.jsx
+    - tsconfig.tsbuildinfo
+source_files: []
+depends_on: []
+related_to: []

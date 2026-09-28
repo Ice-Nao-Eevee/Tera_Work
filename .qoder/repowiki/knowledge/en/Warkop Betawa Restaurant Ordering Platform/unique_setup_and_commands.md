@@ -1,0 +1,1 @@
+`npm install` runs a `postinstall` hook that executes `prisma skills sync`; `npm run dev` starts the Next.js dev server serving the customer app, while the static admin site is served from its own directory without a separate build step.

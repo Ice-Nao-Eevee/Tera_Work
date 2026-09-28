@@ -1,0 +1,5 @@
+- All DOM queries use the local `$` / `$$` helpers defined in `app.js` rather than direct `querySelector` calls.
+- User-supplied strings are passed through the `safe()` helper before being interpolated into HTML to prevent XSS.
+- Data mutations go exclusively through `StorageManager.set/get/remove` instead of touching `localStorage` directly, so every write also dispatches the `ss-data` CustomEvent.
+- Each route exposes a `renderXxx()` function registered in the central dispatch map at the bottom of `app.js`, which is invoked after `shell()` builds the chrome.
+- Forms are created as modal dialogs via the shared `modal()` helper, with cancel buttons wired to remove the dialog and submit handlers calling `notice()` followed by `render()`.

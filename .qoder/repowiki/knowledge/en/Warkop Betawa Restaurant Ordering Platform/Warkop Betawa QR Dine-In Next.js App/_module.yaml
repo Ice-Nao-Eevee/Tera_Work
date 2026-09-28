@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: nextjs_app
+title: Warkop Betawa QR Dine-In Next.js App
+scope:
+    - app/
+    - components/
+    - lib/
+    - utils/
+source_files: []
+depends_on: []
+related_to: []

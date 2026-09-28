@@ -1,0 +1,2 @@
+- Shared styling is centralized in the root `tailwind.config.ts` and consumed by both the Next.js app and the static admin site rather than each frontend defining its own Tailwind setup.
+- Environment variables (notably `MONGODB_URI`) are loaded from `.env.local` at runtime, allowing the same codebase to target local MongoDB or MongoDB Atlas without code changes.

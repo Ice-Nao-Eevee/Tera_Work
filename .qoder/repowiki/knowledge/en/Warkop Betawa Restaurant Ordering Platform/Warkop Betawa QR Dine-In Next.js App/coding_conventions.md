@@ -1,0 +1,5 @@
+- API endpoints are implemented as Next.js Route Handlers under `app/api/<resource>/route.ts` with one folder per resource and optional `[id]/route.ts` for single-resource operations.
+- All monetary totals are recomputed on the server from database prices — browser-supplied amounts are never trusted.
+- Database access goes exclusively through the Prisma client exported from `lib/prisma.ts`; direct SQL or Mongoose usage is deprecated.
+- Shared TypeScript interfaces live in `lib/types.ts` and are re-exported via `lib/models/index.ts` so consumers import from a single types barrel.
+- Server-side error handling in route handlers returns `NextResponse.json({ error: ... })` with appropriate HTTP status codes rather than throwing.

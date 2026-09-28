@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: nextjs_app/customer_pages
+title: Next.js App Shell & Root Layout
+scope:
+    - app/page.tsx
+    - app/layout.tsx
+    - app/globals.css
+source_files: []
+depends_on: []
+related_to:
+    - path: nextjs_app/shared_components

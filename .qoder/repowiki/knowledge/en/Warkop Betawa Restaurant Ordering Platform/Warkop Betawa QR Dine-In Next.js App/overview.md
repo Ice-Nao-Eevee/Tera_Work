@@ -1,0 +1,1 @@
+Next.js App Router application that composes shared UI components, typed state stores, and route handlers into a QR table-based dine-in ordering system backed by Prisma and Supabase.
