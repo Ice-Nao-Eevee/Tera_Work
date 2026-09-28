@@ -106,10 +106,32 @@ export default function MenuPage() {
   };
 
   return (
-    <main className="min-h-screen pb-32 bg-[#faf7f2]">
+    <main className="min-h-screen pb-32 bg-transparent relative overflow-x-hidden">
+      {/* ── Background Subtle Botanical Watermark (Organic Nusantara Coffee & Tea Elements) ── */}
+      <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden select-none">
+        {/* Soft amber ambient warmth spotlight around hero banner */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[350px] bg-[radial-gradient(ellipse_at_top,rgba(217,119,6,0.07),transparent_70%)]" />
+
+        {/* Top-Right subtle botanical coffee branch line accent */}
+        <div className="absolute top-12 -right-8 w-80 h-80 opacity-[0.03] pointer-events-none">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[#361c12]">
+            <path d="M100 20 C140 50 170 90 170 140 C140 130 90 110 70 70 Z" fill="currentColor" />
+            <path d="M100 20 C90 70 80 120 70 170" stroke="currentColor" strokeWidth="2.5" />
+          </svg>
+        </div>
+
+        {/* Mid-Left subtle organic motif accent */}
+        <div className="absolute top-[45%] -left-12 w-72 h-72 opacity-[0.025] pointer-events-none">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[#361c12]">
+            <circle cx="90" cy="90" r="30" fill="currentColor" />
+            <circle cx="130" cy="120" r="24" fill="currentColor" />
+            <path d="M50 150 C80 120 120 90 160 60" stroke="currentColor" strokeWidth="3" />
+          </svg>
+        </div>
+      </div>
 
       {/* ─── HERO / SLOGAN BANNER ─── */}
-      <section className="bg-[#faf7f2]">
+      <section className="bg-transparent">
         <div className="max-w-7xl mx-auto px-6 md:px-10">
           <div className="relative rounded-2xl overflow-hidden bg-[#2a1a15] flex items-center min-h-[240px] md:min-h-[280px] my-5 shadow-md">
 

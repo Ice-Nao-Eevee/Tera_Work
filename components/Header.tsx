@@ -39,7 +39,18 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#fcf8f2]/95 backdrop-blur-md border-b border-[#e6cdac] px-4 md:px-8 py-3 flex items-center justify-between gap-3 md:gap-6 transition-all">
+    <header className="sticky top-0 z-40 bg-[#faf5ee]/95 backdrop-blur-md border-b border-[#e4d0b7] px-4 md:px-8 py-3 flex items-center justify-between gap-3 md:gap-6 transition-all relative">
+      {/* Delicate Traditional Betawi Gigi Balang Trim along Header Bottom */}
+      <div className="absolute -bottom-[3px] inset-x-0 h-[3px] opacity-25 overflow-hidden pointer-events-none">
+        <svg className="w-full h-[3px]" preserveAspectRatio="repeat-x" viewBox="0 0 100 6" fill="#b45309">
+          <defs>
+            <pattern id="gigi-header" width="12" height="6" patternUnits="userSpaceOnUse">
+              <polygon points="0,0 6,6 12,0" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="6" fill="url(#gigi-header)" />
+        </svg>
+      </div>
       {/* Brand Logo & Top Searchbar */}
       <div className="flex items-center gap-3 sm:gap-4 md:gap-6 flex-1 max-w-xl">
         <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 group">

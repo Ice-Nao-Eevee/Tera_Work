@@ -11,11 +11,22 @@
 
 body {
   font-family: var(--font-inter);
-  background-color: #fcf8f2;
+  background-color: #faf5ee;
   color: #2a1a15;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  /* Authentic warm cafe ambience & tactile artisan paper grain (Bukan AI, natural & selaras warkop) */
+  background-image:
+    /* Overhead warm cafe pendant glow */
+    radial-gradient(ellipse 70% 360px at 50% -40px, rgba(217, 119, 6, 0.08) 0%, transparent 70%),
+    /* Soft corner warm vignetting */
+    radial-gradient(circle 800px at 100% 25%, rgba(139, 90, 43, 0.035) 0%, transparent 60%),
+    radial-gradient(circle 800px at 0% 75%, rgba(180, 83, 9, 0.03) 0%, transparent 60%),
+    /* Tactile organic paper grain (lightweight SVG noise filter) */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperGrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperGrain)' opacity='0.025'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+  background-repeat: repeat;
 }
 
 .font-serif {

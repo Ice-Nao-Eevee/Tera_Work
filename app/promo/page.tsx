@@ -119,16 +119,70 @@ export default function PromoPage() {
   };
 
   return (
-    <div className="bg-[#f5ede2] min-h-screen py-8">
+    <div className="relative min-h-screen py-10 bg-[#f9f3ea] text-[#2a1a15] overflow-x-hidden selection:bg-amber-800 selection:text-white">
+      {/* ── Background Decorative Ambience (Tekstur Warkop, Glow & Aksen Ornamen) ── */}
+      <div className="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+        {/* Warm Ambient Spotlights */}
+        <div className="absolute -top-28 left-1/2 -translate-x-1/2 w-[1100px] h-[500px] bg-[radial-gradient(ellipse_at_top,rgba(217,119,6,0.16),transparent_65%)]" />
+        <div className="absolute top-[20%] -left-36 w-[550px] h-[550px] rounded-full bg-[radial-gradient(circle,rgba(180,83,9,0.08),transparent_70%)] blur-2xl" />
+        <div className="absolute top-[55%] -right-36 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(139,90,43,0.08),transparent_70%)] blur-3xl" />
+        <div className="absolute bottom-12 left-1/4 w-[500px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(217,119,6,0.06),transparent_70%)] blur-2xl" />
+
+        {/* Subtle vintage artisanal paper / warkop dot-mesh pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: `radial-gradient(#361c12 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+
+        {/* Traditional Betawi Gigi Balang decorative trim at the very top */}
+        <div className="absolute top-0 inset-x-0 h-3 flex opacity-15 overflow-hidden">
+          <svg className="w-full h-3" preserveAspectRatio="repeat-x" viewBox="0 0 100 12" fill="#361c12">
+            <defs>
+              <pattern id="gigi-balang-top" width="20" height="12" patternUnits="userSpaceOnUse">
+                <polygon points="0,0 10,12 20,0" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="12" fill="url(#gigi-balang-top)" />
+          </svg>
+        </div>
+      </div>
+
       <main className="max-w-7xl mx-auto px-4 md:px-8 pb-24">
-        {/* ── Banner / Hero Section (Tema Kayu & Kopi Betawi Alami) ── */}
-        <div className="relative overflow-hidden rounded-3xl bg-[#361c12] p-8 md:p-12 text-[#fbf5eb] shadow-lg mb-10 border-2 border-[#542d1e]">
+        {/* ── Banner / Hero Section (Tema Kayu & Kopi Betawi Alami dengan Deep Roast Gradient & Warm Light) ── */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#3d1f14] via-[#2d140c] to-[#1c0c06] p-8 md:p-12 text-[#fbf5eb] shadow-[0_16px_45px_rgba(42,26,21,0.22)] mb-10 border-2 border-[#5d3221]">
+          {/* Internal ambient glowing orbs */}
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-amber-500/15 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-[#b45309]/20 blur-3xl pointer-events-none" />
+
+          {/* Subtle vintage wood/coffee texture lines overlay */}
+          <div 
+            className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-overlay"
+            style={{
+              backgroundImage: `repeating-linear-gradient(45deg, #000 0, #000 2px, transparent 0, transparent 8px)`,
+            }}
+          />
+
+          {/* Top traditional Gigi Balang decorative subtle motif inside banner */}
+          <div className="absolute top-0 inset-x-0 h-2 opacity-15 overflow-hidden pointer-events-none">
+            <svg className="w-full h-2" preserveAspectRatio="repeat-x" viewBox="0 0 100 8" fill="#fbf5eb">
+              <defs>
+                <pattern id="gigi-banner" width="16" height="8" patternUnits="userSpaceOnUse">
+                  <polygon points="0,0 8,8 16,0" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="8" fill="url(#gigi-banner)" />
+            </svg>
+          </div>
+
           <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#4e2a1d] text-xs font-bold tracking-wide uppercase text-amber-300 border border-[#6b3c2a] shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#4e2a1d]/90 backdrop-blur-xs text-xs font-bold tracking-wide uppercase text-amber-300 border border-[#6b3c2a] shadow-xs">
               <Coffee className="w-3.5 h-3.5 text-amber-300" />
               <span>Voucher Resmi Warkop Betawa</span>
             </div>
-            <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#fbf5eb] leading-tight">
+            <h1 className="font-serif italic text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#fbf5eb] leading-tight drop-shadow-sm">
               Promo & Kupon Belanja Betawi
             </h1>
             <p className="text-sm md:text-base text-[#eeddc5] leading-relaxed font-normal max-w-2xl">
@@ -137,32 +191,35 @@ export default function PromoPage() {
 
             {/* Sorotan nilai autentik */}
             <div className="pt-2 flex flex-wrap items-center gap-2.5 text-xs font-semibold text-[#f5ebd8]">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2a150e] border border-[#542d1e]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#221009]/80 border border-[#542d1e] shadow-xs">
                 <Ticket className="w-3.5 h-3.5 text-amber-400" />
                 Voucher Kuota Harian
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2a150e] border border-[#542d1e]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#221009]/80 border border-[#542d1e] shadow-xs">
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
                 Reset Otomatis Pukul 00:00
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2a150e] border border-[#542d1e]">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#221009]/80 border border-[#542d1e] shadow-xs">
                 <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
                 Potongan Langsung di Kasir
               </span>
             </div>
           </div>
 
-          {/* Aksen ornamen natural warkop */}
-          <div className="absolute right-4 bottom-2 opacity-10 pointer-events-none">
-            <Coffee className="w-64 h-64 text-amber-200" />
+          {/* Aksen ornamen cangkir kopi warkop dengan warm amber backglow */}
+          <div className="absolute -right-4 -bottom-6 opacity-20 pointer-events-none transition-transform duration-700">
+            <Coffee className="w-72 h-72 text-amber-300 drop-shadow-[0_0_35px_rgba(245,158,11,0.3)]" />
           </div>
         </div>
 
-        {/* ── 3-Langkah Panduan Kupon (Kertas Kraft / Krem Warkop Alami) ── */}
-        <div className="mb-12 bg-[#ebdcc8] rounded-3xl p-6 border-2 border-[#cfb28d] shadow-sm">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        {/* ── 3-Langkah Panduan Kupon (Kertas Kraft / Krem Warkop Hangat Bertekstur) ── */}
+        <div className="relative overflow-hidden mb-12 bg-gradient-to-r from-[#ebd8c2] via-[#f3e6d5] to-[#ebdac5] rounded-3xl p-6 border-2 border-[#cca980] shadow-[0_6px_25px_rgba(42,26,21,0.06)]">
+          {/* Subtle warm backlight */}
+          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="flex items-center gap-3.5 shrink-0">
-              <div className="w-12 h-12 rounded-2xl bg-[#361c12] text-amber-300 flex items-center justify-center shadow-md shrink-0 border border-[#542d1e]">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#3d1f14] to-[#251009] text-amber-300 flex items-center justify-center shadow-md shrink-0 border border-[#542d1e]">
                 <Ticket className="w-6 h-6" />
               </div>
               <div>
@@ -176,8 +233,8 @@ export default function PromoPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full lg:w-auto flex-1 max-w-3xl">
-              <div className="bg-[#f8f1e5] p-4 rounded-2xl border border-[#d6be9c] flex items-start gap-3 shadow-xs">
-                <div className="w-7 h-7 rounded-full bg-[#361c12] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="bg-[#fbf7f0]/90 backdrop-blur-xs p-4 rounded-2xl border border-[#d6be9c] flex items-start gap-3 shadow-xs hover:bg-white transition-colors">
+                <div className="w-7 h-7 rounded-full bg-[#361c12] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                   1
                 </div>
                 <div>
@@ -186,8 +243,8 @@ export default function PromoPage() {
                 </div>
               </div>
 
-              <div className="bg-[#f8f1e5] p-4 rounded-2xl border border-[#d6be9c] flex items-start gap-3 shadow-xs">
-                <div className="w-7 h-7 rounded-full bg-[#361c12] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="bg-[#fbf7f0]/90 backdrop-blur-xs p-4 rounded-2xl border border-[#d6be9c] flex items-start gap-3 shadow-xs hover:bg-white transition-colors">
+                <div className="w-7 h-7 rounded-full bg-[#361c12] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                   2
                 </div>
                 <div>
@@ -196,8 +253,8 @@ export default function PromoPage() {
                 </div>
               </div>
 
-              <div className="bg-[#f8f1e5] p-4 rounded-2xl border border-[#d6be9c] flex items-start gap-3 shadow-xs">
-                <div className="w-7 h-7 rounded-full bg-[#361c12] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="bg-[#fbf7f0]/90 backdrop-blur-xs p-4 rounded-2xl border border-[#d6be9c] flex items-start gap-3 shadow-xs hover:bg-white transition-colors">
+                <div className="w-7 h-7 rounded-full bg-[#361c12] text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
                   3
                 </div>
                 <div>
@@ -326,11 +383,11 @@ export default function PromoPage() {
                         {/* ── Perforasi Coakan Tiket (Warna background pas menyatu dengan halaman) ── */}
                         <div className="relative py-2.5 bg-[#fbf5eb] flex items-center justify-between">
                           {/* Coakan kiri */}
-                          <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#f5ede2] border-2 border-[#d5be9b] z-10 shadow-[inset_-2px_0_4px_rgba(42,26,21,0.12)]" />
+                          <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#f9f3ea] border-2 border-[#d5be9b] z-10 shadow-[inset_-2px_0_4px_rgba(42,26,21,0.12)]" />
                           {/* Garis putus-putus perforasi */}
                           <div className="w-full border-t-2 border-dashed border-[#c4a47c] mx-6" />
                           {/* Coakan kanan */}
-                          <div className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#f5ede2] border-2 border-[#d5be9b] z-10 shadow-[inset_2px_0_4px_rgba(42,26,21,0.12)]" />
+                          <div className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#f9f3ea] border-2 border-[#d5be9b] z-10 shadow-[inset_2px_0_4px_rgba(42,26,21,0.12)]" />
                         </div>
 
                         {/* ── Isi Tiket & Syarat Ketentuan (Kertas Kraft Vintage) ── */}
