@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { ImagePlus, Upload, X } from 'lucide-react';
 
 type ActivePage =
   | 'dashboard' | 'products' | 'categories' | 'orders' | 'customers'
@@ -132,7 +133,34 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
   });
   const [addOnInput, setAddOnInput] = useState({ label: '', price: '' });
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const set = (k: string, v: any) => sf(x => ({ ...x, [k]: v }));
+
+  const uploadPhoto = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('File harus berupa gambar (JPG, PNG, WEBP, atau GIF)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran foto maksimal 5MB');
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      set('photoUrl', data.url);
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengunggah foto');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +191,66 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
           <label className="grid text-xs font-bold gap-[6px]">Harga<input className={iCls} type="number" min="0" required value={f.price} onChange={e => set('price', e.target.value)} /></label>
           <label className="grid text-xs font-bold gap-[6px]">Badge<select className={iCls} value={f.badge} onChange={e => set('badge', e.target.value)}>{['none', 'best_seller', 'chefs_choice', 'vegan_friendly'].map(b => <option key={b} value={b}>{b}</option>)}</select></label>
           <label className="grid text-xs font-bold gap-[6px]">Status<select className={iCls} value={f.isActive ? 'true' : 'false'} onChange={e => set('isActive', e.target.value === 'true')}><option value="true">Tersedia</option><option value="false">Nonaktif</option></select></label>
-          <label className="grid text-xs font-bold gap-[6px] sm:col-span-2">Foto URL<input className={iCls} value={f.photoUrl} onChange={e => set('photoUrl', e.target.value)} /></label>
+          <div className="sm:col-span-2 grid text-xs font-bold gap-[6px]">
+            <span>Foto Menu</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={e => { const file = e.target.files?.[0]; if (file) void uploadPhoto(file); e.target.value = ''; }}
+            />
+            {f.photoUrl ? (
+              <div className="relative overflow-hidden rounded-[10px] border border-[#e9e3dc] bg-[#f8f4f1]">
+                <img src={f.photoUrl} alt="Preview foto menu" className="h-[180px] w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => set('photoUrl', '')}
+                  className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#c34040] shadow hover:bg-white"
+                  aria-label="Hapus foto"
+                >
+                  <X size={16} />
+                </button>
+                <button
+                  type="button"
+                  disabled={uploadingPhoto}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-2 right-2 rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold text-[#292522] shadow hover:bg-white"
+                >
+                  Ganti foto
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={uploadingPhoto}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) void uploadPhoto(file);
+                }}
+                className={`flex min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-6 text-center transition-colors ${
+                  dragOver ? 'border-[#aa2027] bg-[#f8e3e3]' : 'border-[#e9e3dc] bg-[#faf8f6] hover:border-[#aa2027]/60 hover:bg-[#f8ece8]'
+                }`}
+              >
+                {uploadingPhoto ? (
+                  <span className="text-sm font-bold text-[#827a73]">Mengunggah foto...</span>
+                ) : (
+                  <>
+                    <span className="grid h-11 w-11 place-items-center rounded-full bg-[#f9e8e5] text-[#aa2027]">
+                      {dragOver ? <Upload size={20} /> : <ImagePlus size={20} />}
+                    </span>
+                    <span className="text-sm font-bold text-[#292522]">Seret & lepas foto di sini</span>
+                    <span className="text-[11px] font-medium text-[#827a73]">atau klik untuk memilih file · JPG, PNG, WEBP, GIF · maks. 5MB</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
           <label className="grid text-xs font-bold gap-[6px] sm:col-span-2">Deskripsi<textarea className={`${iCls} min-h-[80px] resize-y`} value={f.description} onChange={e => set('description', e.target.value)} /></label>
           <div className="sm:col-span-2">
             <p className="text-xs font-bold mb-2">Add-Ons</p>
