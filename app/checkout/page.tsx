@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState<boolean>(false);
   const [couponError, setCouponError] = useState<string>('');
   const [couponSuccess, setCouponSuccess] = useState<string>('');
+  const [availableCoupons, setAvailableCoupons] = useState<any[]>([]);
 
   const refreshCart = useCallback(() => {
     setItems(getCartItems());
@@ -52,12 +53,13 @@ export default function CheckoutPage() {
     setManualTableNumber(getManualTableNumber());
     setNotes(getOrderNotes());
 
-    // Fetch promos, settings, and known tables in parallel
+    // Fetch promos, settings, known tables, and active coupons in parallel
     Promise.all([
       fetch('/api/promos').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings').then(r => r.json()).catch(() => ({})),
       fetch('/api/tables').then(r => r.json()).catch(() => ({})),
-    ]).then(([promoData, settingsData, tablesData]) => {
+      fetch('/api/coupons').then(r => r.json()).catch(() => ({})),
+    ]).then(([promoData, settingsData, tablesData, couponData]) => {
       if (promoData.promos?.length > 0) setPromos(promoData.promos);
       if (settingsData.settings) {
         setTaxRate((settingsData.settings.taxRatePercent ?? 10) / 100);
@@ -66,7 +68,19 @@ export default function CheckoutPage() {
       if (tablesData.tables) {
         setKnownTableNumbers(tablesData.tables.map((t: any) => t.tableNumber));
       }
+      if (couponData?.coupons?.length > 0) {
+        setAvailableCoupons(couponData.coupons);
+      }
     });
+
+    // Check if user came from /promo with a preselected coupon
+    try {
+      const saved = sessionStorage.getItem('wkb_selected_coupon');
+      if (saved) {
+        setCouponCodeInput(saved.toUpperCase());
+        sessionStorage.removeItem('wkb_selected_coupon');
+      }
+    } catch (_) {}
 
     const unsubscribe = storeEvents.subscribe(refreshCart);
     return () => unsubscribe();
@@ -366,7 +380,7 @@ export default function CheckoutPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -375,7 +389,7 @@ export default function CheckoutPage() {
                       setCouponCodeInput(e.target.value.toUpperCase());
                       if (couponError) setCouponError('');
                     }}
-                    placeholder="Masukkan kode kupon (cth: DISKON50)"
+                    placeholder="Masukkan kode kupon (cth: KASIH10K)"
                     className="flex-1 p-3.5 rounded-2xl border border-[#d4bc8c] bg-[#fcf8f2]/50 text-sm uppercase font-mono font-bold text-[#2a1a15] placeholder-[#9e8d87] placeholder:normal-case placeholder:font-normal focus:outline-none focus:border-[#b45309] focus:bg-white transition-all"
                   />
                   <button
@@ -387,6 +401,40 @@ export default function CheckoutPage() {
                     {couponLoading ? 'Cek...' : 'Terapkan'}
                   </button>
                 </div>
+
+                {/* Quick available coupons list */}
+                {availableCoupons.length > 0 && (
+                  <div className="pt-1">
+                    <span className="text-[11px] text-[#8c5950] font-medium flex items-center gap-1 mb-1.5">
+                      <Ticket className="w-3.5 h-3.5 text-[#b45309]" />
+                      Kupon aktif hari ini (klik untuk pasang):
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {availableCoupons.map((c) => (
+                        <button
+                          key={c.id || c.code}
+                          type="button"
+                          onClick={() => {
+                            setCouponCodeInput(c.code);
+                            if (couponError) setCouponError('');
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border flex items-center gap-1.5 ${
+                            couponCodeInput === c.code
+                              ? 'bg-amber-100 text-[#b45309] border-[#b45309] ring-2 ring-amber-300'
+                              : 'bg-[#fcf8f2] text-[#735a52] border-[#d4bc8c] hover:border-[#b45309] hover:text-[#b45309]'
+                          }`}
+                        >
+                          <span>🏷️ {c.code}</span>
+                          <span className="font-sans font-normal text-[10px] text-[#8c5950] bg-[#eeddc5] px-1.5 py-0.5 rounded-md border border-[#d8be9a]">
+                            {c.discountType === 'PERCENTAGE'
+                              ? `${c.discountValue}%`
+                              : formatRupiah(c.discountValue)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {couponError && (
                   <p className="flex items-center gap-1.5 text-xs text-red-600 font-medium mt-1">
