@@ -1,0 +1,3 @@
+- Global site chrome (metadata, viewport, html/body tags) is centralized in `app/layout.tsx` rather than per-page.
+- Typography is exposed as CSS custom properties (`--font-playfair`, `--font-inter`) and reused via Tailwind classes instead of inline font-family strings.
+- The homepage acts as a pass-through re-export of another route component (`page.tsx` → `MenuPage`) rather than duplicating markup.

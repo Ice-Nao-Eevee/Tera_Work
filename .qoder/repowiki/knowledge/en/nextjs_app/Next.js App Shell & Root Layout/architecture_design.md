@@ -1,0 +1,5 @@
+Three files form the app shell:
+- `app/layout.tsx` is the root layout exporting `Metadata` (title/description) and a `Viewport`, wrapping every route in `<html lang="id">` with a Tailwind-styled body and delegating content rendering to `@/components/ClientLayoutWrapper`.
+- `app/page.tsx` is the `/` route handler — a thin wrapper that renders `./menu/page`, so the homepage is effectively the menu page.
+- `app/globals.css` is the single CSS entry point: it imports Google Fonts (Playfair Display + Inter), runs `@tailwind base/components/utilities`, defines CSS custom properties for fonts, sets the default body background (`#fcf8f2`) and text color (`#2a1a15`), adds a `.font-serif` utility, and styles the webkit scrollbar with a gold accent.
+Dependency direction is one-way: this module depends on sibling `menu/page` and the shared `@/components/ClientLayoutWrapper`; nothing inside this scope imports from deeper feature routes.

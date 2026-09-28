@@ -1,0 +1,1 @@
+Defines the app's shared TypeScript interfaces, a localStorage-backed cart/table session store with event-driven reactivity, and client-safe static seed data.

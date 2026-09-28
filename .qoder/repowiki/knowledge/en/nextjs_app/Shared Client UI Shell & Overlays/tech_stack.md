@@ -1,0 +1,1 @@
+Next.js App Router client components (`'use client'`), Tailwind CSS for styling, `lucide-react` for icons, and a local event-bus store (`@/lib/store`) for cross-component cart/search state.

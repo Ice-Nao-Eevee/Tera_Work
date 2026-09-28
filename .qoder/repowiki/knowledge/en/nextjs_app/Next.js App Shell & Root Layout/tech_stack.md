@@ -1,0 +1,1 @@
+Next.js App Router with React Server Components for the root layout; Tailwind CSS via `@tailwind` directives; Google Fonts loaded through CSS `@import`.

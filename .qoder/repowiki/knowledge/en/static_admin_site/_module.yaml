@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: static_admin_site
+title: static_admin_site
+scope:
+    - admin-zip-extracted/
+source_files: []
+depends_on: []
+related_to: []
