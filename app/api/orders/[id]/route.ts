@@ -22,7 +22,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/orders/[id] — update order status (used by admin panel)
+// PATCH /api/orders/[id] — update order status and/or items (used by admin panel)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -31,10 +31,38 @@ export async function PATCH(
   const orderCode = decodeURIComponent(id);
   try {
     await connectDB();
-    const { status } = await req.json();
+    const body = await req.json();
+    const { status, items } = body;
+
+    // Build the update payload
+    const updateData: Record<string, unknown> = {};
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+
+    // If items are provided, recalculate totals and update items
+    if (Array.isArray(items) && items.length > 0) {
+      const settings = await prisma.settings.findFirst();
+      const taxRate = settings?.taxRatePercent ?? 10;
+      const serviceRate = settings?.serviceChargeRatePercent ?? 5;
+
+      const subtotal = items.reduce((sum: number, item: { price: number; qty: number }) => {
+        return sum + (Number(item.price) || 0) * (Number(item.qty) || 0);
+      }, 0);
+      const taxAmount = Math.round(subtotal * taxRate / 100);
+      const serviceChargeAmount = Math.round(subtotal * serviceRate / 100);
+      const total = subtotal + taxAmount + serviceChargeAmount;
+
+      updateData.items = items;
+      updateData.subtotal = subtotal;
+      updateData.taxAmount = taxAmount;
+      updateData.serviceChargeAmount = serviceChargeAmount;
+      updateData.total = total;
+    }
+
     const order = await prisma.order.update({
       where: { orderCode },
-      data: { status },
+      data: updateData,
     });
     return NextResponse.json({ order });
   } catch (err: any) {

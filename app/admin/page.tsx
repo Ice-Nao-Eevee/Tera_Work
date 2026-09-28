@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { ImagePlus, Upload, X } from 'lucide-react';
+import { ImagePlus, Upload, X, Search, Plus, Minus, Trash2 } from 'lucide-react';
 
 type ActivePage =
   | 'dashboard' | 'products' | 'categories' | 'orders' | 'customers'
@@ -88,11 +88,11 @@ function Toast({ message, onRemove }: { message: string; onRemove: () => void })
   useEffect(() => { const t = setTimeout(onRemove, 3200); return () => clearTimeout(t); }, [onRemove]);
   return <div className="ss-rise bg-[#282222] text-white rounded-[10px] px-4 py-3 shadow-lg text-sm flex items-center gap-2"><span className="text-[#7de2ae] font-bold">✓</span> {message}</div>;
 }
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   useEffect(() => { const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; document.addEventListener('keydown', onKey); return () => document.removeEventListener('keydown', onKey); }, [onClose]);
   return (
     <div className="fixed inset-0 z-[50] flex items-center justify-center p-[18px] bg-black/50" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <section className="ss-rise bg-white rounded-[18px] shadow-[0_20px_60px_#0004] w-full max-w-[680px] max-h-[calc(100vh-36px)] overflow-auto p-[25px]" role="dialog" aria-modal="true">
+      <section className={`ss-rise bg-white rounded-[18px] shadow-[0_20px_60px_#0004] w-full ${wide ? 'max-w-[960px]' : 'max-w-[680px]'} max-h-[calc(100vh-36px)] overflow-auto p-[25px]`} role="dialog" aria-modal="true">
         <header className="flex items-center justify-between mb-[18px]"><h2 className="text-[19px] font-bold m-0">{title}</h2><button onClick={onClose} className="text-xl leading-none px-2 py-1 rounded-lg hover:bg-[#f3eeea]" aria-label="Tutup">×</button></header>
         {children}
       </section>
@@ -269,19 +269,73 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
 }
 
 // ── OrderDetailModal (wired to PATCH /api/orders/[id]) ───────────────────────
-function OrderDetailModal({ order, onClose, onSaved }: { order: Order; onClose: () => void; onSaved: (m: string) => void }) {
+function OrderDetailModal({ order, onClose, onSaved, products }: { order: Order; onClose: () => void; onSaved: (m: string) => void; products: Product[] }) {
   const [status, setStatus] = useState(order.status);
   const [showDel, setShowDel] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [items, setItems] = useState<OrderItem[]>([...order.items]);
+  const [showAddSidebar, setShowAddSidebar] = useState(false);
+  const [menuSearch, setMenuSearch] = useState('');
+
+  const updateQty = (idx: number, delta: number) => {
+    setItems(prev => prev.map((it, i) => {
+      if (i !== idx) return it;
+      const newQty = Math.max(1, it.qty + delta);
+      return { ...it, qty: newQty, lineTotal: it.price * newQty };
+    }));
+  };
+
+  const removeItem = (idx: number) => {
+    setItems(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const addMenuItem = (product: Product) => {
+    const existing = items.findIndex(it => it.name === product.name);
+    if (existing >= 0) {
+      setItems(prev => prev.map((it, i) => {
+        if (i !== existing) return it;
+        const newQty = it.qty + 1;
+        return { ...it, qty: newQty, lineTotal: it.price * newQty };
+      }));
+    } else {
+      setItems(prev => [...prev, {
+        name: product.name,
+        qty: 1,
+        price: product.price,
+        lineTotal: product.price,
+        spiceLevel: undefined,
+        addOns: [],
+      }]);
+    }
+  };
+
+  const subtotal = items.reduce((sum, it) => sum + (it.price * it.qty), 0);
+  const taxAmount = Math.round(subtotal * 0.10);
+  const serviceAmount = Math.round(subtotal * 0.05);
+  const total = subtotal + taxAmount + serviceAmount;
+
+  const filteredProducts = products.filter(p => {
+    if (!p.isActive) return false;
+    if (!menuSearch) return true;
+    return p.name.toLowerCase().includes(menuSearch.toLowerCase()) ||
+           p.category.toLowerCase().includes(menuSearch.toLowerCase());
+  });
 
   const saveStatus = async () => {
+    if (items.length === 0) {
+      alert('Pesanan tidak boleh kosong. Tambahkan minimal satu menu.');
+      return;
+    }
     setSaving(true);
     try {
-      await apiFetch(`/api/orders/${encodeURIComponent(order.orderCode)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-      onSaved('Status pesanan diperbarui');
+      await apiFetch(`/api/orders/${encodeURIComponent(order.orderCode)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, items }),
+      });
+      onSaved('Pesanan berhasil diperbarui');
       onClose();
     } catch (err: any) {
-      alert(err.message || 'Gagal memperbarui status');
+      alert(err.message || 'Gagal memperbarui pesanan');
     } finally {
       setSaving(false);
     }
@@ -298,27 +352,151 @@ function OrderDetailModal({ order, onClose, onSaved }: { order: Order; onClose: 
   };
 
   return (
-    <>{' '}
-      <Modal title={`Order ${order.orderCode}`} onClose={onClose}>
-        <h2 className="font-bold text-center mb-1">Warkop Betawa</h2>
-        <p className="text-[#827a73] text-xs text-center mb-3">{fmtDate(order.createdAt || '')} · Meja {order.tableNumber}</p>
-        <hr className="border-[#e9e3dc] mb-3" />
-        {order.items.map((item, i) => <div key={i} className="flex justify-between text-sm mb-2"><span>{item.name} × {item.qty}</span><b>{rupiah(item.price * item.qty)}</b></div>)}
-        <hr className="border-[#e9e3dc] my-3" />
-        <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Subtotal</span><span>{rupiah(order.subtotal)}</span></div>
-        {order.couponCode && (
-          <div className="flex justify-between text-sm mb-1 text-[#25805b] font-medium">
-            <span>Diskon Kupon ({order.couponCode})</span>
-            <span>-{rupiah(order.discountAmount || 0)}</span>
+    <>
+      <Modal title={`Order ${order.orderCode}`} onClose={onClose} wide>
+        <div className="relative">
+          {/* Main content */}
+          <div className={`transition-all duration-300 ${showAddSidebar ? 'mr-[280px]' : ''}`}>
+            <h2 className="font-bold text-center mb-1">Warkop Betawa</h2>
+            <p className="text-[#827a73] text-xs text-center mb-3">{fmtDate(order.createdAt || '')} · Meja {order.tableNumber}</p>
+            <hr className="border-[#e9e3dc] mb-3" />
+
+            {/* Order Items with Edit Controls */}
+            {items.length === 0 ? (
+              <div className="text-center py-4 text-[#827a73] text-sm">
+                <p>Belum ada item. Klik "Tambah Menu" untuk menambahkan.</p>
+              </div>
+            ) : (
+              items.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm mb-2 py-1.5 px-2 rounded-lg hover:bg-[#faf8f6] group">
+                  {/* Item info */}
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-[#292522]">{item.name}</span>
+                    {item.spiceLevel && <span className="text-[10px] text-[#827a73] ml-1">({item.spiceLevel})</span>}
+                  </div>
+
+                  {/* Qty controls */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => updateQty(i, -1)}
+                      className="w-6 h-6 rounded-md bg-[#f4efeb] hover:bg-[#e9e3dc] flex items-center justify-center text-[#827a73] transition-colors"
+                      title="Kurangi jumlah"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="w-6 text-center font-bold text-sm">{item.qty}</span>
+                    <button
+                      onClick={() => updateQty(i, 1)}
+                      className="w-6 h-6 rounded-md bg-[#f4efeb] hover:bg-[#e9e3dc] flex items-center justify-center text-[#827a73] transition-colors"
+                      title="Tambah jumlah"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+
+                  {/* Price */}
+                  <b className="w-[90px] text-right">{rupiah(item.price * item.qty)}</b>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={() => removeItem(i)}
+                    className="w-6 h-6 rounded-md text-[#c34040] hover:bg-[#fdecec] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Hapus item"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))
+            )}
+
+            <hr className="border-[#e9e3dc] my-3" />
+
+            {/* Totals */}
+            <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Subtotal</span><span>{rupiah(subtotal)}</span></div>
+            {order.couponCode && (
+              <div className="flex justify-between text-sm mb-1 text-[#25805b] font-medium">
+                <span>Diskon Kupon ({order.couponCode})</span>
+                <span>-{rupiah(order.discountAmount || 0)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Pajak + Service</span><span>{rupiah(taxAmount + serviceAmount)}</span></div>
+            <div className="flex justify-between text-sm font-bold mb-4"><b>Total</b><b>{rupiah(total)}</b></div>
+
+            <label className="grid text-xs font-bold gap-[6px] mb-4">Status Pesanan<select className={iCls} value={status} onChange={e => setStatus(e.target.value)}>{['received','preparing','ready','completed'].map(s => <option key={s} value={s}>{s}</option>)}</select></label>
+
+            <div className="flex justify-end gap-[9px] flex-wrap">
+              <button onClick={() => setShowDel(true)} className="inline-flex items-center gap-2 font-bold px-4 py-[10px] rounded-[9px] bg-[#fdecec] text-[#c34040] text-sm hover:bg-[#fbd6d6]">Hapus</button>
+              <button onClick={() => window.print()} className={bSec}>Cetak Invoice</button>
+              <button onClick={() => setShowAddSidebar(true)} className="inline-flex items-center gap-2 font-bold px-[14px] py-[10px] rounded-[9px] bg-[#f3eeea] border border-[#e9e3dc] text-[#292522] text-sm hover:bg-[#ebe5e0] transition-colors">
+                <Plus size={15} />Tambah Menu
+              </button>
+              <button onClick={saveStatus} className={bPri} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Status'}</button>
+            </div>
           </div>
-        )}
-        <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Pajak + Service</span><span>{rupiah((order.taxAmount || 0) + (order.serviceChargeAmount || 0))}</span></div>
-        <div className="flex justify-between text-sm font-bold mb-4"><b>Total</b><b>{rupiah(order.total)}</b></div>
-        <label className="grid text-xs font-bold gap-[6px] mb-4">Status Pesanan<select className={iCls} value={status} onChange={e => setStatus(e.target.value)}>{['received','preparing','ready','completed'].map(s => <option key={s} value={s}>{s}</option>)}</select></label>
-        <div className="flex justify-end gap-[9px]">
-          <button onClick={() => setShowDel(true)} className="inline-flex items-center gap-2 font-bold px-4 py-[10px] rounded-[9px] bg-[#fdecec] text-[#c34040] text-sm hover:bg-[#fbd6d6]">Hapus</button>
-          <button onClick={() => window.print()} className={bSec}>Cetak Invoice</button>
-          <button onClick={saveStatus} className={bPri} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Status'}</button>
+
+          {/* Sidebar: Add Menu Panel */}
+          {showAddSidebar && (
+            <div className="absolute top-0 right-0 bottom-0 w-[270px] bg-white border-l border-[#e9e3dc] rounded-r-[14px] shadow-[-4px_0_20px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden animate-slide-in">
+              {/* Sidebar Header */}
+              <div className="p-3 border-b border-[#e9e3dc] bg-[#faf8f6]">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-bold text-sm text-[#292522]">Tambah Menu</h3>
+                  <button
+                    onClick={() => setShowAddSidebar(false)}
+                    className="w-7 h-7 rounded-lg hover:bg-[#f3eeea] flex items-center justify-center text-[#827a73]"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                {/* Search bar */}
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#827a73]" />
+                  <input
+                    className="w-full bg-white border border-[#e9e3dc] rounded-lg pl-8 pr-3 py-2 text-xs focus:border-[#aa2027] focus:shadow-[0_0_0_2px_#f8e3e3] outline-0"
+                    placeholder="Cari menu..."
+                    value={menuSearch}
+                    onChange={e => setMenuSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Menu Grid */}
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {filteredProducts.length === 0 ? (
+                  <div className="text-center py-6 text-[#827a73] text-xs">
+                    <p>Menu tidak ditemukan</p>
+                  </div>
+                ) : (
+                  filteredProducts.map(product => (
+                    <button
+                      key={product._id || product.id}
+                      onClick={() => addMenuItem(product)}
+                      className="w-full flex gap-2 p-2 rounded-lg border border-[#e9e3dc] hover:border-[#aa2027] hover:bg-[#fdf9f7] transition-all text-left group"
+                    >
+                      {/* Product Image */}
+                      <div className="w-12 h-12 rounded-md overflow-hidden bg-[#f5ede7] flex-shrink-0">
+                        <img
+                          src={product.photoUrl || 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80'}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-xs text-[#292522] line-clamp-1">{product.name}</p>
+                        <p className="text-[10px] text-[#827a73] capitalize">{product.category}</p>
+                        <p className="text-xs font-bold text-[#733e24] mt-0.5">{rupiah(product.price)}</p>
+                      </div>
+                      {/* Add icon */}
+                      <div className="w-6 h-6 rounded-full bg-[#feece7] text-[#7a2318] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 self-center">
+                        <Plus size={14} />
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
       {showDel && <ConfirmModal message="Hapus pesanan ini dari database?" onConfirm={deleteOrder} onClose={() => setShowDel(false)} />}
@@ -732,14 +910,19 @@ function CategoriesPage({ onToast }: { onToast: (m: string) => void }) {
 // ── OrdersPage ────────────────────────────────────────────────────────────────
 function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(''); const [statF, setStatF] = useState('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const data = await apiFetch<{ orders: Order[] }>('/api/orders');
-      setOrders(data.orders || []);
+      const [orderData, menuData] = await Promise.all([
+        apiFetch<{ orders: Order[] }>('/api/orders'),
+        apiFetch<{ menuItems: Product[] }>('/api/menu'),
+      ]);
+      setOrders(orderData.orders || []);
+      setProducts((menuData.menuItems || []).map(withAdminId));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, []);
@@ -760,7 +943,7 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
         <select className={iCls} value={statF} onChange={e => setStatF(e.target.value)}><option value="">Semua status</option>{['received', 'preparing', 'ready', 'completed'].map(s => <option key={s} value={s}>{s}</option>)}</select>
       </div>
       {shown.length ? <DataTable headers={['Kode', 'Meja', 'Item', 'Total', 'Status', 'Waktu', 'Aksi']} rows={shown.map(o => [<b key="i">{o.orderCode}</b>, `Meja ${o.tableNumber}`, o.items.map(i => `${i.name} x${i.qty}`).join(', '), rupiah(o.total), <Badge key="s" status={o.status} />, fmtDate(o.createdAt || ''), <SmallBtn key="d" onClick={() => setDetailOrder(o)}>Detail</SmallBtn>])} /> : <EmptyState title="Belum ada pesanan" text="Pesanan dari pelanggan akan muncul di sini secara otomatis." />}
-      {detailOrder && <OrderDetailModal order={detailOrder} onClose={() => setDetailOrder(null)} onSaved={m => { onToast(m); refresh(); }} />}
+      {detailOrder && <OrderDetailModal order={detailOrder} onClose={() => setDetailOrder(null)} onSaved={m => { onToast(m); refresh(); }} products={products} />}
     </div>
   );
 }
@@ -1256,6 +1439,8 @@ export default function AdminPage() {
         @keyframes ss-rise { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:none; } }
         .ss-rise { animation: ss-rise .25s ease; }
         .ss-page { animation: ss-rise .3s ease; }
+        @keyframes slide-in { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:none; } }
+        .animate-slide-in { animation: slide-in .25s ease; }
         @media print { .no-print { display:none !important; } }
       `}</style>
       <div className="ss-admin flex min-h-screen bg-[#f8f6f2] text-[#292522]">
