@@ -78,6 +78,8 @@ export interface IOrder {
   discountAmount?: number;
   total: number;
   status: 'received' | 'preparing' | 'ready' | 'completed';
+  paymentMethod?: 'cash' | 'qris' | string;
+  paymentStatus?: 'unpaid' | 'paid' | string;
   createdAt?: Date;
   updatedAt?: Date;
 }

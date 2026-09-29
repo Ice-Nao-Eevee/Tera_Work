@@ -20,7 +20,7 @@ interface Product {
 }
 interface Category { _id: string; id?: string; name: string; slug: string; sortOrder: number; description?: string; createdAt?: string; }
 interface OrderItem { name: string; qty: number; price: number; lineTotal: number; spiceLevel?: string; addOns?: { label: string; price: number }[]; }
-interface Order { _id?: string; id?: string; orderCode: string; tableNumber: number; items: OrderItem[]; notes?: string; subtotal: number; taxAmount: number; serviceChargeAmount: number; couponCode?: string; discountAmount?: number; total: number; status: string; createdAt?: string; updatedAt?: string; }
+interface Order { _id?: string; id?: string; orderCode: string; tableNumber: number; items: OrderItem[]; notes?: string; subtotal: number; taxAmount: number; serviceChargeAmount: number; couponCode?: string; discountAmount?: number; total: number; status: string; paymentMethod?: string; paymentStatus?: string; createdAt?: string; updatedAt?: string; }
 interface Promotion { _id: string; title: string; description: string; originalPrice: number; discountedPrice: number; isActive: boolean; createdAt?: string; }
 interface Coupon {
   _id: string;
@@ -79,7 +79,7 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ── UI Micro-components (unchanged from original) ────────────────────────────
 function Badge({ status }: { status: string }) {
-  const cls = /tersedia|aktif|aman|selesai|dibaca|completed|ready/i.test(status) ? 'bg-[#e8f5ee] text-[#25805b]' : /baru|diproses|siap|menipis|received|preparing/i.test(status) ? 'bg-[#fff0df] text-[#bb7420]' : /habis|nonaktif|dibatalkan/i.test(status) ? 'bg-[#fbe7e7] text-[#c34040]' : 'bg-[#f0edeb] text-[#625a56]';
+  const cls = /tersedia|aktif|aman|selesai|dibaca|completed|ready|lunas|paid/i.test(status) ? 'bg-[#e8f5ee] text-[#25805b]' : /baru|diproses|siap|menipis|received|preparing/i.test(status) ? 'bg-[#fff0df] text-[#bb7420]' : /habis|nonaktif|dibatalkan|belum|unpaid/i.test(status) ? 'bg-[#fbe7e7] text-[#c34040]' : 'bg-[#f0edeb] text-[#625a56]';
   return <span className={`inline-block rounded-full text-[11px] font-bold px-[9px] py-[5px] ${cls}`}>{status}</span>;
 }
 function EmptyState({ icon = '◌', title, text, action }: { icon?: string; title: string; text: string; action?: React.ReactNode }) {
@@ -272,6 +272,8 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
 // ── OrderDetailModal (wired to PATCH /api/orders/[id]) ───────────────────────
 function OrderDetailModal({ order, onClose, onSaved, products }: { order: Order; onClose: () => void; onSaved: (m: string) => void; products: Product[] }) {
   const [status, setStatus] = useState(order.status);
+  const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus || 'unpaid');
+  const [paymentMethod, setPaymentMethod] = useState(order.paymentMethod || 'cash');
   const [showDel, setShowDel] = useState(false);
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<OrderItem[]>([...order.items]);
@@ -331,7 +333,7 @@ function OrderDetailModal({ order, onClose, onSaved, products }: { order: Order;
     try {
       await apiFetch(`/api/orders/${encodeURIComponent(order.orderCode)}`, {
         method: 'PATCH',
-        body: JSON.stringify({ status, items }),
+        body: JSON.stringify({ status, items, paymentStatus, paymentMethod }),
       });
       onSaved('Pesanan berhasil diperbarui');
       onClose();
@@ -423,7 +425,51 @@ function OrderDetailModal({ order, onClose, onSaved, products }: { order: Order;
             <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Pajak + Service</span><span>{rupiah(taxAmount + serviceAmount)}</span></div>
             <div className="flex justify-between text-sm font-bold mb-4"><b>Total</b><b>{rupiah(total)}</b></div>
 
-            <label className="grid text-xs font-bold gap-[6px] mb-4">Status Pesanan<select className={iCls} value={status} onChange={e => setStatus(e.target.value)}>{['received','preparing','ready','completed'].map(s => <option key={s} value={s}>{s}</option>)}</select></label>
+            {/* Status Pesanan & Pembayaran */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 p-3.5 bg-[#fbf9f7] border border-[#e9e3dc] rounded-xl">
+              <div>
+                <label className="block text-xs font-bold mb-1 text-[#292522]">Status Dapur (Progres)</label>
+                <select className={iCls} value={status} onChange={e => setStatus(e.target.value)}>
+                  {['received','preparing','ready','completed'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold mb-1 text-[#292522]">Metode Pembayaran</label>
+                <select className={iCls} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                  <option value="cash">💵 Bayar di Kasir (Tunai)</option>
+                  <option value="qris">📱 QRIS</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2 pt-2 border-t border-[#e9e3dc] flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#827a73]">Status Pembayaran:</span>
+                  <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full ${
+                    paymentStatus === 'paid' ? 'bg-[#e8f5ee] text-[#25805b]' : 'bg-[#fbe7e7] text-[#c34040]'
+                  }`}>
+                    {paymentStatus === 'paid' ? '✓ SUDAH LUNAS' : '● BELUM LUNAS'}
+                  </span>
+                </div>
+                {paymentStatus === 'paid' ? (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentStatus('unpaid')}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#e9e3dc] bg-white text-[#827a73] hover:bg-[#fdecec] hover:text-[#c34040] hover:border-[#fbd6d6] transition-colors"
+                  >
+                    Ubah ke Belum Lunas
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setPaymentStatus('paid')}
+                    className="text-xs font-bold px-3.5 py-1.5 rounded-lg bg-[#25805b] hover:bg-[#1e684a] text-white shadow-xs transition-colors"
+                  >
+                    ✓ Tandai Sudah Lunas
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="flex justify-end gap-[9px] flex-wrap">
               <button onClick={() => setShowDel(true)} className="inline-flex items-center gap-2 font-bold px-4 py-[10px] rounded-[9px] bg-[#fdecec] text-[#c34040] text-sm hover:bg-[#fbd6d6]">Hapus</button>
@@ -913,7 +959,9 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(''); const [statF, setStatF] = useState('');
+  const [search, setSearch] = useState('');
+  const [statF, setStatF] = useState('');
+  const [payF, setPayF] = useState('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   const refresh = useCallback(async () => {
@@ -932,7 +980,25 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
   // Auto-refresh every 10 seconds to catch new customer orders
   useEffect(() => { const t = setInterval(refresh, 10000); return () => clearInterval(t); }, [refresh]);
 
-  const shown = orders.filter(o => `${o.orderCode}${o.tableNumber}`.toLowerCase().includes(search.toLowerCase()) && (!statF || o.status === statF));
+  const togglePayment = async (o: Order) => {
+    const nextStatus = o.paymentStatus === 'paid' ? 'unpaid' : 'paid';
+    try {
+      await apiFetch(`/api/orders/${encodeURIComponent(o.orderCode)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ paymentStatus: nextStatus }),
+      });
+      onToast(`Status bayar ${o.orderCode} diubah jadi ${nextStatus === 'paid' ? 'Lunas' : 'Belum Lunas'}`);
+      refresh();
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengubah status bayar');
+    }
+  };
+
+  const shown = orders.filter(o =>
+    `${o.orderCode}${o.tableNumber}`.toLowerCase().includes(search.toLowerCase()) &&
+    (!statF || o.status === statF) &&
+    (!payF || (o.paymentStatus || 'unpaid') === payF)
+  );
 
   if (loading) return <div className="text-[#827a73] text-sm">Memuat pesanan...</div>;
 
@@ -940,10 +1006,49 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
     <div>
       <PageHeading title="Pesanan" desc="Pantau pesanan yang masuk dari pelanggan." />
       <div className="flex flex-wrap gap-[9px] mb-[18px]">
-        <input className={iCls + ' min-w-[210px]'} placeholder="Cari kode atau meja" value={search} onChange={e => setSearch(e.target.value)} />
-        <select className={iCls} value={statF} onChange={e => setStatF(e.target.value)}><option value="">Semua status</option>{['received', 'preparing', 'ready', 'completed'].map(s => <option key={s} value={s}>{s}</option>)}</select>
+        <input className={iCls + ' min-w-[210px] max-w-[260px]'} placeholder="Cari kode atau meja" value={search} onChange={e => setSearch(e.target.value)} />
+        <select className={iCls + ' max-w-[190px]'} value={statF} onChange={e => setStatF(e.target.value)}>
+          <option value="">Semua status dapur</option>
+          {['received', 'preparing', 'ready', 'completed'].map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select className={iCls + ' max-w-[190px]'} value={payF} onChange={e => setPayF(e.target.value)}>
+          <option value="">Semua pembayaran</option>
+          <option value="unpaid">● Belum Lunas</option>
+          <option value="paid">✓ Sudah Lunas</option>
+        </select>
       </div>
-      {shown.length ? <DataTable headers={['Kode', 'Meja', 'Item', 'Total', 'Status', 'Waktu', 'Aksi']} rows={shown.map(o => [<b key="i">{o.orderCode}</b>, `Meja ${o.tableNumber}`, o.items.map(i => `${i.name} x${i.qty}`).join(', '), rupiah(o.total), <Badge key="s" status={o.status} />, fmtDate(o.createdAt || ''), <SmallBtn key="d" onClick={() => setDetailOrder(o)}>Detail</SmallBtn>])} /> : <EmptyState title="Belum ada pesanan" text="Pesanan dari pelanggan akan muncul di sini secara otomatis." />}
+      {shown.length ? (
+        <DataTable
+          headers={['Kode', 'Meja', 'Item', 'Total', 'Status Dapur', 'Pembayaran', 'Waktu', 'Aksi']}
+          rows={shown.map(o => [
+            <b key="i">{o.orderCode}</b>,
+            `Meja ${o.tableNumber}`,
+            o.items.map(i => `${i.name} x${i.qty}`).join(', '),
+            <span key="tot" className="font-bold text-[#733e24]">{rupiah(o.total)}</span>,
+            <Badge key="s" status={o.status} />,
+            <div key="pay" className="flex flex-col gap-1 items-start">
+              <button
+                onClick={() => togglePayment(o)}
+                title="Klik untuk ubah status lunas/belum lunas"
+                className="cursor-pointer border-0 bg-transparent p-0 hover:opacity-80 transition-opacity"
+              >
+                <span className={`inline-block rounded-full text-[11px] font-bold px-[8px] py-[3px] ${
+                  o.paymentStatus === 'paid' ? 'bg-[#e8f5ee] text-[#25805b]' : 'bg-[#fbe7e7] text-[#c34040]'
+                }`}>
+                  {o.paymentStatus === 'paid' ? '✓ Lunas' : '● Belum Lunas'}
+                </span>
+              </button>
+              <span className="text-[10px] text-[#827a73] font-medium">
+                {o.paymentMethod === 'qris' ? '📱 QRIS' : '💵 Tunai'}
+              </span>
+            </div>,
+            fmtDate(o.createdAt || ''),
+            <SmallBtn key="d" onClick={() => setDetailOrder(o)}>Detail</SmallBtn>
+          ])}
+        />
+      ) : (
+        <EmptyState title="Belum ada pesanan" text="Pesanan dari pelanggan akan muncul di sini secara otomatis." />
+      )}
       {detailOrder && <OrderDetailModal order={detailOrder} onClose={() => setDetailOrder(null)} onSaved={m => { onToast(m); refresh(); }} products={products} />}
     </div>
   );

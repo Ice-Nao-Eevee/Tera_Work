@@ -4,12 +4,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Utensils, Tag, ArrowRight, AlertCircle, Ticket, Check, X } from 'lucide-react';
+import { Utensils, Tag, ArrowRight, AlertCircle, Ticket, Check, X, Banknote, QrCode } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import {
   getCartItems,
   getManualTableNumber,
   saveManualTableNumber,
+  getTableSession,
   getOrderNotes,
   clearCart,
   addToCart,
@@ -35,6 +36,7 @@ export default function CheckoutPage() {
   const [submitError, setSubmitError] = useState<string>('');
   const [taxRate, setTaxRate] = useState<number>(0.10);
   const [serviceRate, setServiceRate] = useState<number>(0.05);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qris'>('cash');
 
   // ── Coupon State ──
   const [couponCodeInput, setCouponCodeInput] = useState<string>('');
@@ -51,7 +53,15 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     refreshCart();
-    setManualTableNumber(getManualTableNumber());
+    let initialTable = getManualTableNumber();
+    if (!initialTable || initialTable < 1) {
+      const session = getTableSession();
+      if (session?.tableNumber && session.tableNumber > 0) {
+        initialTable = session.tableNumber;
+        saveManualTableNumber(initialTable);
+      }
+    }
+    setManualTableNumber(initialTable);
     setNotes(getOrderNotes());
 
     // Fetch promos, settings, known tables, and active coupons in parallel
@@ -94,6 +104,7 @@ export default function CheckoutPage() {
     setManualTableNumber(num);
     saveManualTableNumber(num);
     if (tableError) setTableError('');
+    if (submitError) setSubmitError('');
     // Soft advisory — warn but never block
     if (num > 0 && knownTableNumbers.length > 0 && !knownTableNumbers.includes(num)) {
       setTableAdvisory(`Meja ${num} tidak ditemukan dalam daftar terdaftar. Pastikan nomor meja Anda sudah benar.`);
@@ -199,11 +210,21 @@ export default function CheckoutPage() {
   const grandTotal = Math.max(0, subtotal - discountAmount + combinedTaxService);
 
   const handleCreateOrder = async () => {
-    if (items.length === 0 || isSubmitting) return;
+    if (items.length === 0) {
+      setSubmitError('Keranjang belanja Anda kosong.');
+      return;
+    }
+    if (isSubmitting) return;
 
     // Client-side validation: table number required
     if (!manualTableNumber || manualTableNumber < 1) {
       setTableError('Harap masukkan nomor meja Anda sebelum melanjutkan.');
+      setSubmitError('Harap isi nomor meja Anda pada bagian Nomor Meja di sebelah kiri.');
+      const inputEl = document.getElementById('table-number-input');
+      if (inputEl) {
+        inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        inputEl.focus();
+      }
       return;
     }
 
@@ -225,6 +246,7 @@ export default function CheckoutPage() {
           lineTotal: ci.lineTotal,
         })),
         notes: fullNotes,
+        paymentMethod,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
         // NOTE: subtotal/tax/total below are hints only — server ignores and recalculates
         subtotal,
@@ -243,7 +265,6 @@ export default function CheckoutPage() {
 
       if (!res.ok) {
         setSubmitError(data.error || 'Terjadi kendala saat mengirim pesanan.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -263,6 +284,7 @@ export default function CheckoutPage() {
       }
     } catch (err: any) {
       setSubmitError(err.message || 'Terjadi kendala saat mengirim pesanan. Silakan coba lagi.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -505,6 +527,57 @@ export default function CheckoutPage() {
               className="w-full p-4 rounded-2xl border border-[#d4bc8c] bg-[#fcf8f2]/50 text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#b45309] focus:bg-white transition-all"
             />
           </div>
+
+          {/* ── Metode Pembayaran ── */}
+          <div className="bg-white rounded-3xl p-6 border border-[#d4bc8c] shadow-card space-y-3">
+            <label className="font-bold text-base text-[#2a1a15] block">
+              Metode Pembayaran
+            </label>
+            <p className="text-xs text-[#735a52]">
+              Pilih cara pembayaran yang Anda inginkan (pembayaran diselesaikan ke kasir).
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('cash')}
+                className={`flex items-center gap-3 p-4 rounded-2xl border text-left transition-all ${
+                  paymentMethod === 'cash'
+                    ? 'border-[#b45309] bg-[#fbf5ed] shadow-xs ring-1 ring-[#b45309]'
+                    : 'border-[#e6cdac] bg-white hover:bg-[#faf5ee]'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${
+                  paymentMethod === 'cash' ? 'bg-[#b45309] text-white' : 'bg-[#f4ebe1] text-[#735a52]'
+                }`}>
+                  <Banknote className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-[#2a1a15]">Bayar di Kasir</div>
+                  <div className="text-[11px] text-[#735a52]">Tunai / Langsung ke Kasir</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('qris')}
+                className={`flex items-center gap-3 p-4 rounded-2xl border text-left transition-all ${
+                  paymentMethod === 'qris'
+                    ? 'border-[#b45309] bg-[#fbf5ed] shadow-xs ring-1 ring-[#b45309]'
+                    : 'border-[#e6cdac] bg-white hover:bg-[#faf5ee]'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${
+                  paymentMethod === 'qris' ? 'bg-[#b45309] text-white' : 'bg-[#f4ebe1] text-[#735a52]'
+                }`}>
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-sm text-[#2a1a15]">QRIS</div>
+                  <div className="text-[11px] text-[#735a52]">Scan QRIS di Meja / Kasir</div>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Ringkasan Pesanan */}
@@ -576,16 +649,17 @@ export default function CheckoutPage() {
 
             {/* Inline submit error */}
             {submitError && (
-              <div className="flex items-start gap-2 p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 p-3.5 rounded-2xl bg-red-50 border-2 border-red-300 text-xs font-semibold text-red-700 shadow-sm animate-pulse">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
                 <span>{submitError}</span>
               </div>
             )}
 
             <button
+              type="button"
               onClick={handleCreateOrder}
               disabled={isSubmitting}
-              className="w-full py-4 bg-[#b45309] hover:bg-[#631c1c] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-[#b45309] hover:bg-[#631c1c] active:scale-[0.98] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <span>{isSubmitting ? 'Mengirim Pesanan...' : 'Buat Pesanan Sekarang'}</span>
               <ArrowRight className="w-4 h-4" />

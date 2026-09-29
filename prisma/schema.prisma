@@ -68,10 +68,13 @@ model Order {
   discountAmount      Int      @default(0)
   total               Int
   status              String   @default("received")
+  paymentMethod       String   @default("cash")
+  paymentStatus       String   @default("unpaid")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   @@index([status, createdAt])
+  @@index([paymentStatus, createdAt])
   @@map("orders")
 }
 

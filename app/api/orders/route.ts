@@ -56,6 +56,15 @@ export async function POST(req: NextRequest) {
           .map((id: string) => id.replace(/^promo_/, ''))
       )
     );
+    const promoTitles: string[] = Array.from(
+      new Set(
+        body.items
+          .filter((i: any) => String(i.menuItemId ?? '').startsWith('promo_'))
+          .map((i: any) => String(i.name ?? '').trim())
+          .filter((n: string) => n.length > 0)
+      )
+    );
+
     const regularIds: string[] = Array.from(
       new Set(
         body.items
@@ -63,19 +72,50 @@ export async function POST(req: NextRequest) {
           .filter((id: string) => !id.startsWith('promo_') && id.length > 0)
       )
     );
+    const regularNames: string[] = Array.from(
+      new Set(
+        body.items
+          .filter((i: any) => !String(i.menuItemId ?? '').startsWith('promo_'))
+          .map((i: any) => String(i.name ?? '').trim())
+          .filter((n: string) => n.length > 0)
+      )
+    );
 
     const [settings, dbMenuItems, dbPromos] = await Promise.all([
       prisma.settings.findFirst(),
-      regularIds.length > 0
-        ? prisma.menuItem.findMany({ where: { id: { in: regularIds } } })
+      regularIds.length > 0 || regularNames.length > 0
+        ? prisma.menuItem.findMany({
+            where: {
+              OR: [
+                ...(regularIds.length > 0 ? [{ id: { in: regularIds } }] : []),
+                ...(regularNames.length > 0 ? [{ name: { in: regularNames } }] : []),
+              ],
+            },
+          })
         : [],
-      promoIds.length > 0
-        ? prisma.promo.findMany({ where: { id: { in: promoIds } } })
+      promoIds.length > 0 || promoTitles.length > 0
+        ? prisma.promo.findMany({
+            where: {
+              OR: [
+                ...(promoIds.length > 0 ? [{ id: { in: promoIds } }] : []),
+                ...(promoTitles.length > 0 ? [{ title: { in: promoTitles } }] : []),
+              ],
+            },
+          })
         : [],
     ]);
 
-    const menuItemMap = new Map(dbMenuItems.map((m) => [m.id, m]));
-    const promoMap = new Map(dbPromos.map((p) => [p.id, p]));
+    const menuItemMap = new Map<string, typeof dbMenuItems[0]>();
+    for (const m of dbMenuItems) {
+      menuItemMap.set(m.id, m);
+      menuItemMap.set(m.name.toLowerCase().trim(), m);
+    }
+
+    const promoMap = new Map<string, typeof dbPromos[0]>();
+    for (const p of dbPromos) {
+      promoMap.set(p.id, p);
+      promoMap.set(p.title.toLowerCase().trim(), p);
+    }
 
     const taxRatePercent = settings?.taxRatePercent ?? 10;
     const serviceRatePercent = settings?.serviceChargeRatePercent ?? 5;
@@ -99,7 +139,7 @@ export async function POST(req: NextRequest) {
       if (menuItemId.startsWith('promo_')) {
         // ── Promo item: look up in pre-fetched map ──────────────────────────
         const promoId = menuItemId.replace(/^promo_/, '');
-        const promo = promoMap.get(promoId);
+        const promo = promoMap.get(promoId) || promoMap.get(String(rawItem.name || '').toLowerCase().trim());
         if (!promo || !promo.isActive) {
           return NextResponse.json(
             { error: `Promo "${rawItem.name || '(tidak dikenal)'}" sudah tidak tersedia.` },
@@ -109,7 +149,7 @@ export async function POST(req: NextRequest) {
         const lineTotal = promo.discountedPrice * qty;
         subtotal += lineTotal;
         validatedItems.push({
-          menuItemId,
+          menuItemId: `promo_${promo.id}`,
           name: promo.title,
           qty,
           price: promo.discountedPrice,
@@ -118,8 +158,8 @@ export async function POST(req: NextRequest) {
           lineTotal,
         });
       } else {
-        // ── Regular menu item: look up in pre-fetched map ───────────────────
-        const menuItem = menuItemMap.get(menuItemId);
+        // ── Regular menu item: look up in pre-fetched map (by ID or Name) ───
+        const menuItem = menuItemMap.get(menuItemId) || menuItemMap.get(String(rawItem.name || '').toLowerCase().trim());
         if (!menuItem || !menuItem.isActive) {
           return NextResponse.json(
             { error: `Menu "${rawItem.name || '(tidak dikenal)'}" tidak tersedia. Harap perbarui keranjang Anda.` },
@@ -146,7 +186,7 @@ export async function POST(req: NextRequest) {
         const lineTotal = unitPrice * qty;
         subtotal += lineTotal;
         validatedItems.push({
-          menuItemId,
+          menuItemId: menuItem.id,
           name: menuItem.name,
           qty,
           price: unitPrice,
@@ -216,6 +256,13 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      const paymentMethod = ['cash', 'qris'].includes(String(body.paymentMethod || '').toLowerCase())
+        ? String(body.paymentMethod).toLowerCase()
+        : 'cash';
+      const paymentStatus = ['paid', 'unpaid'].includes(String(body.paymentStatus || '').toLowerCase())
+        ? String(body.paymentStatus).toLowerCase()
+        : 'unpaid';
+
       return tx.order.create({
         data: {
           orderCode,
@@ -229,6 +276,8 @@ export async function POST(req: NextRequest) {
           discountAmount,
           total,
           status: 'received',
+          paymentMethod,
+          paymentStatus,
         },
       });
     });

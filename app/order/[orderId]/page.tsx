@@ -181,9 +181,31 @@ export default function OrderStatusPage() {
             <span>Total Pembayaran</span>
             <span>{formatRupiah(order.total)}</span>
           </div>
-          <p className="text-[11px] text-[#8c5950] italic text-right">
-            * Pembayaran dilakukan di kasir secara manual (Tunai / EDC)
-          </p>
+
+          {/* Payment Status Card */}
+          <div className={`p-4 rounded-2xl border text-xs flex items-center justify-between gap-3 ${
+            order.paymentStatus === 'paid'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-amber-50 border-amber-200 text-amber-900'
+          }`}>
+            <div>
+              <div className="font-bold flex items-center gap-1.5">
+                <span>Metode: {order.paymentMethod === 'qris' ? 'QRIS' : 'Bayar di Kasir (Tunai)'}</span>
+              </div>
+              <p className="mt-0.5 opacity-90">
+                {order.paymentStatus === 'paid'
+                  ? '✓ Pembayaran telah diterima & dikonfirmasi kasir'
+                  : 'Silakan lakukan pembayaran di kasir dengan menyebutkan nomor meja atau kode pesanan'}
+              </p>
+            </div>
+            <span className={`px-2.5 py-1 rounded-full font-bold text-[11px] shrink-0 ${
+              order.paymentStatus === 'paid'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-amber-500 text-white'
+            }`}>
+              {order.paymentStatus === 'paid' ? 'Lunas' : 'Belum Lunas'}
+            </span>
+          </div>
         </div>
       )}
 
@@ -263,7 +285,7 @@ export default function OrderStatusPage() {
           {/* Footer note */}
           <div className="mt-5 pt-4 border-t border-dashed border-[#d4bc8c] text-center space-y-1">
             <p className="text-xs text-[#8c5950] font-semibold">
-              Pembayaran di Kasir (Tunai / EDC)
+              Metode: {order.paymentMethod === 'qris' ? 'QRIS' : 'Tunai / Kasir'} • Status: {order.paymentStatus === 'paid' ? 'LUNAS (Dikonfirmasi)' : 'Belum Lunas'}
             </p>
             <p className="text-[11px] text-[#9e8d87] italic">
               Struk ini adalah konfirmasi pesanan digital Anda. Tunjukkan kepada kasir jika diperlukan.

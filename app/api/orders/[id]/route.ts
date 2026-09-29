@@ -32,12 +32,18 @@ export async function PATCH(
   try {
     await connectDB();
     const body = await req.json();
-    const { status, items } = body;
+    const { status, items, paymentStatus, paymentMethod } = body;
 
     // Build the update payload
     const updateData: Record<string, unknown> = {};
     if (status !== undefined) {
       updateData.status = status;
+    }
+    if (paymentStatus !== undefined) {
+      updateData.paymentStatus = paymentStatus;
+    }
+    if (paymentMethod !== undefined) {
+      updateData.paymentMethod = paymentMethod;
     }
 
     // If items are provided, recalculate totals and update items
