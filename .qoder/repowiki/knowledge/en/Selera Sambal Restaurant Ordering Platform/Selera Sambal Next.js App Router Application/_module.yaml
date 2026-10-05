@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: nextjs_app
-title: QR Dine-In Ordering App (Next.js App Router)
+title: Selera Sambal Next.js App Router Application
 scope:
     - app/
     - components/

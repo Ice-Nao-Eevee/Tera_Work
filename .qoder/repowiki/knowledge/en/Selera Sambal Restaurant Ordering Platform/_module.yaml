@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: ""
-title: Selera Sambal QR Dine-In Platform (Next.js + Static Admin)
+title: Selera Sambal Restaurant Ordering Platform
 scope:
     - README.md
     - package.json

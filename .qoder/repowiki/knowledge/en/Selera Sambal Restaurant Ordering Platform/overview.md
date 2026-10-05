@@ -1,0 +1,1 @@
+Monorepo-root Next.js customer ordering app and sibling static admin dashboard sharing one Tailwind/TypeScript toolchain, Prisma schema, and environment configuration.

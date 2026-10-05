@@ -1024,10 +1024,10 @@ export default function MenuPage() {
               {promoSlides.map((slide, idx) => (
                 <div
                   key={slide.id}
-                  className="relative rounded-3xl overflow-hidden min-h-[175px] sm:min-h-[190px] p-5 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-white/20"
+                  className="relative isolate rounded-3xl overflow-hidden min-h-[175px] sm:min-h-[190px] p-5 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-white/20 bg-[#1c110b]"
                 >
                   {/* Background Photo with dark roast overlay */}
-                  <div className="absolute inset-0 -z-10">
+                  <div className="absolute inset-0">
                     <img
                       src={slide.bgImage}
                       alt={slide.title}
@@ -1037,7 +1037,7 @@ export default function MenuPage() {
                   </div>
 
                   {/* Top Badges */}
-                  <div className="flex items-center justify-between text-[11px] font-bold">
+                  <div className="relative z-10 flex items-center justify-between text-[11px] font-bold">
                     <span className="px-2.5 py-1 rounded-full bg-white/95 text-[#24130a] shadow-xs">
                       {slide.badge}
                     </span>
@@ -1048,7 +1048,7 @@ export default function MenuPage() {
                   </div>
 
                   {/* Bottom Text & Action */}
-                  <div className="flex items-end justify-between gap-3 pt-4">
+                  <div className="relative z-10 flex items-end justify-between gap-3 pt-4">
                     <div className="text-white space-y-1">
                       <h3 className="font-bold text-base sm:text-lg leading-tight text-[#fdf8f4]">
                         {slide.title}
@@ -1060,7 +1060,7 @@ export default function MenuPage() {
 
                     <button
                       onClick={() => handleClaimPromo(slide.title, slide.code)}
-                      className="px-4 py-1.5 rounded-full bg-white hover:bg-amber-100 text-[#24130a] text-xs font-bold shadow-md transition-all shrink-0 active:scale-95"
+                      className="px-4 py-1.5 rounded-full bg-white hover:bg-amber-100 text-[#24130a] text-xs font-bold shadow-md transition-all shrink-0 active:scale-95 cursor-pointer"
                     >
                       Klaim &gt;
                     </button>
@@ -1090,7 +1090,7 @@ export default function MenuPage() {
                     setActivePromoIndex((prev) => (prev > 0 ? prev - 1 : promoSlides.length - 1));
                     showToast('Menampilkan promo sebelumnya');
                   }}
-                  className="w-7 h-7 rounded-full bg-[#2a170e] hover:bg-[#b45309] text-white flex items-center justify-center transition-colors shadow-xs"
+                  className="w-7 h-7 rounded-full bg-[#2a170e] hover:bg-[#b45309] text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer"
                   aria-label="Promo Sebelumnya"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -1100,7 +1100,7 @@ export default function MenuPage() {
                     setActivePromoIndex((prev) => (prev < promoSlides.length - 1 ? prev + 1 : 0));
                     showToast('Menampilkan promo berikutnya');
                   }}
-                  className="w-7 h-7 rounded-full bg-[#2a170e] hover:bg-[#b45309] text-white flex items-center justify-center transition-colors shadow-xs"
+                  className="w-7 h-7 rounded-full bg-[#2a170e] hover:bg-[#b45309] text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer"
                   aria-label="Promo Berikutnya"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -1126,7 +1126,7 @@ export default function MenuPage() {
 
               <button
                 onClick={() => setShowAllMenuSection((prev) => !prev)}
-                className="text-xs sm:text-sm font-semibold text-[#b45309] hover:underline flex items-center gap-1 self-start sm:self-auto"
+                className="text-xs sm:text-sm font-semibold text-[#b45309] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
               >
                 <span>{showAllMenuSection ? 'Tutup Daftar Lengkap' : 'Lihat Semua Menu'}</span>
                 <ChevronRight className="w-4 h-4" />
@@ -1162,7 +1162,7 @@ export default function MenuPage() {
                       {/* Heart Top Right */}
                       <button
                         onClick={(e) => toggleFavorite(item.id, e)}
-                        className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/80 hover:bg-white text-[#2a170e] flex items-center justify-center transition-colors shadow-xs"
+                        className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/80 hover:bg-white text-[#2a170e] flex items-center justify-center transition-colors shadow-xs cursor-pointer"
                         aria-label="Favoritkan"
                       >
                         <Heart
@@ -1208,7 +1208,7 @@ export default function MenuPage() {
 
                         <button
                           onClick={(e) => handleQuickAdd(item, e)}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm active:scale-95 ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm active:scale-95 cursor-pointer ${
                             isAdded
                               ? 'bg-emerald-600 text-white'
                               : 'bg-black hover:bg-[#b45309] text-white'
@@ -1247,7 +1247,7 @@ export default function MenuPage() {
 
               <button
                 onClick={() => setShowAllMenuSection((prev) => !prev)}
-                className="text-xs sm:text-sm font-semibold text-[#b45309] hover:underline flex items-center gap-1 self-start sm:self-auto"
+                className="text-xs sm:text-sm font-semibold text-[#b45309] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
               >
                 <span>{showAllMenuSection ? 'Tutup Daftar Lengkap' : 'Lihat Semua Menu'}</span>
                 <ChevronRight className="w-4 h-4" />
@@ -1263,10 +1263,10 @@ export default function MenuPage() {
                 return (
                   <div
                     key={rec.id}
-                    className="relative aspect-[3/4] rounded-3xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-4 group border border-white/20"
+                    className="relative isolate aspect-[3/4] rounded-3xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-4 group border border-white/20 bg-[#24130a]"
                   >
                     {/* Background Full Photo */}
-                    <div className="absolute inset-0 -z-10 bg-[#24130a]">
+                    <div className="absolute inset-0 bg-[#24130a]">
                       <img
                         src={rec.photoUrl}
                         alt={rec.name}
@@ -1276,13 +1276,13 @@ export default function MenuPage() {
                     </div>
 
                     {/* Top Row: Badge + Heart */}
-                    <div className="flex items-center justify-between z-10">
+                    <div className="relative z-10 flex items-center justify-between">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-black/60 backdrop-blur-xs text-amber-300 border border-amber-400/30">
                         {rec.badge}
                       </span>
                       <button
                         onClick={(e) => toggleFavorite(rec.id, e)}
-                        className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-xs text-white hover:text-red-400 flex items-center justify-center transition-colors"
+                        className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-xs text-white hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
                         aria-label="Favoritkan"
                       >
                         <Heart
@@ -1294,7 +1294,7 @@ export default function MenuPage() {
                     </div>
 
                     {/* Bottom Info & Action Button */}
-                    <div className="z-10 space-y-2">
+                    <div className="relative z-10 space-y-2">
                       <div>
                         <span className="text-[9px] font-bold tracking-wider text-amber-300 uppercase block">
                           {rec.tag}
@@ -1311,7 +1311,7 @@ export default function MenuPage() {
 
                         <button
                           onClick={(e) => handleQuickAdd(rec as any, e)}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm active:scale-95 ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm active:scale-95 cursor-pointer ${
                             isAdded
                               ? 'bg-emerald-500 text-white'
                               : 'bg-white hover:bg-amber-100 text-[#1c110b]'

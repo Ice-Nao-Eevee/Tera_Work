@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: nextjs_app/state_and_types
-title: Shared Types, Store & Static Data
+title: Domain Types, Static Seed Data & Client Session Store
 scope:
     - lib/store.ts
     - lib/types.ts

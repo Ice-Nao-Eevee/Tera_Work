@@ -1,5 +1,0 @@
-- Domain entities are declared as exported TypeScript interfaces in `lib/types.ts` and consumed by other modules via `import type { ... }` to avoid leaking runtime code into static data.
-- Every function that touches `window`/`localStorage` starts with an early `if (typeof window === 'undefined') return` guard so the module is SSR-safe for Next.js server components.
-- Persistent keys are centralized as `const` constants prefixed with `selera_sambal_` (`CART_KEY`, `TABLE_KEY`, `NOTES_KEY`, `MANUAL_TABLE_KEY`) rather than scattered string literals.
-- After mutating persisted state, store functions call `storeEvents.notify()` to broadcast changes to subscribers, keeping persistence and reactivity concerns separate.
-- Read paths defensively parse and validate raw `localStorage` entries (type checks on each field, array guards, try/catch) before returning them, treating stored JSON as untrusted input.

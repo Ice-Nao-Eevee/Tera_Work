@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: nextjs_app/shared_components
-title: Shared Client UI Shell & Overlays
+title: Public App Shell & Floating Overlays
 scope:
     - components/
 source_files: []

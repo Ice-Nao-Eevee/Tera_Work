@@ -1,0 +1,1 @@
+Shared TypeScript domain interfaces, client-safe static seed datasets, and a localStorage-backed cart/table session store with hand-rolled event-driven reactivity for the Selera Sambal Next.js app.

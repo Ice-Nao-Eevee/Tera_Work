@@ -1,1 +1,0 @@
-Monorepo-root Next.js application serving the customer-facing QR dine-in ordering app and a sibling static admin dashboard, sharing one package manifest, Tailwind config, and Prisma schema.
