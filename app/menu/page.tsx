@@ -891,27 +891,27 @@ export default function MenuPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-9">
 
           {/* ── 1. HERO / BANNER SECTION (matching Image 1) ── */}
-          <section className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#2c170d] via-[#22120a] to-[#170a04] text-white p-6 sm:p-8 md:p-11 shadow-2xl border border-[#3b2014]">
+          <section className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#2c170d] via-[#22120a] to-[#170a04] text-white p-4 sm:p-8 md:p-11 shadow-2xl border border-[#3b2014]">
             {/* Background subtle coffee ambient lighting */}
             <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-amber-600/15 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#c05621]/20 blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col-reverse md:flex-row items-center justify-between gap-8 md:gap-12">
+            <div className="relative z-10 flex flex-col-reverse md:flex-row items-center justify-between gap-4 sm:gap-8 md:gap-12">
               {/* Left Text & CTA */}
-              <div className="max-w-xl text-left space-y-4">
-                <h1 className="font-serif font-extrabold text-3xl sm:text-4xl lg:text-5xl leading-[1.15] tracking-tight">
+              <div className="max-w-xl text-left space-y-2.5 sm:space-y-4">
+                <h1 className="font-serif font-extrabold text-2xl pr-24 min-h-[4.5rem] sm:pr-0 sm:min-h-0 sm:text-4xl lg:text-5xl leading-[1.15] tracking-tight">
                   <span className="text-[#fdf8f4] block">Rasa Segar.</span>
                   <span className="italic text-[#e59866] font-serif font-bold">Racikan Istimewa.</span>
                 </h1>
 
-                <p className="text-xs sm:text-sm text-[#d6c5b6] leading-relaxed max-w-lg font-light">
+                <p className="text-[11px] line-clamp-3 sm:line-clamp-none sm:text-sm text-[#d6c5b6] leading-relaxed max-w-lg font-light">
                   Menghidangkan kembali tradisi kelezatan sepasang tubuh dan masakan mantap Betawi tempo 1984, diolah segar dengan rempah nusantara pilihan berkualitas kami.
                 </p>
 
-                <div className="pt-2 flex flex-wrap items-center gap-3">
+                <div className="pt-1 sm:pt-2 flex flex-wrap items-center gap-2 sm:gap-3">
                   <a
                     href="#menu-favorit"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#a34415] hover:bg-[#8f390e] text-white text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                    className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full bg-[#a34415] hover:bg-[#8f390e] text-white text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                   >
                     <span>Pesan Sekarang</span>
                     <ArrowRight className="w-4 h-4" />
@@ -919,7 +919,7 @@ export default function MenuPage() {
 
                   <button
                     onClick={() => setIsReservationModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 text-[#f7f2ea] border border-white/20 text-xs sm:text-sm font-semibold transition-all backdrop-blur-xs cursor-pointer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 sm:px-5 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 text-[#f7f2ea] border border-white/20 text-xs sm:text-sm font-semibold transition-all backdrop-blur-xs cursor-pointer"
                   >
                     <Calendar className="w-4 h-4 text-amber-300" />
                     <span>Reservasi Meja</span>
@@ -928,8 +928,8 @@ export default function MenuPage() {
               </div>
 
               {/* Right Circular Food Showcase Image */}
-              <div className="relative shrink-0 flex items-center justify-center">
-                <div className="w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 rounded-full overflow-hidden border-4 border-white/15 shadow-[0_16px_50px_rgba(0,0,0,0.65)] relative group bg-[#2a170f]">
+              <div className="absolute top-0 right-0 md:relative shrink-0 flex items-center justify-center">
+                <div className="w-20 h-20 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 rounded-full overflow-hidden border-4 border-white/15 shadow-[0_16px_50px_rgba(0,0,0,0.65)] relative group bg-[#2a170f]">
                   <img
                     src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=800&q=80"
                     alt="Sajian Istimewa Warkop Betawa"
@@ -1020,11 +1020,11 @@ export default function MenuPage() {
             </div>
 
             {/* 3 Promo Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-4 px-4 pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:mx-0 md:px-0 md:pt-0 md:pb-0 md:overflow-visible">
               {promoSlides.map((slide, idx) => (
                 <div
                   key={slide.id}
-                  className="relative isolate rounded-3xl overflow-hidden min-h-[175px] sm:min-h-[190px] p-5 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-white/20 bg-[#1c110b]"
+                  className="relative isolate w-[85%] min-w-[85%] shrink-0 snap-center md:w-auto md:min-w-0 md:shrink rounded-3xl overflow-hidden min-h-[150px] sm:min-h-[190px] p-5 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-white/20 bg-[#1c110b]"
                 >
                   {/* Background Photo with dark roast overlay */}
                   <div className="absolute inset-0">
@@ -1134,7 +1134,7 @@ export default function MenuPage() {
             </div>
 
             {/* 4 Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:pt-0 sm:pb-0 sm:overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
               {favoriteItems.map((item) => {
                 const isFav = !!favorites[item.id];
                 const isAdded = justAddedId === item.id;
@@ -1142,7 +1142,7 @@ export default function MenuPage() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-3xl p-3.5 border border-[#ece4da] shadow-[0_4px_20px_rgba(42,26,21,0.04)] hover:shadow-[0_12px_32px_rgba(42,26,21,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                    className="w-[62%] min-w-[62%] shrink-0 snap-start sm:w-auto sm:min-w-0 sm:shrink bg-white rounded-3xl p-3.5 border border-[#ece4da] shadow-[0_4px_20px_rgba(42,26,21,0.04)] hover:shadow-[0_12px_32px_rgba(42,26,21,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
                   >
                     {/* Top Image + Badge + Heart */}
                     <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#f5ede7] mb-3">
@@ -1255,7 +1255,7 @@ export default function MenuPage() {
             </div>
 
             {/* 4 Tall Vertical Photo Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:pt-0 sm:pb-0 sm:overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
               {recommendationItems.map((rec) => {
                 const isFav = !!favorites[rec.id];
                 const isAdded = justAddedId === rec.id;
@@ -1263,7 +1263,7 @@ export default function MenuPage() {
                 return (
                   <div
                     key={rec.id}
-                    className="relative isolate aspect-[3/4] rounded-3xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-4 group border border-white/20 bg-[#24130a]"
+                    className="relative isolate w-[68%] min-w-[68%] shrink-0 snap-center sm:w-auto sm:min-w-0 sm:shrink aspect-[3/4] rounded-3xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-4 group border border-white/20 bg-[#24130a]"
                   >
                     {/* Background Full Photo */}
                     <div className="absolute inset-0 bg-[#24130a]">
@@ -1352,14 +1352,14 @@ export default function MenuPage() {
             </div>
 
             {/* 3 Horizontal Combo Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-4 px-4 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4 md:mx-0 md:px-0 md:py-0 md:overflow-visible">
               {bundlePackages.map((pkg) => {
                 const isAdded = justAddedId === pkg.id;
 
                 return (
                   <div
                     key={pkg.id}
-                    className="bg-white rounded-2xl p-3.5 border border-[#e8ded3] flex items-center justify-between gap-3 shadow-xs hover:shadow-md transition-all duration-200"
+                    className="w-[85%] min-w-[85%] shrink-0 snap-center md:w-auto md:min-w-0 md:shrink bg-white rounded-2xl p-3.5 border border-[#e8ded3] flex items-center justify-between gap-3 shadow-xs hover:shadow-md transition-all duration-200"
                   >
                     {/* Thumbnail */}
                     <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-[#f5ede7] shrink-0 border border-[#e8ded3]">
@@ -1422,7 +1422,7 @@ export default function MenuPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {filteredItems.map((item) => {
                     const itemId = item.id || item._id || '';
                     const isAdded = justAddedId === itemId;
@@ -1431,11 +1431,11 @@ export default function MenuPage() {
                     return (
                       <div
                         key={itemId}
-                        className="bg-white rounded-3xl p-3.5 border border-[#ece4da] shadow-[0_4px_16px_rgba(42,26,21,0.03)] hover:shadow-[0_8px_24px_rgba(42,26,21,0.06)] hover:-translate-y-1 transition-all flex flex-col justify-between group"
+                        className="bg-white rounded-2xl sm:rounded-3xl p-1.5 sm:p-3.5 border border-[#ece4da] shadow-[0_4px_16px_rgba(42,26,21,0.03)] hover:shadow-[0_8px_24px_rgba(42,26,21,0.06)] hover:-translate-y-1 transition-all flex flex-col justify-between group"
                       >
                         <Link
                           href={`/menu/${itemId}`}
-                          className="block relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#f5ede7] mb-3"
+                          className="block relative aspect-square sm:aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden bg-[#f5ede7] mb-1.5 sm:mb-3"
                         >
                           <img
                             src={
@@ -1446,21 +1446,21 @@ export default function MenuPage() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           {item.badge && item.badge !== 'none' ? (
-                            <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#1c110b] text-white shadow-xs">
+                            <span className="hidden sm:block absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#1c110b] text-white shadow-xs">
                               {item.badge.replace(/_/g, ' ')}
                             </span>
                           ) : (
-                            <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 backdrop-blur-xs text-white shadow-xs">
+                            <span className="hidden sm:block absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 backdrop-blur-xs text-white shadow-xs">
                               {item.category}
                             </span>
                           )}
                           <button
                             onClick={(e) => toggleFavorite(itemId, e)}
-                            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-[#2a170e] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                            className="absolute top-1 right-1 w-5 h-5 sm:top-2.5 sm:right-2.5 sm:w-7 sm:h-7 rounded-full bg-white/90 hover:bg-white text-[#2a170e] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                             aria-label="Favoritkan"
                           >
                             <Heart
-                              className={`w-3.5 h-3.5 ${
+                              className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${
                                 isFav ? 'fill-red-500 text-red-500' : 'text-stone-600'
                               }`}
                             />
@@ -1469,37 +1469,37 @@ export default function MenuPage() {
 
                         <div className="space-y-1.5 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-700">
+                            <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-amber-700">
                               <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                               <span>4.9</span>
                               <span className="text-stone-400">•</span>
                               <span className="text-stone-500 text-[10px]">Terlaris</span>
                             </div>
                             <Link href={`/menu/${itemId}`}>
-                              <h3 className="font-bold text-sm sm:text-base text-[#1c1917] truncate hover:text-[#b45309] transition-colors mt-0.5">
+                              <h3 className="font-bold text-[10px] leading-tight max-sm:line-clamp-2 sm:text-base text-[#1c1917] sm:truncate hover:text-[#b45309] transition-colors sm:mt-0.5">
                                 {item.name}
                               </h3>
                             </Link>
                             {item.description && (
-                              <p className="text-[11px] sm:text-xs text-[#736055] line-clamp-2 min-h-[32px] mt-0.5">
+                              <p className="hidden sm:block text-[11px] sm:text-xs text-[#736055] line-clamp-2 min-h-[32px] mt-0.5">
                                 {item.description}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex items-end justify-between pt-3 border-t border-[#f5efe8] mt-2">
+                          <div className="flex flex-col items-stretch gap-1 pt-1.5 sm:flex-row sm:items-end sm:justify-between sm:pt-3 border-t border-[#f5efe8] mt-1 sm:mt-2">
                             <div>
-                              <span className="text-[9px] uppercase font-bold text-[#8c786a] block leading-none">
+                              <span className="hidden sm:block text-[9px] uppercase font-bold text-[#8c786a] leading-none">
                                 Harga
                               </span>
-                              <span className="font-extrabold text-sm sm:text-base text-[#1c1917] block mt-0.5">
+                              <span className="font-extrabold text-[10px] sm:text-base text-[#1c1917] block sm:mt-0.5">
                                 {formatRupiah(item.price)}
                               </span>
                             </div>
 
                             <button
                               onClick={(e) => handleQuickAdd(item, e)}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer ${
+                              className={`w-full h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer ${
                                 isAdded
                                   ? 'bg-emerald-600 text-white'
                                   : 'bg-black hover:bg-[#b45309] text-white'
@@ -1576,7 +1576,7 @@ export default function MenuPage() {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-2 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                   {filteredItems.map((item) => {
                     const itemId = item.id || item._id || '';
                     const isAdded = justAddedId === itemId;
@@ -1585,11 +1585,11 @@ export default function MenuPage() {
                     return (
                       <div
                         key={itemId}
-                        className="bg-white rounded-3xl p-3.5 border border-[#ece4da] shadow-[0_4px_16px_rgba(42,26,21,0.03)] hover:shadow-[0_8px_24px_rgba(42,26,21,0.06)] hover:-translate-y-1 transition-all flex flex-col justify-between group"
+                        className="bg-white rounded-2xl sm:rounded-3xl p-1.5 sm:p-3.5 border border-[#ece4da] shadow-[0_4px_16px_rgba(42,26,21,0.03)] hover:shadow-[0_8px_24px_rgba(42,26,21,0.06)] hover:-translate-y-1 transition-all flex flex-col justify-between group"
                       >
                         <Link
                           href={`/menu/${itemId}`}
-                          className="block relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#f5ede7] mb-3"
+                          className="block relative aspect-square sm:aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden bg-[#f5ede7] mb-1.5 sm:mb-3"
                         >
                           <img
                             src={
@@ -1600,21 +1600,21 @@ export default function MenuPage() {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           {item.badge && item.badge !== 'none' ? (
-                            <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#1c110b] text-white shadow-xs">
+                            <span className="hidden sm:block absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#1c110b] text-white shadow-xs">
                               {item.badge.replace(/_/g, ' ')}
                             </span>
                           ) : (
-                            <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 backdrop-blur-xs text-white shadow-xs">
+                            <span className="hidden sm:block absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 backdrop-blur-xs text-white shadow-xs">
                               {item.category}
                             </span>
                           )}
                           <button
                             onClick={(e) => toggleFavorite(itemId, e)}
-                            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/90 hover:bg-white text-[#2a170e] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                            className="absolute top-1 right-1 w-5 h-5 sm:top-2.5 sm:right-2.5 sm:w-7 sm:h-7 rounded-full bg-white/90 hover:bg-white text-[#2a170e] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                             aria-label="Favoritkan"
                           >
                             <Heart
-                              className={`w-3.5 h-3.5 ${
+                              className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 ${
                                 isFav ? 'fill-red-500 text-red-500' : 'text-stone-600'
                               }`}
                             />
@@ -1623,37 +1623,37 @@ export default function MenuPage() {
 
                         <div className="space-y-1.5 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-700">
+                            <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-amber-700">
                               <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                               <span>4.9</span>
                               <span className="text-stone-400">•</span>
                               <span className="text-stone-500 text-[10px]">Terlaris</span>
                             </div>
                             <Link href={`/menu/${itemId}`}>
-                              <h3 className="font-bold text-sm sm:text-base text-[#1c1917] truncate hover:text-[#b45309] transition-colors mt-0.5">
+                              <h3 className="font-bold text-[10px] leading-tight max-sm:line-clamp-2 sm:text-base text-[#1c1917] sm:truncate hover:text-[#b45309] transition-colors sm:mt-0.5">
                                 {item.name}
                               </h3>
                             </Link>
                             {item.description && (
-                              <p className="text-[11px] sm:text-xs text-[#736055] line-clamp-2 min-h-[32px] mt-0.5">
+                              <p className="hidden sm:block text-[11px] sm:text-xs text-[#736055] line-clamp-2 min-h-[32px] mt-0.5">
                                 {item.description}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex items-end justify-between pt-3 border-t border-[#f5efe8] mt-2">
+                          <div className="flex flex-col items-stretch gap-1 pt-1.5 sm:flex-row sm:items-end sm:justify-between sm:pt-3 border-t border-[#f5efe8] mt-1 sm:mt-2">
                             <div>
-                              <span className="text-[9px] uppercase font-bold text-[#8c786a] block leading-none">
+                              <span className="hidden sm:block text-[9px] uppercase font-bold text-[#8c786a] leading-none">
                                 Harga
                               </span>
-                              <span className="font-extrabold text-sm sm:text-base text-[#1c1917] block mt-0.5">
+                              <span className="font-extrabold text-[10px] sm:text-base text-[#1c1917] block sm:mt-0.5">
                                 {formatRupiah(item.price)}
                               </span>
                             </div>
 
                             <button
                               onClick={(e) => handleQuickAdd(item, e)}
-                              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer ${
+                              className={`w-full h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer ${
                                 isAdded
                                   ? 'bg-emerald-600 text-white'
                                   : 'bg-black hover:bg-[#b45309] text-white'
