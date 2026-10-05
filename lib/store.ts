@@ -74,6 +74,35 @@ class SearchEvents {
 
 export const searchEvents = new SearchEvents();
 
+class UIEventBus {
+  private cartListeners: (() => void)[] = [];
+  private aiListeners: (() => void)[] = [];
+
+  subscribeCart(cb: () => void) {
+    this.cartListeners.push(cb);
+    return () => {
+      this.cartListeners = this.cartListeners.filter((l) => l !== cb);
+    };
+  }
+
+  openCart() {
+    this.cartListeners.forEach((cb) => cb());
+  }
+
+  subscribeAi(cb: () => void) {
+    this.aiListeners.push(cb);
+    return () => {
+      this.aiListeners = this.aiListeners.filter((l) => l !== cb);
+    };
+  }
+
+  toggleAi() {
+    this.aiListeners.forEach((cb) => cb());
+  }
+}
+
+export const uiEvents = new UIEventBus();
+
 export function getCartItems(): CartItem[] {
   if (typeof window === 'undefined') return [];
   try {

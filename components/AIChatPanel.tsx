@@ -133,12 +133,12 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
     <>
       {/* Backdrop overlay */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[60] transition-opacity"
         onClick={onClose}
       />
 
       {/* Slide-over panel */}
-      <div className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-[#fcf8f2] border-l border-[#d4bc8c] z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+      <div className="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-[#fcf8f2] border-l border-[#d4bc8c] z-[65] flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
         {/* Panel Header */}
         <div className="p-4 border-b border-[#d4bc8c] bg-[#f3e8d6] flex items-center justify-between">
           <div className="flex items-center gap-2.5">

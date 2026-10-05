@@ -29,7 +29,7 @@ export interface IMenuItem {
   price: number;
   category: string;
   photoUrl: string;
-  badge?: 'none' | 'best_seller' | 'chefs_choice' | 'vegan_friendly';
+  badge?: 'none' | 'best_seller' | 'chefs_choice' | 'vegan_friendly' | string;
   spiceLevels: ISpiceLevel[];
   addOns: IAddOn[];
   isActive: boolean;

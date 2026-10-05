@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import AIChatPanel from '@/components/AIChatPanel';
 import FloatingCart from '@/components/FloatingCart';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { uiEvents } from '@/lib/store';
 
 export default function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isAiOpen, setIsAiOpen] = useState<boolean>(false);
@@ -16,6 +17,12 @@ export default function ClientLayoutWrapper({ children }: { children: React.Reac
 
   useEffect(() => {
     setIsMounted(true);
+    const unsubCart = uiEvents.subscribeCart(() => setIsCartOpen(true));
+    const unsubAi = uiEvents.subscribeAi(() => setIsAiOpen((prev) => !prev));
+    return () => {
+      unsubCart();
+      unsubAi();
+    };
   }, []);
 
   // Halaman admin punya header sendiri — sembunyikan public header/footer/AI
@@ -27,18 +34,22 @@ export default function ClientLayoutWrapper({ children }: { children: React.Reac
     );
   }
 
+  // Halaman menu utama menggunakan layout Left Sidebar + Hero + Footer terintegrasi sesuai Gambar 1
+  const isMenuPage = pathname === '/' || pathname === '/menu';
+
   return (
     <>
-      <Header
-        onToggleAiChat={() => setIsAiOpen((prev) => !prev)}
-        onOpenCart={() => setIsCartOpen(true)}
-      />
+      {!isMenuPage && (
+        <Header
+          onToggleAiChat={() => setIsAiOpen((prev) => !prev)}
+          onOpenCart={() => setIsCartOpen(true)}
+        />
+      )}
       <div className="flex-1">
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
-      <Footer />
-      {isMounted && <AIChatPanel isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />}
-      {isMounted && <FloatingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />}
+      {!isMenuPage && isMounted && <AIChatPanel isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />}
+      {!isMenuPage && isMounted && <FloatingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />}
     </>
   );
 }

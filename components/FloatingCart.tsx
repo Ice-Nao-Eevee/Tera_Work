@@ -111,14 +111,23 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
 
   return (
     <>
-      {/* Sidebar (No dark overlay so left menu remains 100% visible & scrollable) */}
+      {/* Backdrop overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 transition-opacity"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar drawer */}
       <aside
         role="dialog"
-        aria-modal="false"
+        aria-modal="true"
         aria-label="Keranjang Belanja"
-        style={{ boxShadow: '-12px 0 40px rgba(0,0,0,0.15), -4px 0 16px rgba(0,0,0,0.08)' }}
+        style={{ boxShadow: '-12px 0 40px rgba(0,0,0,0.25), -4px 0 16px rgba(0,0,0,0.1)' }}
         className={[
-          'fixed top-0 right-0 z-50 h-screen',
+          'fixed top-0 right-0 z-[60] h-screen',
           'w-[92vw] sm:w-[380px] md:w-[410px] lg:w-[430px]',
           'flex flex-col',
           'bg-white border-l border-[#ece8e3]',
