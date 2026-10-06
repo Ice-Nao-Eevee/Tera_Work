@@ -26,9 +26,14 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
     refreshData();
     const unsubscribeStore = storeEvents.subscribe(refreshData);
     const unsubscribeSearch = searchEvents.subscribe((q) => setSearchQuery(q));
+    const handleCartUpdated = () => refreshData();
+    window.addEventListener('wkb:cart-updated', handleCartUpdated);
+    window.addEventListener('storage', handleCartUpdated);
     return () => {
       unsubscribeStore();
       unsubscribeSearch();
+      window.removeEventListener('wkb:cart-updated', handleCartUpdated);
+      window.removeEventListener('storage', handleCartUpdated);
     };
   }, [refreshData]);
 
@@ -68,6 +73,7 @@ export default function Header({ onToggleAiChat, onOpenCart }: HeaderProps) {
         <div className="relative flex-1 max-w-[180px] sm:max-w-xs md:max-w-sm">
           <Search className="w-4 h-4 text-[#b45309] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
+            suppressHydrationWarning
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}

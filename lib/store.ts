@@ -112,18 +112,27 @@ export function getCartItems(): CartItem[] {
     if (!Array.isArray(parsed)) return [];
     
     // Strict sanitization to prevent null pointer exceptions
-    return parsed.filter(
-      (ci: any) =>
-        ci &&
-        typeof ci === 'object' &&
-        ci.id &&
-        ci.menuItem &&
-        typeof ci.menuItem === 'object' &&
-        typeof ci.menuItem.name === 'string' &&
-        typeof ci.menuItem.price === 'number' &&
-        typeof ci.qty === 'number' &&
-        ci.qty > 0
-    );
+    return parsed
+      .map((ci: any) => {
+        if (ci && typeof ci === 'object' && ci.menuItem) {
+          if (!ci.menuItem.name && ci.menuItem.title) {
+            ci.menuItem.name = ci.menuItem.title;
+          }
+        }
+        return ci;
+      })
+      .filter(
+        (ci: any) =>
+          ci &&
+          typeof ci === 'object' &&
+          ci.id &&
+          ci.menuItem &&
+          typeof ci.menuItem === 'object' &&
+          typeof ci.menuItem.name === 'string' &&
+          typeof ci.menuItem.price === 'number' &&
+          typeof ci.qty === 'number' &&
+          ci.qty > 0
+      );
   } catch (err) {
     return [];
   }
@@ -133,6 +142,10 @@ export function saveCartItems(items: CartItem[]): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(CART_KEY, JSON.stringify(items));
   storeEvents.notify();
+  try {
+    window.dispatchEvent(new Event('wkb:cart-updated'));
+    window.dispatchEvent(new Event('storage'));
+  } catch (_) {}
 }
 
 export function addToCart(
@@ -141,18 +154,25 @@ export function addToCart(
   spiceLevel?: string,
   selectedAddOns: IAddOn[] = []
 ): CartItem[] {
-  if (!item || !item.name) return getCartItems();
+  if (!item) return getCartItems();
+  const itemName = item.name || (item as any).title;
+  if (!itemName) return getCartItems();
+
+  const safeItem: IMenuItem = {
+    ...item,
+    name: itemName,
+  };
 
   const current = getCartItems();
   const safeAddOns = Array.isArray(selectedAddOns) ? selectedAddOns : [];
   
   // Calculate unit price including addOns
   const addOnsTotal = safeAddOns.reduce((acc, a) => acc + (a?.price || 0), 0);
-  const unitPrice = (item.price || 0) + addOnsTotal;
+  const unitPrice = (safeItem.price || 0) + addOnsTotal;
 
   // Create unique key based on item ID + spiceLevel + addOns signature
   const addOnSig = safeAddOns.map((a) => a?.label || '').sort().join(',');
-  const itemId = (item as any)._id || item.id || 'item';
+  const itemId = (safeItem as any)._id || safeItem.id || 'item';
   const instanceId = `${itemId}_${spiceLevel || 'none'}_${addOnSig}`;
 
   const existingIndex = current.findIndex((ci) => ci.id === instanceId);
@@ -163,7 +183,7 @@ export function addToCart(
   } else {
     current.push({
       id: instanceId,
-      menuItem: item,
+      menuItem: safeItem,
       qty,
       spiceLevel,
       selectedAddOns: safeAddOns,

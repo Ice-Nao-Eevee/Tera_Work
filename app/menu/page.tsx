@@ -137,9 +137,14 @@ export default function MenuPage() {
     refreshCart();
     const unsubscribeCart = storeEvents.subscribe(refreshCart);
     const unsubscribeSearch = searchEvents.subscribe((q) => setSearchQuery(q));
+    const handleCartUpdated = () => refreshCart();
+    window.addEventListener('wkb:cart-updated', handleCartUpdated);
+    window.addEventListener('storage', handleCartUpdated);
     return () => {
       unsubscribeCart();
       unsubscribeSearch();
+      window.removeEventListener('wkb:cart-updated', handleCartUpdated);
+      window.removeEventListener('storage', handleCartUpdated);
     };
   }, [refreshCart]);
 
@@ -376,12 +381,17 @@ export default function MenuPage() {
       e.preventDefault();
       e.stopPropagation();
     }
-    const defaultSpice = item.spiceLevels && item.spiceLevels.length > 0 ? 'Sedang' : undefined;
-    addToCart(item, 1, defaultSpice, []);
+    const safeItem: IMenuItem = {
+      ...item,
+      name: item.name || (item as any).title || 'Menu Warkop',
+    };
+    const defaultSpice = safeItem.spiceLevels && safeItem.spiceLevels.length > 0 ? 'Sedang' : undefined;
+    const updatedCart = addToCart(safeItem, 1, defaultSpice, []);
+    setCartItems([...updatedCart]);
 
-    const itemId = item.id || item._id || '';
+    const itemId = safeItem.id || safeItem._id || '';
     setJustAddedId(itemId);
-    showToast(`"${item.name}" berhasil ditambahkan ke keranjang!`);
+    showToast(`"${safeItem.name}" berhasil ditambahkan ke keranjang!`);
 
     setTimeout(() => {
       setJustAddedId((curr) => (curr === itemId ? null : curr));
@@ -574,8 +584,9 @@ export default function MenuPage() {
     {
       id: 'item-16',
       _id: 'item-16',
-      saveBadge: 'Hemat Rp 8.000',
+      name: 'Paket Semangat Pagi',
       title: 'Paket Semangat Pagi',
+      saveBadge: 'Hemat Rp 8.000',
       subtitle: 'Kopi Senja + Butter Croissant',
       originalPrice: 40000,
       price: 32000,
@@ -589,8 +600,9 @@ export default function MenuPage() {
     {
       id: 'item-17',
       _id: 'item-17',
-      saveBadge: 'Hemat Rp 15.000',
+      name: 'Paket Teman Kerja',
       title: 'Paket Teman Kerja',
+      saveBadge: 'Hemat Rp 15.000',
       subtitle: '2x Kopi Senja + Snack Mix',
       originalPrice: 70000,
       price: 55000,
@@ -604,8 +616,9 @@ export default function MenuPage() {
     {
       id: 'item-18',
       _id: 'item-18',
-      saveBadge: 'Hemat Rp 7.000',
+      name: 'Paket Sore Santai',
       title: 'Paket Sore Santai',
+      saveBadge: 'Hemat Rp 7.000',
       subtitle: 'Matcha Latte + Pain Au Chocolat',
       originalPrice: 45000,
       price: 38000,
@@ -688,9 +701,11 @@ export default function MenuPage() {
       {/* ══════════════════════════════════════════════════════════════════
           MOBILE TOP NAVBAR (Only on small screens < lg)
       ══════════════════════════════════════════════════════════════════ */}
-      <header className="lg:hidden sticky top-0 z-40 bg-[#1c110b] text-[#f7f2ea] px-4 py-3 flex items-center justify-between border-b border-[#2e1b12] shadow-md">
+      <header suppressHydrationWarning className="lg:hidden sticky top-0 z-40 bg-[#1c110b] text-[#f7f2ea] px-4 py-3 flex items-center justify-between border-b border-[#2e1b12] shadow-md">
         <div className="flex items-center gap-3">
           <button
+            type="button"
+            suppressHydrationWarning
             onClick={() => setIsMobileSidebarOpen(true)}
             aria-label="Buka Menu Navigasi"
             className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#f7f2ea] transition-colors"
@@ -712,6 +727,8 @@ export default function MenuPage() {
         <div className="flex items-center gap-2">
           {/* AI Sparkle */}
           <button
+            type="button"
+            suppressHydrationWarning
             onClick={() => setIsAiOpen((prev) => !prev)}
             aria-label="Tanya AI Asisten"
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-amber-300 transition-colors cursor-pointer"
@@ -721,6 +738,8 @@ export default function MenuPage() {
 
           {/* Cart Icon */}
           <button
+            type="button"
+            suppressHydrationWarning
             onClick={() => setIsCartOpen(true)}
             aria-label="Buka Keranjang"
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white relative transition-colors cursor-pointer"
@@ -747,6 +766,7 @@ export default function MenuPage() {
       )}
 
       <aside
+        suppressHydrationWarning
         className={`fixed top-0 bottom-0 left-0 z-50 w-64 xl:w-72 bg-[#1c110b] text-[#e8ded3] border-r border-[#2e1b12] flex flex-col justify-between p-5 overflow-y-auto transition-transform duration-300 ease-in-out ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
@@ -759,6 +779,8 @@ export default function MenuPage() {
             </span>
             <div className="flex items-center gap-1">
               <button
+                type="button"
+                suppressHydrationWarning
                 onClick={() => setIsAiOpen((prev) => !prev)}
                 title="Tanya Asisten AI Warkop Betawa"
                 className="p-1.5 rounded-full bg-white/10 hover:bg-amber-500/20 text-amber-300 transition-colors cursor-pointer"
@@ -766,6 +788,8 @@ export default function MenuPage() {
                 <Sparkles className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
+                suppressHydrationWarning
                 onClick={() => setIsMobileSidebarOpen(false)}
                 className="lg:hidden p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[#cbb59b] cursor-pointer"
                 aria-label="Tutup Menu"
@@ -798,6 +822,7 @@ export default function MenuPage() {
           <div className="relative">
             <Search className="w-4 h-4 text-[#8c7e75] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
+              suppressHydrationWarning
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
@@ -806,6 +831,7 @@ export default function MenuPage() {
             />
             {searchQuery && (
               <button
+                suppressHydrationWarning
                 onClick={() => {
                   setSearchQuery('');
                   searchEvents.setQuery('');
@@ -829,6 +855,7 @@ export default function MenuPage() {
 
               return (
                 <button
+                  suppressHydrationWarning
                   key={cat.slug}
                   onClick={() => handleSelectCategory(cat.slug)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 text-left cursor-pointer ${
@@ -855,6 +882,7 @@ export default function MenuPage() {
               <span className="text-xs text-[#f5ebe1] font-medium">Ada 3 voucher aktif</span>
             </div>
             <button
+              suppressHydrationWarning
               onClick={() => setIsVoucherModalOpen(true)}
               className="text-xs font-bold text-[#e59866] hover:text-white transition-colors flex items-center gap-0.5 cursor-pointer"
             >
@@ -867,17 +895,19 @@ export default function MenuPage() {
         {/* Sidebar Bottom: Real-Time Cart Pill Button */}
         <div className="pt-4 mt-6 border-t border-[#2e1b12]">
           <button
+            type="button"
+            suppressHydrationWarning
             onClick={() => setIsCartOpen(true)}
             className="w-full bg-white hover:bg-[#fafafa] text-[#1c110b] py-2 px-4 rounded-full shadow-lg flex items-center justify-between transition-transform active:scale-98 border border-white/20 group cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-[#1c110b]" />
-              <span className="font-bold text-xs sm:text-sm text-[#1c110b]">
-                {cartTotal > 0 ? formatRupiah(cartTotal) : 'Rp 0'}
+              <span className="font-bold text-xs sm:text-sm text-[#1c110b]" suppressHydrationWarning>
+                {isMounted && cartTotal > 0 ? formatRupiah(cartTotal) : 'Rp 0'}
               </span>
             </div>
 
-            <div className="w-6 h-6 rounded-full bg-[#1c110b] text-white flex items-center justify-center text-xs font-bold shadow-xs group-hover:bg-[#b45309] transition-colors">
+            <div className="w-6 h-6 rounded-full bg-[#1c110b] text-white flex items-center justify-center text-xs font-bold shadow-xs group-hover:bg-[#b45309] transition-colors" suppressHydrationWarning>
               {isMounted ? cartCount : 0}
             </div>
           </button>
@@ -918,6 +948,7 @@ export default function MenuPage() {
                   </a>
 
                   <button
+                    suppressHydrationWarning
                     onClick={() => setIsReservationModalOpen(true)}
                     className="inline-flex items-center gap-2 px-3.5 py-2 sm:px-5 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 text-[#f7f2ea] border border-white/20 text-xs sm:text-sm font-semibold transition-all backdrop-blur-xs cursor-pointer"
                   >
@@ -954,6 +985,7 @@ export default function MenuPage() {
 
                 return (
                   <button
+                    suppressHydrationWarning
                     key={item.slug}
                     onClick={() => handleSelectCategory(item.slug)}
                     className="flex flex-col items-center gap-1.5 flex-shrink-0 group transition-transform active:scale-95 cursor-pointer"
@@ -1059,6 +1091,7 @@ export default function MenuPage() {
                     </div>
 
                     <button
+                      suppressHydrationWarning
                       onClick={() => handleClaimPromo(slide.title, slide.code)}
                       className="px-4 py-1.5 rounded-full bg-white hover:bg-amber-100 text-[#24130a] text-xs font-bold shadow-md transition-all shrink-0 active:scale-95 cursor-pointer"
                     >
@@ -1074,6 +1107,7 @@ export default function MenuPage() {
               <div className="flex items-center gap-1.5">
                 {promoSlides.map((_, idx) => (
                   <button
+                    suppressHydrationWarning
                     key={idx}
                     onClick={() => setActivePromoIndex(idx)}
                     className={`transition-all duration-300 rounded-full cursor-pointer ${
@@ -1086,6 +1120,7 @@ export default function MenuPage() {
 
               <div className="flex items-center gap-2">
                 <button
+                  suppressHydrationWarning
                   onClick={() => {
                     setActivePromoIndex((prev) => (prev > 0 ? prev - 1 : promoSlides.length - 1));
                     showToast('Menampilkan promo sebelumnya');
@@ -1096,6 +1131,7 @@ export default function MenuPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
+                  suppressHydrationWarning
                   onClick={() => {
                     setActivePromoIndex((prev) => (prev < promoSlides.length - 1 ? prev + 1 : 0));
                     showToast('Menampilkan promo berikutnya');
@@ -1125,6 +1161,7 @@ export default function MenuPage() {
               </div>
 
               <button
+                suppressHydrationWarning
                 onClick={() => setShowAllMenuSection((prev) => !prev)}
                 className="text-xs sm:text-sm font-semibold text-[#b45309] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
               >
@@ -1394,6 +1431,8 @@ export default function MenuPage() {
 
                     {/* Action Button */}
                     <button
+                      type="button"
+                      suppressHydrationWarning
                       onClick={(e) => handleQuickAdd(pkg as any, e)}
                       className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95 ${
                         isAdded

@@ -213,6 +213,7 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
         {/* Input Form */}
         <form onSubmit={handleSend} className="p-3 bg-[#f3e8d6] border-t border-[#d4bc8c] flex gap-2">
           <input
+            suppressHydrationWarning
             ref={inputRef}
             type="text"
             value={input}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { checkCouponRules } from '@/lib/coupon';
+import { STATIC_MENU_ITEMS } from '@/lib/staticData';
 
 function generateOrderCode(): string {
   const num = Math.floor(1000 + Math.random() * 9000);
@@ -109,6 +110,16 @@ export async function POST(req: NextRequest) {
     for (const m of dbMenuItems) {
       menuItemMap.set(m.id, m);
       menuItemMap.set(m.name.toLowerCase().trim(), m);
+    }
+
+    // Fallback to static menu items if not present in DB
+    for (const s of STATIC_MENU_ITEMS) {
+      if (!menuItemMap.has(s.id)) {
+        menuItemMap.set(s.id, s as any);
+      }
+      if (!menuItemMap.has(s.name.toLowerCase().trim())) {
+        menuItemMap.set(s.name.toLowerCase().trim(), s as any);
+      }
     }
 
     const promoMap = new Map<string, typeof dbPromos[0]>();

@@ -329,6 +329,7 @@ export default function CheckoutPage() {
             </div>
             <div>
               <input
+                suppressHydrationWarning
                 id="table-number-input"
                 type="number"
                 min="1"
@@ -414,6 +415,7 @@ export default function CheckoutPage() {
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <input
+                    suppressHydrationWarning
                     type="text"
                     value={couponCodeInput}
                     onChange={(e) => {
@@ -520,6 +522,7 @@ export default function CheckoutPage() {
               Catatan Tambahan (Opsional)
             </label>
             <input
+              suppressHydrationWarning
               type="text"
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}

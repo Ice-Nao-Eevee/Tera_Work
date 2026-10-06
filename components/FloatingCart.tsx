@@ -41,8 +41,21 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
     setIsMounted(true);
     refreshCart();
     const unsub = storeEvents.subscribe(refreshCart);
-    return () => unsub();
+    const handleCartUpdated = () => refreshCart();
+    window.addEventListener('wkb:cart-updated', handleCartUpdated);
+    window.addEventListener('storage', handleCartUpdated);
+    return () => {
+      unsub();
+      window.removeEventListener('wkb:cart-updated', handleCartUpdated);
+      window.removeEventListener('storage', handleCartUpdated);
+    };
   }, [refreshCart]);
+
+  useEffect(() => {
+    if (isOpen) {
+      refreshCart();
+    }
+  }, [isOpen, refreshCart]);
 
   // Fetch order statuses when history panel is opened
   useEffect(() => {

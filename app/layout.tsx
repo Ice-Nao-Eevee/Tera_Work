@@ -14,8 +14,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
-      <body className="bg-[#faf5ee] text-[#2a1a15] min-h-screen flex flex-col antialiased">
+    <html lang="id" suppressHydrationWarning>
+      <body suppressHydrationWarning className="bg-[#faf5ee] text-[#2a1a15] min-h-screen flex flex-col antialiased">
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
