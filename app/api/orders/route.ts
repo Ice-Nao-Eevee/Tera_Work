@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { checkCouponRules } from '@/lib/coupon';
 import { STATIC_MENU_ITEMS } from '@/lib/staticData';
@@ -12,7 +11,6 @@ function generateOrderCode(): string {
 // GET /api/orders - list all orders, newest first
 export async function GET() {
   try {
-    await connectDB();
     const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
     return NextResponse.json({ orders });
   } catch (err) {
@@ -28,7 +26,6 @@ export async function GET() {
 // completely ignored to prevent price manipulation attacks.
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     // ── Validate: items array must be non-empty ────────────────────────────
@@ -274,23 +271,23 @@ export async function POST(req: NextRequest) {
         ? String(body.paymentStatus).toLowerCase()
         : 'unpaid';
 
-      return tx.order.create({
-        data: {
-          orderCode,
-          tableNumber,
-          items: validatedItems,
-          notes: String(body.notes ?? '').slice(0, 500),
-          subtotal,
-          taxAmount,
-          serviceChargeAmount,
-          couponCode: validatedCoupon ? validatedCoupon.code : null,
-          discountAmount,
-          total,
-          status: 'received',
-          paymentMethod,
-          paymentStatus,
-        },
-      });
+      const orderData: any = {
+        orderCode,
+        tableNumber,
+        items: validatedItems,
+        notes: String(body.notes ?? '').slice(0, 500),
+        subtotal,
+        taxAmount,
+        serviceChargeAmount,
+        couponCode: validatedCoupon ? validatedCoupon.code : null,
+        discountAmount,
+        total,
+        status: 'received',
+        paymentMethod,
+        paymentStatus,
+      };
+
+      return tx.order.create({ data: orderData });
     });
 
     return NextResponse.json({ order }, { status: 201 });

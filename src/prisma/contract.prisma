@@ -19,3 +19,85 @@ model Post {
   createdAt TimestamptzString @default(now())
   updatedAt temporal.updatedAtString()
 }
+
+// Restaurant ordering system models
+model MenuItem {
+  id          String   @id
+  name        String
+  description String?
+  price       Int
+  category    String
+  photoUrl    String?
+  badge       String   @default("none")
+  spiceLevels Json     @default("[]")
+  addOns      Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+model Promo {
+  id              String  @id
+  title           String
+  description     String?
+  originalPrice   Int
+  discountedPrice Int
+  isActive        Boolean @default(true)
+  createdAt       TimestamptzString @default(now())
+  updatedAt       temporal.updatedAtString()
+}
+
+model RestaurantTable {
+  id         String @id
+  tableNumber Int   @unique
+  qrToken    String?
+  isActive   Boolean @default(true)
+  createdAt  TimestamptzString @default(now())
+  updatedAt  temporal.updatedAtString()
+}
+
+model Order {
+  id                  String   @id
+  orderCode           String   @unique
+  tableNumber         Int
+  items               Json     @default("[]")
+  notes               String   @default("")
+  subtotal            Int
+  taxAmount           Int
+  serviceChargeAmount Int
+  couponCode          String?
+  discountAmount      Int      @default(0)
+  total               Int
+  status              String   @default("received")
+  paymentMethod       String   @default("cash")
+  paymentStatus       String   @default("unpaid")
+  createdAt           TimestamptzString @default(now())
+  updatedAt           temporal.updatedAtString()
+}
+
+model Coupon {
+  id                String    @id
+  code              String    @unique
+  title             String
+  description       String?
+  discountType      String    // "PERCENTAGE" or "FIXED"
+  discountValue     Int
+  minOrderAmount    Int       @default(0)
+  maxDiscountAmount Int?
+  startDate         TimestamptzString
+  endDate           TimestamptzString
+  isActive          Boolean   @default(true)
+  lastUsedDate      TimestamptzString?
+  usedToday         Boolean   @default(false)
+  createdAt         TimestamptzString @default(now())
+  updatedAt         temporal.updatedAtString()
+}
+
+model Settings {
+  id                       String @id
+  taxRatePercent           Int    @default(10)
+  serviceChargeRatePercent Int    @default(5)
+  restaurantInfo           Json   @default("{}")
+  createdAt                TimestamptzString @default(now())
+  updatedAt                temporal.updatedAtString()
+}
