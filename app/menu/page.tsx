@@ -70,6 +70,7 @@ export default function MenuPage() {
     'item-12': true, // V60 Senja Reserve favorit default
   });
   const [activePromoIndex, setActivePromoIndex] = useState<number>(0);
+  const [expandedPromoId, setExpandedPromoId] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isReservationModalOpen, setIsReservationModalOpen] = useState<boolean>(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState<boolean>(false);
@@ -436,6 +437,7 @@ export default function MenuPage() {
       time: '14:00 - 17:00',
       title: 'Coffee Break',
       subtitle: 'Diskon 20% untuk semua racikan espresso & latte sore ini',
+      detail: 'Nikmati diskon 20% untuk semua menu espresso dan latte di sore hari. Cocok untuk mengakhiri pekerjaanmu sebelum waktu istirahat. Berlaku untuk Americano, Latte, Cappuccino, Espresso, dan semua varian lainnya.',
       code: 'SENJA20',
       bgImage: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
     },
@@ -445,6 +447,7 @@ export default function MenuPage() {
       time: '07:00 - 11:00',
       title: 'Morning Combo',
       subtitle: 'Kopi + Pastry hangat mulai Rp 25.000 untuk awali harimu',
+      detail: 'Mulai harimu dengan sempurna! Dapatkan paket hemat yang terdiri dari satu cup kopi pilihan (Americano, Cappuccino, atau Latte) + satu pastry hangat (Croissant, Danish, atau Chocolate Roll). Harga mulai Rp 25.000 saja.',
       code: 'PAGIHEMAT',
       bgImage: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?auto=format&fit=crop&w=800&q=80',
     },
@@ -454,10 +457,20 @@ export default function MenuPage() {
       time: 'All Day',
       title: 'Sunset Blend',
       subtitle: 'Racikan spesial sore hari dengan sentuhan aroma citrus segar',
+      detail: 'Coba minuman baru kami: Sunset Blend! Racisan eksklusif yang menggabungkan robusta premium dengan sentuhan orange zest dan sedikit vanila. Aroma citrus yang segar dipadukan dengan rasa kopi yang rich dan smooth. Tersedia dingin atau panas.',
       code: 'SUNSETBARU',
       bgImage: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80',
     },
-  ];
+  ] as Array<{
+    id: string;
+    badge: string;
+    time: string;
+    title: string;
+    subtitle: string;
+    detail?: string;
+    code: string;
+    bgImage: string;
+  }>;
 
   // ── Curated Favorite Menu Items (matching Image 1) ──
   const favoriteItems: (IMenuItem & { rating: string; sold: string })[] = [
@@ -1056,7 +1069,9 @@ export default function MenuPage() {
               {promoSlides.map((slide, idx) => (
                 <div
                   key={slide.id}
-                  className="relative isolate w-[85%] min-w-[85%] shrink-0 snap-center md:w-auto md:min-w-0 md:shrink rounded-3xl overflow-hidden min-h-[150px] sm:min-h-[190px] p-5 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-white/20 bg-[#1c110b]"
+                  className={`relative isolate w-[85%] min-w-[85%] shrink-0 snap-center md:w-auto md:min-w-0 md:shrink rounded-3xl overflow-hidden min-h-[175px] sm:min-h-[195px] p-5 flex flex-col justify-between shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group border border-white/20 bg-[#1c110b] ${
+                    expandedPromoId === slide.id ? 'pb-5' : 'pb-16 sm:pb-18'
+                  }`}
                 >
                   {/* Background Photo with dark roast overlay */}
                   <div className="absolute inset-0">
@@ -1079,24 +1094,109 @@ export default function MenuPage() {
                     </span>
                   </div>
 
-                  {/* Bottom Text & Action */}
-                  <div className="relative z-10 flex items-end justify-between gap-3 pt-4">
-                    <div className="text-white space-y-1">
-                      <h3 className="font-bold text-base sm:text-lg leading-tight text-[#fdf8f4]">
+                  {/* Middle Text & Action: Title, Subtitle, and Raised Claim Button */}
+                  <div className="relative z-10 flex items-center justify-between gap-3 pt-3">
+                    <div className="text-white space-y-0.5 min-w-0 pr-1">
+                      <h3 className="font-bold text-base sm:text-lg leading-tight text-[#fdf8f4] truncate">
                         {slide.title}
                       </h3>
-                      <p className="text-[11px] sm:text-xs text-[#d6c7b7] line-clamp-1 max-w-[190px]">
+                      <p className="text-[11px] sm:text-xs text-[#d6c7b7] line-clamp-1">
                         {slide.subtitle}
                       </p>
                     </div>
 
                     <button
+                      type="button"
                       suppressHydrationWarning
-                      onClick={() => handleClaimPromo(slide.title, slide.code)}
-                      className="px-4 py-1.5 rounded-full bg-white hover:bg-amber-100 text-[#24130a] text-xs font-bold shadow-md transition-all shrink-0 active:scale-95 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleClaimPromo(slide.title, slide.code);
+                      }}
+                      className="px-3.5 py-1.5 rounded-full bg-white hover:bg-amber-100 text-[#24130a] text-xs font-bold shadow-lg transition-all shrink-0 active:scale-95 cursor-pointer border border-white/30 z-30"
                     >
                       Klaim &gt;
                     </button>
+                  </div>
+
+                  {/* Click Indicator (Promo Description Pill) */}
+                  <div 
+                    className={`absolute bottom-0 left-0 right-0 z-20 p-3 sm:p-4 bg-gradient-to-t from-black/70 via-black/40 to-transparent pointer-events-none transition-all ${
+                      expandedPromoId === slide.id ? 'hidden' : 'block'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedPromoId(expandedPromoId === slide.id ? null : slide.id);
+                      }}
+                      className="pointer-events-auto w-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-xl py-2 px-3 flex items-center justify-between text-white text-xs font-semibold transition-all shadow-sm"
+                    >
+                      <span className="truncate">{slide.detail || 'Lihat detail promo'}</span>
+                      <ArrowRight className="w-4 h-4 ml-2 shrink-0 transition-transform" />
+                    </button>
+                  </div>
+
+                  {/* Slide-down Details Panel */}
+                  <div
+                    className={`relative z-20 overflow-hidden transition-all duration-500 ease-in-out ${
+                      expandedPromoId === slide.id
+                        ? 'max-h-96 opacity-100'
+                        : 'max-h-0 opacity-0'
+                    }`}
+                    style={{
+                      backgroundColor: '#2a1a15',
+                      backdropFilter: 'blur(10px)',
+                    }}
+                  >
+                    <div className="p-5 space-y-4">
+                      {/* Full Description */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-bold text-[#eeddc5] flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-400" />
+                          Detail Promo
+                        </h4>
+                        <p className="text-xs text-[#d6c7b7] leading-relaxed">
+                          {slide.detail || slide.subtitle}
+                        </p>
+                      </div>
+
+                      {/* Terms & Conditions */}
+                      <div className="border-t border-white/10 pt-3 space-y-2">
+                        <h4 className="text-xs font-bold text-[#eeddc5] flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                          Ketentuan
+                        </h4>
+                        <ul className="text-xs text-[#d6c7b7] space-y-1.5 list-disc list-inside">
+                          <li>Berlaku pada waktu yang tertera</li>
+                          <li>Tidak dapat digabungkan dengan promo lain</li>
+                          <li>Maksimal 2 order per customer</li>
+                          <li>Berlaku untuk dine-in dan take-away</li>
+                        </ul>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row gap-2 pt-3 sticky bottom-0 bg-[#2a1a15]" style={{ backdropFilter: 'blur(10px)' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClaimPromo(slide.title, slide.code);
+                          }}
+                          className="w-full flex-1 px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-colors shadow-lg"
+                        >
+                          Klaim Promo
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedPromoId(null);
+                          }}
+                          className="sm:w-auto w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl transition-colors border border-white/20"
+                        >
+                          Tutup
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
