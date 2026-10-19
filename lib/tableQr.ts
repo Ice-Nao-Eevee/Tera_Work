@@ -5,7 +5,8 @@
  * QR images are generated on the fly in the browser (never written to disk).
  */
 
-import QRCode from 'qrcode';
+
+
 
 export const BRAND_NAME = 'Selera Sambal';
 const ADMIN_KEY_STORAGE = 'ss_admin_key';
@@ -29,9 +30,13 @@ export function tableScanUrl(baseUrl: string, token: string): string {
   return `${base}/t/${token}`;
 }
 
-export function qrDataUrl(text: string, width = 300): Promise<string> {
+export async function qrDataUrl(text: string, width = 300): Promise<string> {
+  // Dynamic import keeps 'qrcode' out of the SSR/build bundle.
+  // It is only evaluated in the browser at runtime.
+  const QRCode = (await import('qrcode')).default;
   return QRCode.toDataURL(text, { width, margin: 1, errorCorrectionLevel: 'M' });
 }
+
 
 /** Builds a labelled PNG ("Selera Sambal" / QR / "Meja N") and triggers a download. */
 export async function downloadTableQrPng(url: string, tableNumber: number): Promise<void> {
