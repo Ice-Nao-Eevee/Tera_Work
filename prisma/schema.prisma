@@ -36,10 +36,12 @@ model MenuItem {
 }
 
 model RestaurantTable {
-  id          String  @id @default(cuid())
-  tableNumber Int     @unique
-  qrToken     String
-  isActive    Boolean @default(true)
+  id          String   @id @default(cuid())
+  tableNumber Int      @unique
+  qrToken     String   @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  orders      Order[]
 
   @@map("tables")
 }
@@ -59,6 +61,8 @@ model Order {
   id                  String   @id @default(cuid())
   orderCode           String   @unique
   tableNumber         Int
+  tableId             String?
+  table               RestaurantTable? @relation(fields: [tableId], references: [id])
   items               Json     @default("[]")
   notes               String   @default("")
   subtotal            Int
@@ -75,6 +79,7 @@ model Order {
 
   @@index([status, createdAt])
   @@index([paymentStatus, createdAt])
+  @@index([tableId])
   @@map("orders")
 }
 

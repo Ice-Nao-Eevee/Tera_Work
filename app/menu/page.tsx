@@ -26,7 +26,6 @@ import {
   Menu,
   X,
   Tag,
-  Star,
   CupSoda,
   CheckCircle2,
   Calendar,
@@ -39,10 +38,9 @@ import {
   storeEvents,
   searchEvents,
   uiEvents,
-  saveManualTableNumber,
-  getManualTableNumber,
   CartItem,
 } from '@/lib/store';
+import { useTableContext } from '@/lib/useTableContext';
 import { STATIC_MENU_ITEMS, STATIC_CATEGORIES } from '@/lib/staticData';
 import { IMenuItem, ICategory } from '@/lib/types';
 import FloatingCart from '@/components/FloatingCart';
@@ -50,6 +48,8 @@ import AIChatPanel from '@/components/AIChatPanel';
 
 export default function MenuPage() {
   const router = useRouter();
+  // Table comes from the scanned unique QR (httpOnly cookie)
+  const { tableNumber: scannedTableNumber, loading: tableLoading } = useTableContext();
 
   // ── State: Data & Filter ──
   const [categories, setCategories] = useState<ICategory[]>(STATIC_CATEGORIES);
@@ -65,17 +65,13 @@ export default function MenuPage() {
 
   // ── State: Interactive UI ──
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({
-    'item-8': true, // Es Kopi Senja favorit default
-    'item-12': true, // V60 Senja Reserve favorit default
-  });
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [activePromoIndex, setActivePromoIndex] = useState<number>(0);
   const [expandedPromoId, setExpandedPromoId] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
-  const [isReservationModalOpen, setIsReservationModalOpen] = useState<boolean>(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState<boolean>(false);
+  const [showAllFavorites, setShowAllFavorites] = useState<boolean>(false);
   const [showAllMenuSection, setShowAllMenuSection] = useState<boolean>(false);
-  const [selectedTableNumber, setSelectedTableNumber] = useState<number>(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Synchronize cart & AI with uiEvents and window custom events
@@ -109,7 +105,15 @@ export default function MenuPage() {
   // Load menu items from API or fallback to static data
   useEffect(() => {
     setIsMounted(true);
-    setSelectedTableNumber(getManualTableNumber() || 1);
+
+    try {
+      const savedFavorites = localStorage.getItem('wkb_favorites');
+      if (savedFavorites) {
+        setFavorites(JSON.parse(savedFavorites));
+      }
+    } catch (_) {
+      // Favorit tetap dapat digunakan meskipun penyimpanan browser tidak tersedia.
+    }
 
     fetch('/api/menu')
       .then((res) => res.json())
@@ -405,8 +409,14 @@ export default function MenuPage() {
     e.stopPropagation();
     setFavorites((prev) => {
       const next = !prev[itemId];
+      const updatedFavorites = { ...prev, [itemId]: next };
+      try {
+        localStorage.setItem('wkb_favorites', JSON.stringify(updatedFavorites));
+      } catch (_) {
+        // Pembaruan daftar tetap berjalan jika localStorage tidak tersedia.
+      }
       showToast(next ? 'Disimpan ke menu favorit ❤️' : 'Dihapus dari favorit');
-      return { ...prev, [itemId]: next };
+      return updatedFavorites;
     });
   };
 
@@ -419,14 +429,6 @@ export default function MenuPage() {
       sessionStorage.setItem('wkb_selected_coupon', code);
     } catch (_) {}
     showToast(`Voucher "${promoTitle}" (Kode: ${code}) berhasil diklaim!`);
-  };
-
-  // Save manual table selection
-  const handleConfirmReservation = (tableNum: number) => {
-    saveManualTableNumber(tableNum);
-    setSelectedTableNumber(tableNum);
-    setIsReservationModalOpen(false);
-    showToast(`Meja #${tableNum} berhasil dipilih untuk pesanan Anda!`);
   };
 
   // ── Promos Data (matching Image 1) ──
@@ -473,7 +475,7 @@ export default function MenuPage() {
   }>;
 
   // ── Curated Favorite Menu Items (matching Image 1) ──
-  const favoriteItems: (IMenuItem & { rating: string; sold: string })[] = [
+  const curatedFavoriteItems: IMenuItem[] = [
     {
       id: 'item-8',
       _id: 'item-8',
@@ -486,8 +488,6 @@ export default function MenuPage() {
       spiceLevels: [],
       addOns: [],
       isActive: true,
-      rating: '4.9',
-      sold: '1.2k terjual',
     },
     {
       id: 'item-9',
@@ -501,8 +501,6 @@ export default function MenuPage() {
       spiceLevels: [],
       addOns: [],
       isActive: true,
-      rating: '4.8',
-      sold: '850 terjual',
     },
     {
       id: 'item-10',
@@ -516,8 +514,6 @@ export default function MenuPage() {
       spiceLevels: [],
       addOns: [],
       isActive: true,
-      rating: '4.9',
-      sold: '940 terjual',
     },
     {
       id: 'item-11',
@@ -531,12 +527,27 @@ export default function MenuPage() {
       spiceLevels: [],
       addOns: [],
       isActive: true,
-      rating: '4.7',
-      sold: '620 terjual',
     },
   ];
 
   // ── Curated Recommendations (matching Image 1) ──
+  const favoriteItems = useMemo(
+    () => {
+      const menuById = new Map(
+        menuItems.map((item) => [item.id || item._id || '', item]),
+      );
+
+      return Object.entries(favorites)
+        .filter(([, isFavorite]) => isFavorite)
+        .map(([itemId]) => menuById.get(itemId))
+        .filter((item): item is IMenuItem => Boolean(item && item.isActive !== false));
+    },
+    [favorites, menuItems],
+  );
+  // Menu Favorit di beranda hanya menampilkan satu baris kartu.
+  const featuredFavoriteItems = favoriteItems.slice(0, 4);
+  const displayedFavoriteItems = showAllFavorites ? favoriteItems : featuredFavoriteItems;
+
   const recommendationItems = [
     {
       id: 'item-12',
@@ -960,14 +971,19 @@ export default function MenuPage() {
                     <ArrowRight className="w-4 h-4" />
                   </a>
 
-                  <button
-                    suppressHydrationWarning
-                    onClick={() => setIsReservationModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 sm:px-5 sm:py-3 rounded-full bg-white/10 hover:bg-white/20 text-[#f7f2ea] border border-white/20 text-xs sm:text-sm font-semibold transition-all backdrop-blur-xs cursor-pointer"
+                  <div
+                    id="table-indicator"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 sm:px-5 sm:py-3 rounded-full bg-white/10 text-[#f7f2ea] border border-white/20 text-xs sm:text-sm font-semibold backdrop-blur-xs"
                   >
-                    <Calendar className="w-4 h-4 text-amber-300" />
-                    <span>Reservasi Meja</span>
-                  </button>
+                    <Utensils className="w-4 h-4 text-amber-300" />
+                    <span>
+                      {tableLoading
+                        ? 'Memeriksa meja…'
+                        : scannedTableNumber > 0
+                          ? `Meja ${scannedTableNumber}`
+                          : 'Scan QR di meja Anda untuk memesan'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1256,30 +1272,36 @@ export default function MenuPage() {
                   Menu Favorit
                 </h2>
                 <p className="text-xs sm:text-sm text-[#736055] mt-0.5">
-                  Paling sering dipesan dan dinikmati setiap harinya
+                  Produk yang Anda tandai dengan tombol favorit
                 </p>
               </div>
 
-              <button
-                suppressHydrationWarning
-                onClick={() => setShowAllMenuSection((prev) => !prev)}
+              <Link
+                href="/favorit"
                 className="text-xs sm:text-sm font-semibold text-[#b45309] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
               >
-                <span>{showAllMenuSection ? 'Tutup Daftar Lengkap' : 'Lihat Semua Menu'}</span>
+                <span>Lihat Menu Favorit</span>
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </Link>
             </div>
 
-            {/* 4 Cards Grid */}
-            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:pt-0 sm:pb-0 sm:overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-              {favoriteItems.map((item) => {
-                const isFav = !!favorites[item.id];
-                const isAdded = justAddedId === item.id;
+            {/* One row of up to four favorite cards */}
+            <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 gap-4 px-4 pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:gap-5">
+              {favoriteItems.length === 0 ? (
+                <div className="w-full min-w-full rounded-2xl border border-dashed border-[#d8cabe] bg-white/70 px-5 py-8 text-center">
+                  <Heart className="mx-auto mb-2 h-5 w-5 text-[#b45309]" />
+                  <p className="text-sm font-semibold text-[#4a3022]">Belum ada menu favorit</p>
+                  <p className="mt-1 text-xs text-[#736055]">Tekan ikon hati pada produk untuk menambahkannya ke daftar ini.</p>
+                </div>
+              ) : featuredFavoriteItems.map((item) => {
+                const itemId = item.id || item._id || '';
+                const isFav = !!favorites[itemId];
+                const isAdded = justAddedId === itemId;
 
                 return (
                   <div
-                    key={item.id}
-                    className="w-[62%] min-w-[62%] shrink-0 snap-start sm:w-auto sm:min-w-0 sm:shrink bg-white rounded-3xl p-3.5 border border-[#ece4da] shadow-[0_4px_20px_rgba(42,26,21,0.04)] hover:shadow-[0_12px_32px_rgba(42,26,21,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                    key={itemId}
+                    className="w-[62%] min-w-[62%] shrink-0 snap-start sm:w-[calc((100%-3.75rem)/4)] sm:min-w-[220px] bg-white rounded-3xl p-3.5 border border-[#ece4da] shadow-[0_4px_20px_rgba(42,26,21,0.04)] hover:shadow-[0_12px_32px_rgba(42,26,21,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
                   >
                     {/* Top Image + Badge + Heart */}
                     <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#f5ede7] mb-3">
@@ -1298,9 +1320,10 @@ export default function MenuPage() {
 
                       {/* Heart Top Right */}
                       <button
-                        onClick={(e) => toggleFavorite(item.id, e)}
+                        onClick={(e) => toggleFavorite(itemId, e)}
                         className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white/80 hover:bg-white text-[#2a170e] flex items-center justify-center transition-colors shadow-xs cursor-pointer"
-                        aria-label="Favoritkan"
+                        aria-label={isFav ? 'Hapus dari favorit' : 'Tambahkan ke favorit'}
+                        aria-pressed={isFav}
                       >
                         <Heart
                           className={`w-3.5 h-3.5 transition-colors ${
@@ -1313,16 +1336,6 @@ export default function MenuPage() {
                     {/* Content */}
                     <div className="space-y-1.5 flex-1 flex flex-col justify-between">
                       <div>
-                        {/* Rating row */}
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#786458] font-medium">
-                          <span className="flex items-center text-amber-500 font-bold">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400 mr-0.5" />
-                            {item.rating}
-                          </span>
-                          <span>•</span>
-                          <span>{item.sold}</span>
-                        </div>
-
                         {/* Title */}
                         <h3 className="font-bold text-sm sm:text-base text-[#1c1917] leading-tight line-clamp-1 mt-0.5">
                           {item.name}
@@ -1394,7 +1407,6 @@ export default function MenuPage() {
             {/* 4 Tall Vertical Photo Cards */}
             <div className="flex overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0 sm:pt-0 sm:pb-0 sm:overflow-visible sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
               {recommendationItems.map((rec) => {
-                const isFav = !!favorites[rec.id];
                 const isAdded = justAddedId === rec.id;
 
                 return (
@@ -1412,22 +1424,11 @@ export default function MenuPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
                     </div>
 
-                    {/* Top Row: Badge + Heart */}
-                    <div className="relative z-10 flex items-center justify-between">
+                    {/* Badge */}
+                    <div className="relative z-10 flex items-center">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-black/60 backdrop-blur-xs text-amber-300 border border-amber-400/30">
                         {rec.badge}
                       </span>
-                      <button
-                        onClick={(e) => toggleFavorite(rec.id, e)}
-                        className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-xs text-white hover:text-red-400 flex items-center justify-center transition-colors cursor-pointer"
-                        aria-label="Favoritkan"
-                      >
-                        <Heart
-                          className={`w-3.5 h-3.5 ${
-                            isFav ? 'fill-red-500 text-red-500' : 'text-white'
-                          }`}
-                        />
-                      </button>
                     </div>
 
                     {/* Bottom Info & Action Button */}
@@ -1549,6 +1550,7 @@ export default function MenuPage() {
           </section>
 
               {/* ── 7. COMPLETE CATALOG SECTION (In Showcase Mode) ── */}
+              {showAllMenuSection && (
               <section id="koleksi-lengkap" className="pt-2 space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-[#e8ded3]">
                   <div>
@@ -1608,12 +1610,6 @@ export default function MenuPage() {
 
                         <div className="space-y-1.5 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-amber-700">
-                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                              <span>4.9</span>
-                              <span className="text-stone-400">•</span>
-                              <span className="text-stone-500 text-[10px]">Terlaris</span>
-                            </div>
                             <Link href={`/menu/${itemId}`}>
                               <h3 className="font-bold text-[10px] leading-tight max-sm:line-clamp-2 sm:text-base text-[#1c1917] sm:truncate hover:text-[#b45309] transition-colors sm:mt-0.5">
                                 {item.name}
@@ -1658,6 +1654,7 @@ export default function MenuPage() {
                   })}
                 </div>
               </section>
+              )}
             </>
           ) : (
             <section id="category-catalog" className="pt-2 space-y-6">
@@ -1762,12 +1759,6 @@ export default function MenuPage() {
 
                         <div className="space-y-1.5 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-amber-700">
-                              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                              <span>4.9</span>
-                              <span className="text-stone-400">•</span>
-                              <span className="text-stone-500 text-[10px]">Terlaris</span>
-                            </div>
                             <Link href={`/menu/${itemId}`}>
                               <h3 className="font-bold text-[10px] leading-tight max-sm:line-clamp-2 sm:text-base text-[#1c1917] sm:truncate hover:text-[#b45309] transition-colors sm:mt-0.5">
                                 {item.name}
@@ -1845,9 +1836,7 @@ export default function MenuPage() {
               <h4 className="font-semibold text-white text-sm tracking-wide">Layanan</h4>
               <ul className="space-y-2 text-xs text-[#a89688]">
                 <li>
-                  <button onClick={() => setIsReservationModalOpen(true)} className="hover:text-white transition-colors cursor-pointer">
-                    Dine In
-                  </button>
+                  <span>Dine In (scan QR di meja)</span>
                 </li>
                 <li>
                   <button onClick={() => setIsCartOpen(true)} className="hover:text-white transition-colors cursor-pointer">
@@ -1917,85 +1906,6 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          MODAL: RESERVASI MEJA / PILIH MEJA
-      ══════════════════════════════════════════════════════════════════ */}
-      {isReservationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-[#faf5ee] rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#d8c8b8] shadow-2xl space-y-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#1c110b] text-amber-300 flex items-center justify-center">
-                  <Utensils className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-bold text-lg text-[#24130a]">
-                    Pilih Nomor Meja
-                  </h3>
-                  <p className="text-xs text-[#736055]">
-                    Untuk pesanan Dine-In langsung diantar ke meja Anda
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsReservationModalOpen(false)}
-                className="p-1.5 rounded-full hover:bg-stone-200 text-stone-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Grid 20 Meja */}
-            <div>
-              <label className="text-xs font-bold text-[#24130a] mb-2 block">
-                Pilih Meja Tersedia:
-              </label>
-              <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-1">
-                {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => {
-                  const isCur = selectedTableNumber === num;
-                  return (
-                    <button
-                      key={num}
-                      onClick={() => setSelectedTableNumber(num)}
-                      className={`py-2 rounded-xl text-xs font-bold transition-all ${
-                        isCur
-                          ? 'bg-[#1c110b] text-amber-300 shadow-md scale-105'
-                          : 'bg-white hover:bg-amber-100 text-[#24130a] border border-[#e0d5c8]'
-                      }`}
-                    >
-                      #{num}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-amber-50 rounded-2xl p-3 border border-amber-200/60 text-xs text-[#735a4b] space-y-1">
-              <p className="font-bold text-[#b45309]">
-                ✓ Meja Terpilih: Meja #{selectedTableNumber}
-              </p>
-              <p className="text-[11px] leading-relaxed">
-                Nomor meja ini akan disimpan untuk sesi pemesanan dan checkout Anda.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                onClick={() => setIsReservationModalOpen(false)}
-                className="flex-1 py-2.5 rounded-full border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => handleConfirmReservation(selectedTableNumber)}
-                className="flex-1 py-2.5 rounded-full bg-[#1c110b] hover:bg-[#b45309] text-white text-xs font-bold shadow-md transition-colors"
-              >
-                Konfirmasi Meja
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ══════════════════════════════════════════════════════════════════
           MODAL: DAFTAR VOUCHER AKTIF

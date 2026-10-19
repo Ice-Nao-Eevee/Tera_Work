@@ -27,7 +27,7 @@ INFO WARUNG:
 CARA MEMESAN:
 1. Scan QR code di meja â†’ otomatis masuk ke halaman menu
 2. Pilih menu yang diinginkan, pilih level pedas & add-on jika ada
-3. Klik "Tambah ke Keranjang" â†’ buka keranjang â†’ isi nomor meja
+3. Klik "Tambah ke Keranjang" â†’ buka keranjang â†’ nomor meja otomatis terisi dari QR yang di-scan
 4. Klik "Checkout & Pesan" â†’ pesanan langsung masuk ke dapur
 
 TUGASMU: Membantu pelanggan dengan pertanyaan seputar menu, harga, promo, kupon, cara memesan, jam buka, dan lokasi.

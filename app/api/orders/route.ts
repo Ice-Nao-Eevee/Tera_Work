@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { checkCouponRules } from '@/lib/coupon';
 import { STATIC_MENU_ITEMS } from '@/lib/staticData';
+import { getTableFromCookie } from '@/lib/tableToken';
 
 function generateOrderCode(): string {
   const num = Math.floor(1000 + Math.random() * 9000);
@@ -36,14 +37,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Validate: tableNumber must be a positive integer ──────────────────
-    const tableNumber = parseInt(String(body.tableNumber ?? ''), 10);
-    if (isNaN(tableNumber) || tableNumber < 1) {
+    // ── Resolve table from the QR cookie (never trust body.tableNumber/tableId) ─
+    const table = await getTableFromCookie();
+    if (!table) {
       return NextResponse.json(
-        { error: 'Nomor meja tidak valid. Harap masukkan nomor meja Anda.' },
+        { error: 'Meja tidak terdeteksi. Silakan scan QR yang ada di meja Anda.' },
         { status: 400 }
       );
     }
+    const tableNumber = table.tableNumber;
 
     // ── Batch fetch settings, menu items, and promos in parallel ───────
     const promoIds: string[] = Array.from(
@@ -274,6 +276,7 @@ export async function POST(req: NextRequest) {
       const orderData: any = {
         orderCode,
         tableNumber,
+        tableId: table.id,
         items: validatedItems,
         notes: String(body.notes ?? '').slice(0, 500),
         subtotal,

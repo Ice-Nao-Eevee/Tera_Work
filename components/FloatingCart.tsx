@@ -8,12 +8,12 @@ import {
   getCartItems,
   updateCartQty,
   removeCartItem,
-  getManualTableNumber,
   getOrderHistory,
   OrderHistoryEntry,
   storeEvents,
   CartItem,
 } from '@/lib/store';
+import { useTableContext } from '@/lib/useTableContext';
 
 interface FloatingCartProps {
   isOpen: boolean;
@@ -26,14 +26,13 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [tableNumber, setTableNumber] = useState<number>(0);
+  const { tableNumber } = useTableContext();
   const [showHistory, setShowHistory] = useState(false);
   const [orderHistory, setOrderHistory] = useState<OrderHistoryEntry[]>([]);
   const [orderStatuses, setOrderStatuses] = useState<Record<string, { status: string; items: { name: string; qty: number }[] }>>({});
 
   const refreshCart = useCallback(() => {
     setItems(getCartItems());
-    setTableNumber(getManualTableNumber());
     setOrderHistory(getOrderHistory());
   }, []);
 
@@ -195,7 +194,7 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
               }`}>
                 <Utensils className="w-3 h-3 text-white/80" />
                 <span className="text-white text-xs font-semibold leading-none">
-                  {tableNumber > 0 ? `Meja ${tableNumber}` : 'Pilih Meja'}
+                  {tableNumber > 0 ? `Meja ${tableNumber}` : 'Scan QR Meja'}
                 </span>
               </div>
               <button

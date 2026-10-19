@@ -4,10 +4,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { ImagePlus, Upload, X, Search, Plus, Minus, Trash2 } from 'lucide-react';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
+import TablesManager from '@/components/admin/TablesManager';
 
 type ActivePage =
   | 'dashboard' | 'products' | 'categories' | 'orders' | 'customers'
-  | 'analytics' | 'promotions' | 'coupons' | 'inventory' | 'reviews' | 'notifications' | 'settings';
+  | 'analytics' | 'promotions' | 'coupons' | 'inventory' | 'reviews' | 'notifications' | 'settings' | 'tables';
 
 // ── Types matching the MongoDB models ────────────────────────────────────────
 interface Product {
@@ -1458,6 +1459,7 @@ const NAV: { key: ActivePage; icon: string; label: string; group: string }[] = [
   { key: 'products', icon: '▣', label: 'Menu', group: 'MANAJEMEN' },
   { key: 'categories', icon: '◫', label: 'Kategori', group: 'MANAJEMEN' },
   { key: 'orders', icon: '◉', label: 'Pesanan', group: 'MANAJEMEN' },
+  { key: 'tables', icon: '▥', label: 'Meja & QR', group: 'MANAJEMEN' },
   { key: 'analytics', icon: '⌁', label: 'Analitik', group: 'BISNIS' },
   { key: 'promotions', icon: '✦', label: 'Promo', group: 'BISNIS' },
   { key: 'coupons', icon: '🏷', label: 'Kupon', group: 'BISNIS' },
@@ -1472,7 +1474,7 @@ const PAGE_LABELS: Record<ActivePage, [string, string]> = {
   promotions: ['Promo', 'Penawaran restoran'], coupons: ['Kupon', 'Kelola kode kupon & diskon'],
   inventory: ['Inventori', 'Ketersediaan menu'],
   reviews: ['Ulasan', 'Suara pelanggan'], notifications: ['Notifikasi', 'Pusat pemberitahuan'],
-  settings: ['Pengaturan', 'Restoran dan sistem'],
+  settings: ['Pengaturan', 'Restoran dan sistem'], tables: ['Meja & QR', 'QR unik per meja'],
 };
 
 // ── Root AdminPage ────────────────────────────────────────────────────────────
@@ -1510,6 +1512,7 @@ export default function AdminPage() {
       case 'products': return <ProductsPage onToast={addToast} />;
       case 'categories': return <CategoriesPage onToast={addToast} />;
       case 'orders': return <OrdersPage onToast={addToast} />;
+      case 'tables': return <TablesManager onToast={addToast} />;
       case 'analytics': return <AnalyticsPage onToast={addToast} />;
       case 'promotions': return <PromotionsPage onToast={addToast} />;
       case 'coupons': return <CouponsPage onToast={addToast} />;

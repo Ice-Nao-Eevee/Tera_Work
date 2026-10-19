@@ -8,9 +8,6 @@ import { Utensils, Tag, ArrowRight, AlertCircle, Ticket, Check, X, Banknote, QrC
 import { formatRupiah } from '@/lib/format';
 import {
   getCartItems,
-  getManualTableNumber,
-  saveManualTableNumber,
-  getTableSession,
   getOrderNotes,
   clearCart,
   addToCart,
@@ -18,16 +15,15 @@ import {
   storeEvents,
   CartItem,
 } from '@/lib/store';
+import { useTableContext } from '@/lib/useTableContext';
 import { STATIC_PROMOS } from '@/lib/staticData';
 import { IPromo } from '@/lib/types';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [manualTableNumber, setManualTableNumber] = useState<number>(0);
-  const [tableError, setTableError] = useState<string>('');
-  const [tableAdvisory, setTableAdvisory] = useState<string>('');
-  const [knownTableNumbers, setKnownTableNumbers] = useState<number[]>([]);
+  // Table comes from the scanned QR (httpOnly cookie, validated server-side)
+  const { tableNumber, loading: tableLoading } = useTableContext();
   const [notes, setNotes] = useState<string>('');
   const [extraNotes, setExtraNotes] = useState<string>('');
   const [promos, setPromos] = useState<IPromo[]>(STATIC_PROMOS);
@@ -53,31 +49,18 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     refreshCart();
-    let initialTable = getManualTableNumber();
-    if (!initialTable || initialTable < 1) {
-      const session = getTableSession();
-      if (session?.tableNumber && session.tableNumber > 0) {
-        initialTable = session.tableNumber;
-        saveManualTableNumber(initialTable);
-      }
-    }
-    setManualTableNumber(initialTable);
     setNotes(getOrderNotes());
 
-    // Fetch promos, settings, known tables, and active coupons in parallel
+    // Fetch promos, settings, and active coupons in parallel
     Promise.all([
       fetch('/api/promos').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings').then(r => r.json()).catch(() => ({})),
-      fetch('/api/tables').then(r => r.json()).catch(() => ({})),
       fetch('/api/coupons').then(r => r.json()).catch(() => ({})),
-    ]).then(([promoData, settingsData, tablesData, couponData]) => {
+    ]).then(([promoData, settingsData, couponData]) => {
       if (promoData.promos?.length > 0) setPromos(promoData.promos);
       if (settingsData.settings) {
         setTaxRate((settingsData.settings.taxRatePercent ?? 10) / 100);
         setServiceRate((settingsData.settings.serviceChargeRatePercent ?? 5) / 100);
-      }
-      if (tablesData.tables) {
-        setKnownTableNumbers(tablesData.tables.map((t: any) => t.tableNumber));
       }
       if (couponData?.coupons?.length > 0) {
         setAvailableCoupons(couponData.coupons);
@@ -96,22 +79,6 @@ export default function CheckoutPage() {
     const unsubscribe = storeEvents.subscribe(refreshCart);
     return () => unsubscribe();
   }, [refreshCart]);
-
-  const handleTableNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    const val = raw === '' ? 0 : parseInt(raw, 10);
-    const num = isNaN(val) ? 0 : Math.max(0, val);
-    setManualTableNumber(num);
-    saveManualTableNumber(num);
-    if (tableError) setTableError('');
-    if (submitError) setSubmitError('');
-    // Soft advisory — warn but never block
-    if (num > 0 && knownTableNumbers.length > 0 && !knownTableNumbers.includes(num)) {
-      setTableAdvisory(`Meja ${num} tidak ditemukan dalam daftar terdaftar. Pastikan nomor meja Anda sudah benar.`);
-    } else {
-      setTableAdvisory('');
-    }
-  };
 
   const handleAddPromo = (promo: IPromo) => {
     const promoId = promo.id || promo._id || 'promo-1';
@@ -216,15 +183,9 @@ export default function CheckoutPage() {
     }
     if (isSubmitting) return;
 
-    // Client-side validation: table number required
-    if (!manualTableNumber || manualTableNumber < 1) {
-      setTableError('Harap masukkan nomor meja Anda sebelum melanjutkan.');
-      setSubmitError('Harap isi nomor meja Anda pada bagian Nomor Meja di sebelah kiri.');
-      const inputEl = document.getElementById('table-number-input');
-      if (inputEl) {
-        inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        inputEl.focus();
-      }
+    // Table must come from a scanned QR (server re-validates the cookie anyway)
+    if (!tableNumber) {
+      setSubmitError('Meja tidak terdeteksi. Silakan scan QR yang ada di meja Anda untuk memesan.');
       return;
     }
 
@@ -234,8 +195,8 @@ export default function CheckoutPage() {
     const fullNotes = [notes, extraNotes].filter(Boolean).join(' | ');
 
     try {
+      // NOTE: the table is resolved server-side from the QR cookie — not sent here.
       const payload = {
-        tableNumber: manualTableNumber,
         items: items.map((ci) => ({
           menuItemId: ci.menuItem.id || (ci.menuItem as any)._id,
           name: ci.menuItem.name,
@@ -272,7 +233,7 @@ export default function CheckoutPage() {
         // Save order to local history BEFORE clearing cart (need cart data for summary)
         saveOrderToHistory({
           orderCode: data.order.orderCode,
-          tableNumber: manualTableNumber,
+          tableNumber,
           total: data.order.total || grandTotal,
           itemCount: items.reduce((sum, ci) => sum + ci.qty, 0),
           createdAt: new Date().toISOString(),
@@ -312,7 +273,7 @@ export default function CheckoutPage() {
         {/* Left Column */}
         <div className="lg:col-span-7 space-y-6">
 
-          {/* ── Nomor Meja Input Card ── */}
+          {/* ── Nomor Meja (dari QR) ── */}
           <div className="bg-white rounded-3xl p-6 border border-[#d4bc8c] shadow-card space-y-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-[#f3e8d6] text-[#b45309] flex items-center justify-center shrink-0 border border-[#d4bc8c]">
@@ -320,40 +281,21 @@ export default function CheckoutPage() {
               </div>
               <div>
                 <span className="text-xs uppercase tracking-widest font-bold text-[#8c5950] block">
-                  Nomor Meja <span className="text-[#b45309]">*</span>
+                  Nomor Meja
                 </span>
-                <p className="text-xs text-[#735a52] font-light mt-0.5">
-                  Lihat nomor yang tertera di meja Anda, lalu ketik di bawah ini
-                </p>
+                {tableLoading ? (
+                  <p className="text-sm text-[#735a52] mt-0.5">Memeriksa meja…</p>
+                ) : tableNumber > 0 ? (
+                  <p id="table-number-display" className="text-2xl font-bold text-[#b45309] leading-tight">
+                    Meja {tableNumber}
+                  </p>
+                ) : (
+                  <p className="flex items-start gap-1.5 text-xs text-red-600 mt-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    Meja tidak terdeteksi. Silakan scan QR yang ada di meja Anda untuk memesan.
+                  </p>
+                )}
               </div>
-            </div>
-            <div>
-              <input
-                suppressHydrationWarning
-                id="table-number-input"
-                type="number"
-                min="1"
-                max="99"
-                value={manualTableNumber > 0 ? manualTableNumber : ''}
-                onChange={handleTableNumberChange}
-                placeholder="Contoh: 5"
-                className={`w-full p-4 rounded-2xl border text-base font-bold text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none transition-all ${
-                  tableError
-                    ? 'border-red-400 bg-red-50 focus:border-red-500'
-                    : 'border-[#d4bc8c] bg-[#fcf8f2]/50 focus:border-[#b45309] focus:bg-white'
-                }`}
-              />
-              {tableError && (
-                <p className="flex items-center gap-1.5 text-xs text-red-600 mt-2 font-medium">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  {tableError}
-                </p>
-              )}
-              {!tableError && tableAdvisory && (
-                <p className="text-xs text-amber-600 mt-2">
-                  ⚠️ {tableAdvisory}
-                </p>
-              )}
             </div>
           </div>
 
@@ -661,7 +603,7 @@ export default function CheckoutPage() {
             <button
               type="button"
               onClick={handleCreateOrder}
-              disabled={isSubmitting}
+              disabled={isSubmitting || tableLoading || tableNumber === 0}
               className="w-full py-4 bg-[#b45309] hover:bg-[#631c1c] active:scale-[0.98] text-white font-medium text-base rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <span>{isSubmitting ? 'Mengirim Pesanan...' : 'Buat Pesanan Sekarang'}</span>

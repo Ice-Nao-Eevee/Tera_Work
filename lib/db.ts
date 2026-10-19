@@ -13,7 +13,7 @@ import {
   STATIC_PROMOS,
   STATIC_SETTINGS,
 } from './staticData';
-import { generateTableToken } from './jwt';
+import { generateTableTokenString, TABLE_TOKEN_LENGTH } from './tableToken';
 
 // ── Re-export aliases ─────────────────────────────────────────────────────────
 export const INITIAL_MENU_ITEMS = STATIC_MENU_ITEMS;
@@ -43,6 +43,8 @@ export async function connectDB(): Promise<void> {
   try {
     await seedDatabaseIfEmpty();
     await seedCouponsIfEmpty();
+    await seedTablesIfEmpty();
+    await backfillLegacyTableTokens();
   } catch (err) {
     globalForDb._dbSeeded = false; // allow retry on failure
     console.error('❌ DB seed failed:', err);
@@ -85,6 +87,37 @@ async function seedCouponsIfEmpty() {
     }
   } catch (e) {
     console.error('Coupons seed error:', e);
+  }
+}
+
+/** Seeds sample tables 1–10 (unique QR tokens) when the tables table is empty. */
+async function seedTablesIfEmpty() {
+  try {
+    if ((await prisma.restaurantTable.count()) > 0) return;
+    for (let i = 1; i <= 10; i++) {
+      await prisma.restaurantTable.create({
+        data: { tableNumber: i, qrToken: generateTableTokenString(), isActive: true },
+      });
+    }
+    console.log('✅ Sample tables 1–10 seeded.');
+  } catch (e) {
+    console.error('Tables seed error:', e);
+  }
+}
+
+/** Replaces legacy JWT-style qrTokens with 10-char nanoid tokens (never touches orders). */
+async function backfillLegacyTableTokens() {
+  try {
+    const tables = await prisma.restaurantTable.findMany({ select: { id: true, qrToken: true } });
+    for (const t of tables) {
+      if (t.qrToken.length === TABLE_TOKEN_LENGTH) continue;
+      await prisma.restaurantTable.update({
+        where: { id: t.id },
+        data: { qrToken: generateTableTokenString() },
+      });
+    }
+  } catch (e) {
+    console.error('Table token backfill error:', e);
   }
 }
 
@@ -145,11 +178,10 @@ async function seedDatabaseIfEmpty() {
 
   // Tables 1–10
   for (let i = 1; i <= 10; i++) {
-    const id = `table-${i}`;
     await prisma.restaurantTable.create({
       data: {
         tableNumber: i,
-        qrToken: generateTableToken(id, i),
+        qrToken: generateTableTokenString(),
         isActive: true,
       },
     });
