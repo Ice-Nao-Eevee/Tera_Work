@@ -6,6 +6,7 @@ import {
   Heart,
   ShoppingBag,
   ArrowRight,
+  ChevronLeft,
   Plus,
   Check,
   Coffee,
@@ -141,6 +142,13 @@ export default function FavoritPage() {
           </div>
 
           <div className="relative z-10 max-w-3xl space-y-4">
+            <Link
+              href="/menu"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[#fbf5eb] text-xs font-semibold transition-all border border-white/20 hover:border-white/40 mb-1 w-fit"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Kembali</span>
+            </Link>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#4e2a1d]/90 backdrop-blur-xs text-xs font-bold tracking-wide uppercase text-rose-300 border border-[#6b3c2a] shadow-xs">
               <Heart className="w-3.5 h-3.5 text-rose-300 fill-rose-300" />
               <span>Koleksi Pilihan Anda</span>
@@ -306,16 +314,6 @@ export default function FavoritPage() {
               })}
             </div>
 
-            {/* Tombol Kembali */}
-            <div className="text-center pt-6">
-              <Link
-                href="/menu"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-[#361c12] hover:bg-[#b45309] text-[#fbf5eb] text-sm font-semibold transition-all shadow-md hover:shadow-lg border border-[#542d1e]"
-              >
-                <span>Lihat Semua Menu Makanan &amp; Minuman</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
           </div>
         )}
       </main>
