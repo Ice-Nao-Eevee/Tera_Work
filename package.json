@@ -8,7 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",
