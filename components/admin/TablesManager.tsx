@@ -127,7 +127,7 @@ export default function TablesManager({ onToast }: { onToast: (m: string) => voi
           <h1 className="text-[clamp(22px,3vw,30px)] font-bold tracking-[-0.04em] m-0 mb-[5px]">Meja &amp; QR</h1>
           <p className="text-[#827a73] m-0 text-sm">Satu QR unik per meja. Pelanggan cukup scan, nomor meja terisi otomatis.</p>
         </div>
-        <a href="/admin/tables/print" target="_blank" rel="noreferrer" className={bPri}>🖨 Cetak Semua QR</a>
+        <a href="/admin/tables/print" className={bPri}>🖨 Cetak Semua QR</a>
       </div>
 
       {unsafeBase && (

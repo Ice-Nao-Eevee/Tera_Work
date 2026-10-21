@@ -6,6 +6,17 @@ import {
 } from '@/lib/tableToken';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs'; // Prisma needs the Node.js runtime (not Edge)
+
+const errorHtml = `<!doctype html>
+<html lang="id"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Layanan Sementara Tidak Tersedia · Selera Sambal</title></head>
+<body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 24px">
+<h1>Layanan sementara tidak tersedia</h1>
+<p>Coba scan ulang QR dalam beberapa saat, atau hubungi staf.</p>
+</body></html>`;
 
 const invalidHtml = `<!doctype html>
 <html lang="id"><head><meta charset="utf-8" />
@@ -36,7 +47,12 @@ export async function GET(
   try {
     table = await findActiveTableByToken(token);
   } catch (err) {
+    // Database/config failure — NOT an invalid QR. Surface it as 503.
     console.error('GET /t/[token] error:', err);
+    return new Response(errorHtml, {
+      status: 503,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+    });
   }
 
   if (!table) {

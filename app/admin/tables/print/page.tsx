@@ -70,6 +70,7 @@ export default function PrintTablesPage() {
         }
       `}</style>
       <div className="print-bar no-print">
+        <a href="/admin" style={{ fontSize: 14 }}>← Kembali</a>
         <h1 style={{ margin: 0, fontSize: 22 }}>Cetak QR Meja</h1>
         <label style={{ fontSize: 14 }}>
           <input type="checkbox" checked={onlyActive} onChange={(e) => setOnlyActive(e.target.checked)} /> Hanya meja aktif
@@ -77,6 +78,11 @@ export default function PrintTablesPage() {
         <button onClick={() => window.print()} disabled={!shown.length}>🖨 Cetak / Simpan PDF</button>
       </div>
       {loading && <p className="no-print">Memuat…</p>}
+      {!loading && !error && (!baseUrl || /vercel\.app|localhost|127\.0\.0\.1/.test(baseUrl)) && (
+        <p className="no-print" style={{ color: '#8a5a10' }}>
+          ⚠ NEXT_PUBLIC_APP_URL belum diatur ke domain permanen{baseUrl ? ` (saat ini: ${baseUrl})` : ''}. Atur dulu di Vercel sebelum mencetak.
+        </p>
+      )}
       {error && <p className="no-print" style={{ color: '#c34040' }}>{error}</p>}
       <div className="qr-grid">
         {shown.map((t) => (
