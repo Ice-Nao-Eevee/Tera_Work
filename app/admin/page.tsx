@@ -166,9 +166,23 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!f.category || f.category.trim() === '') {
+      alert('Peringatan: Kategori menu wajib dipilih!');
+      return;
+    }
+    const numPrice = Number(f.price);
+    if (isNaN(numPrice) || numPrice < 0) {
+      alert('Peringatan: Harga menu harus berupa angka valid dan tidak boleh negatif!');
+      return;
+    }
+    if (numPrice > 2147483647) {
+      alert('Peringatan: Harga terlalu besar! Maksimal harga adalah Rp 2.147.483.647 (batas angka sistem database).');
+      return;
+    }
+
     setSaving(true);
     try {
-      const payload = { ...f, price: Number(f.price) };
+      const payload = { ...f, price: Math.round(numPrice) };
       if (product?._id) {
         await apiFetch(`/api/menu/${product._id}`, { method: 'PUT', body: JSON.stringify(payload) });
         onSaved('Menu berhasil diperbarui');
@@ -178,7 +192,8 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
       }
       onClose();
     } catch (err: any) {
-      alert(err.message || 'Gagal menyimpan menu');
+      const detail = err?.message || 'Terjadi kesalahan tidak terduga pada server.';
+      alert(`Gagal menyimpan menu:\n\n${detail}`);
     } finally {
       setSaving(false);
     }

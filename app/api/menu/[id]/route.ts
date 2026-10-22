@@ -33,6 +33,9 @@ export async function PUT(
       if (isNaN(priceNum) || priceNum < 0) {
         return NextResponse.json({ error: 'Harga harus berupa angka dan tidak boleh negatif' }, { status: 400 });
       }
+      if (priceNum > 2147483647) {
+        return NextResponse.json({ error: 'Harga terlalu besar (maksimal Rp 2.147.483.647)' }, { status: 400 });
+      }
     }
 
     if (body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) {
@@ -44,7 +47,7 @@ export async function PUT(
       data: {
         ...(body.name !== undefined && { name: body.name.trim() }),
         ...(body.description !== undefined && { description: body.description }),
-        ...(body.price !== undefined && { price: Number(body.price) }),
+        ...(body.price !== undefined && { price: Math.round(Number(body.price)) }),
         ...(body.category !== undefined && { category: body.category }),
         ...(body.photoUrl !== undefined && { photoUrl: body.photoUrl }),
         ...(body.badge !== undefined && { badge: body.badge }),
@@ -58,7 +61,9 @@ export async function PUT(
   } catch (err: any) {
     if (err?.code === 'P2025') return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
     console.error('PUT /api/menu/[id] error:', err);
-    return NextResponse.json({ error: 'Gagal memperbarui menu' }, { status: 500 });
+    return NextResponse.json({ 
+      error: err?.message ? `Gagal memperbarui menu: ${err.message}` : 'Gagal memperbarui menu (kesalahan server database)' 
+    }, { status: 500 });
   }
 }
 

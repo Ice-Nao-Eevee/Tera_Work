@@ -79,6 +79,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Harga menu harus berupa angka dan tidak boleh negatif' }, { status: 400 });
     }
 
+    if (price > 2147483647) {
+      return NextResponse.json({ error: 'Harga terlalu besar (maksimal Rp 2.147.483.647)' }, { status: 400 });
+    }
+
     if (!body.category || typeof body.category !== 'string' || !body.category.trim()) {
       return NextResponse.json({ error: 'Kategori menu wajib diisi' }, { status: 400 });
     }
@@ -87,7 +91,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: body.name.trim(),
         description: body.description ?? '',
-        price,
+        price: Math.round(price),
         category: body.category.trim(),
         photoUrl: body.photoUrl ?? '',
         badge: body.badge ?? 'none',
@@ -101,8 +105,10 @@ export async function POST(req: NextRequest) {
     invalidateMenuCache();
 
     return NextResponse.json({ item }, { status: 201 });
-  } catch (err) {
+  } catch (err: any) {
     console.error('POST /api/menu error:', err);
-    return NextResponse.json({ error: 'Gagal menambah menu' }, { status: 500 });
+    return NextResponse.json({ 
+      error: err?.message ? `Gagal menambah menu: ${err.message}` : 'Gagal menambah menu (kesalahan server database)' 
+    }, { status: 500 });
   }
 }
