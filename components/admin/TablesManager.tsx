@@ -173,7 +173,7 @@ export default function TablesManager({ onToast }: { onToast: (m: string) => voi
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['QR', 'Meja', 'Status', 'Pesanan', 'Aksi'].map((h) => (
+                  {['QR', 'Meja', 'Status', 'Pesanan', 'Aksi', 'Token'].map((h) => (
                     <th key={h} className="text-[11px] font-bold uppercase tracking-[.05em] text-[#827a73] text-left border-b border-[#e9e3dc] px-3 py-3 first:pl-5 last:pr-5">{h}</th>
                   ))}
                 </tr>
@@ -187,7 +187,7 @@ export default function TablesManager({ onToast }: { onToast: (m: string) => voi
                       <span className={`inline-block rounded-full text-[11px] font-bold px-[9px] py-[5px] ${t.isActive ? 'bg-[#e8f5ee] text-[#25805b]' : 'bg-[#fbe7e7] text-[#c34040]'}`}>{t.isActive ? 'Aktif' : 'Nonaktif'}</span>
                     </td>
                     <td className="border-b border-[#e9e3dc] px-3 py-3 text-sm">{t.orderCount}</td>
-                    <td className="border-b border-[#e9e3dc] px-3 py-3 last:pr-5 text-sm">
+                    <td className="border-b border-[#e9e3dc] px-3 py-3 text-sm">
                       <div className="flex flex-wrap gap-1">
                         <button className={bSec} onClick={() => download(t)}>⬇ PNG</button>
                         <button className={bSec} onClick={() => toggle(t)} disabled={busy}>{t.isActive ? 'Nonaktifkan' : 'Aktifkan'}</button>
@@ -195,10 +195,28 @@ export default function TablesManager({ onToast }: { onToast: (m: string) => voi
                         {t.orderCount === 0 && <button className={bSec} onClick={() => remove(t)} disabled={busy}>Hapus</button>}
                       </div>
                     </td>
+                    <td className="border-b border-[#e9e3dc] px-3 py-3 last:pr-5 text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <code className="px-2 py-1 bg-[#f3eeea] text-[#6e4e37] rounded font-mono text-xs select-all">
+                          {t.qrToken}
+                        </code>
+                        <button
+                          type="button"
+                          className="px-2 py-1 text-xs border border-[#e9e3dc] rounded bg-white hover:bg-[#f3eeea] text-[#554b45] transition-colors"
+                          title="Salin Link Scan Meja"
+                          onClick={() => {
+                            navigator.clipboard.writeText(tableScanUrl(baseUrl, t.qrToken));
+                            onToast('Link Meja ' + t.tableNumber + ' disalin!');
+                          }}
+                        >
+                          Salin
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {!loading && tables.length === 0 && (
-                  <tr><td colSpan={5} className="px-5 py-8 text-center text-sm text-[#827a73]">Belum ada meja. Tambahkan meja di atas.</td></tr>
+                  <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[#827a73]">Belum ada meja. Tambahkan meja di atas.</td></tr>
                 )}
               </tbody>
             </table>
