@@ -13,14 +13,14 @@ const BADGE_LABEL: Record<string, string> = {
   none: '',
 };
 
-// â”€â”€ System Prompt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const SYSTEM_PROMPT_TEMPLATE = `Kamu adalah asisten virtual "Kopi" untuk Warkop Betawa (Selera Sambal), warung makan khas Nusantara di Jakarta.
+const SYSTEM_PROMPT_TEMPLATE = `Kamu adalah asisten virtual "Kopi" untuk Warkop Betawa (Selera Sambal), warung makan khas Nusantara di Depok.
 
 INFO WARUNG:
 - Nama: Warkop Betawa (Selera Sambal)
-- Alamat: Jl. Nusantara No. 14, Jakarta
+- Alamat: Jl. Raya Jatimulya No. 33, Kel. Jatimulya, Kec. Cilodong, Kota Depok, Jawa Barat
+- Google Maps: https://maps.google.com/?q=Jl.+Raya+Jatimulya+No.33+Kel.+Jatimulya+Kec.+Cilodong+Kota+Depok+Jawa+Barat
 - Jam buka: Setiap hari 10:00 - 22:00 WIB
-- WhatsApp: +6281234567890
+- WhatsApp Owner: +62 812-2592-0355 (link: https://wa.me/6281225920355)
 - Instagram: @selerasambal
 - Sistem pemesanan: Dine-in via scan QR di meja
 
@@ -46,6 +46,9 @@ ATURAN WAJIB:
 6. Kamu TIDAK BISA memproses pesanan atau tambah item ke keranjang â€” arahkan user ke halaman menu.
 7. Jika ditanya level pedas: semua makanan utama tersedia dalam Tidak Pedas, Sedang, dan Pedas.
 8. Jika ditanya add-on: sebutkan nama dan harga tambahan dari data.
+9. LINK PRODUK: Setiap kali kamu menyebutkan atau merekomendasikan suatu menu makanan/minuman, WAJIB sertakan link markdown ke produk tersebut menggunakan id produk jika tersedia, atau nama produk. Gunakan format: [Nama Menu](/menu/{id_produk}). Contoh: [Nasi Goreng Spesial](/menu/item-1). Link ini agar pelanggan bisa langsung membuka halaman detail produk dan memesan.
+10. LINK LOKASI: Jika pelanggan menanyakan lokasi, alamat, arah, atau posisi warung, SELALU sertakan alamat lengkap dan link Google Maps dengan format: [ðŸ“ Buka di Google Maps](https://maps.google.com/?q=Jl.+Raya+Jatimulya+No.33+Kel.+Jatimulya+Kec.+Cilodong+Kota+Depok+Jawa+Barat).
+11. LINK WHATSAPP: Jika pelanggan menanyakan nomor telepon, WhatsApp, atau cara menghubungi owner/pemilik warung, berikan nomor +62 812-2592-0355 dan SELALU sertakan link WhatsApp dengan format: [ðŸ’¬ Chat WhatsApp](https://wa.me/6281225920355).
 
 DATA MENU, PROMO & KUPON (gunakan ini sebagai satu-satunya sumber kebenaran):
 {context_data}`;
@@ -206,8 +209,45 @@ async function getRelevantMenuAndPromoData(message: string) {
 
 // â”€â”€ Route Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+/** Helper: create a markdown link to the menu search for a product name */
+function menuLink(name: string): string {
+  return `[${name}](/menu?search=${encodeURIComponent(name).replace(/%20/g, '+')})`;
+}
+
+const MAPS_LINK = '[📍 Buka di Google Maps](https://maps.google.com/?q=Jl.+Raya+Jatimulya+No.33+Kel.+Jatimulya+Kec.+Cilodong+Kota+Depok+Jawa+Barat)';
+const WA_LINK = '[💬 Chat WhatsApp](https://wa.me/6281225920355)';
+
 function generateSmartFallback(userMessage: string, relevantData: any): string {
   const lower = userMessage.toLowerCase();
+
+  // WhatsApp / Telepon / Hubungi Owner
+  if (
+    lower.includes('whatsapp') ||
+    lower.includes('wa ') ||
+    lower.includes('telepon') ||
+    lower.includes('telpon') ||
+    lower.includes('hubungi') ||
+    lower.includes('kontak') ||
+    lower.includes('owner') ||
+    lower.includes('pemilik') ||
+    lower.includes('nomor')
+  ) {
+    return `Kamu bisa langsung hubungi owner Warkop Betawa di **+62 812-2592-0355**.\n\n${WA_LINK}\n\nChat aja langsung ya! \u2615`;
+  }
+
+  // Lokasi / Alamat / Arah / Dimana
+  if (
+    lower.includes('lokasi') ||
+    lower.includes('alamat') ||
+    lower.includes('dimana') ||
+    lower.includes('di mana') ||
+    lower.includes('arah') ||
+    lower.includes('posisi') ||
+    lower.includes('maps') ||
+    lower.includes('map')
+  ) {
+    return `Warkop Betawa berlokasi di **Jl. Raya Jatimulya No. 33, Kel. Jatimulya, Kec. Cilodong, Kota Depok, Jawa Barat**.\n\n${MAPS_LINK}\n\nDitunggu kedatangannya ya! \u2615`;
+  }
 
   // Recommendations / Menu favorites
   if (
@@ -224,10 +264,10 @@ function generateSmartFallback(userMessage: string, relevantData: any): string {
     const listStr = items
       .map(
         (m: any) =>
-          `- **${m.nama}** (${m.harga}): ${m.deskripsi || 'Menu spesial pilihan pengunjung'}`
+          `- ${menuLink(m.nama)} (${m.harga}): ${m.deskripsi || 'Menu spesial pilihan pengunjung'}`
       )
       .join('\n');
-    return `Berikut rekomendasi menu favorit di Warkop Betawa:\n\n${listStr}\n\nAda yang mau dicoba? Tinggal pilih di menu dan masukkan ke keranjang ya! 😊`;
+    return `Berikut rekomendasi menu favorit di Warkop Betawa:\n\n${listStr}\n\nKlik nama menu untuk langsung lihat dan pesan ya! \uD83D\uDE0A`;
   }
 
   // Promo & Diskon
@@ -244,9 +284,9 @@ function generateSmartFallback(userMessage: string, relevantData: any): string {
             `- **${p.judul}**: Cuma ${p.harga_promo} (Hemat ${p.hemat}, normal ${p.harga_normal})`
         )
         .join('\n');
-      return `Kabar baik! Saat ini kami ada promo aktif:\n\n${promoList}\n\nYuk buruan pesan sebelum kehabisan! ✨`;
+      return `Kabar baik! Saat ini kami ada promo aktif:\n\n${promoList}\n\nYuk buruan pesan sebelum kehabisan! \u2728`;
     }
-    return 'Saat ini belum ada promo paket khusus, tapi pantau terus halaman Promo kami ya! Ada juga kupon diskon yang bisa kamu pakai saat checkout. 😊';
+    return 'Saat ini belum ada promo paket khusus, tapi pantau terus halaman Promo kami ya! Ada juga kupon diskon yang bisa kamu pakai saat checkout. \uD83D\uDE0A';
   }
 
   // Kupon / Voucher
@@ -258,9 +298,9 @@ function generateSmartFallback(userMessage: string, relevantData: any): string {
             `- Kode **${c.kode_kupon}** (${c.nama}): Diskon ${c.diskon} (Min. belanja ${c.minimal_belanja})`
         )
         .join('\n');
-      return `Kamu bisa gunakan kupon diskon berikut saat checkout:\n\n${kuponList}\n\nMasukkan kodenya di kolom "Kode Promo" sebelum bayar ya! 🎟️`;
+      return `Kamu bisa gunakan kupon diskon berikut saat checkout:\n\n${kuponList}\n\nMasukkan kodenya di kolom "Kode Promo" sebelum bayar ya! \uD83C\uDFAB\uFE0F`;
     }
-    return 'Belum ada kupon aktif saat ini. Cek berkala di halaman checkout ya! 😊';
+    return 'Belum ada kupon aktif saat ini. Cek berkala di halaman checkout ya! \uD83D\uDE0A';
   }
 
   // Menu / Makanan / Minuman / Harga
@@ -273,9 +313,9 @@ function generateSmartFallback(userMessage: string, relevantData: any): string {
   ) {
     const sample = (relevantData.menu || []).slice(0, 5);
     const sampleStr = sample
-      .map((m: any) => `- **${m.nama}** - ${m.harga} (${m.kategori})`)
+      .map((m: any) => `- ${menuLink(m.nama)} - ${m.harga} (${m.kategori})`)
       .join('\n');
-    return `Warkop Betawa menyajikan berbagai pilihan makanan, minuman, dan cemilan lezat! Beberapa di antaranya:\n\n${sampleStr}\n\nSilakan cek daftar menu lengkap langsung di layar pesananmu ya! 🍜🍹`;
+    return `Warkop Betawa menyajikan berbagai pilihan makanan, minuman, dan cemilan lezat! Beberapa di antaranya:\n\n${sampleStr}\n\nKlik nama menu untuk langsung lihat detailnya! \uD83C\uDF5C\uD83C\uDF79`;
   }
 
   // Pedas / Sambal / Level
@@ -285,7 +325,7 @@ function generateSmartFallback(userMessage: string, relevantData: any): string {
     lower.includes('level') ||
     lower.includes('cabe')
   ) {
-    return 'Untuk menu makanan kami, kamu bisa bebas memilih tingkat kepedasan: **Tidak Pedas**, **Sedang**, atau **Pedas**! Sambal kami dibuat ulek fresh tiap hari khas Warkop Betawa 🌶️🔥';
+    return 'Untuk menu makanan kami, kamu bisa bebas memilih tingkat kepedasan: **Tidak Pedas**, **Sedang**, atau **Pedas**! Sambal kami dibuat ulek fresh tiap hari khas Warkop Betawa \uD83C\uDF36\uFE0F\uD83D\uDD25';
   }
 
   // Cara Pesan / Order
@@ -295,22 +335,20 @@ function generateSmartFallback(userMessage: string, relevantData: any): string {
     lower.includes('cara') ||
     lower.includes('bayar')
   ) {
-    return 'Cara pesan makanan di Warkop Betawa gampang banget:\n1. Pastikan kamu sudah scan QR meja\n2. Pilih menu favoritmu & atur level pedas / topping\n3. Masukkan ke keranjang dan checkout\n4. Makanan akan langsung diantar hangat ke mejamu! 🚀';
+    return 'Cara pesan makanan di Warkop Betawa gampang banget:\n1. Pastikan kamu sudah scan QR meja\n2. Pilih menu favoritmu & atur level pedas / topping\n3. Masukkan ke keranjang dan checkout\n4. Makanan akan langsung diantar hangat ke mejamu! \uD83D\uDE80';
   }
 
-  // Jam Buka / Lokasi
+  // Jam Buka
   if (
     lower.includes('jam') ||
     lower.includes('buka') ||
-    lower.includes('tutup') ||
-    lower.includes('lokasi') ||
-    lower.includes('alamat')
+    lower.includes('tutup')
   ) {
-    return 'Warkop Betawa buka **setiap hari pukul 10:00 - 22:00 WIB**. Silakan nikmati santap santai bareng teman dan keluarga! ☕';
+    return 'Warkop Betawa buka **setiap hari pukul 10:00 - 22:00 WIB**. Silakan nikmati santap santai bareng teman dan keluarga! \u2615';
   }
 
   // General greeting / fallback
-  return 'Halo! Saya Asisten Warkop Betawa ☕. Saya siap bantu kamu cari rekomendasi menu, info promo & kupon diskon, atau panduan cara memesan. Mau tanya apa nih? 😊';
+  return 'Halo! Saya Asisten Warkop Betawa \u2615. Saya siap bantu kamu cari rekomendasi menu, info promo & kupon diskon, atau panduan cara memesan. Mau tanya apa nih? \uD83D\uDE0A';
 }
 
 export async function POST(req: NextRequest) {
