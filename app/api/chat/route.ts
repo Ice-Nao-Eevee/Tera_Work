@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB, getMemoryStore } from '@/lib/db';
+import { connectDB } from '@/lib/db';
 import { formatRupiah } from '@/lib/format';
 import prisma from '@/lib/prisma';
 
@@ -158,52 +158,8 @@ async function getRelevantMenuAndPromoData(message: string) {
       })),
     };
   } catch (err) {
-    // Fallback to in-memory static data
-    const store = getMemoryStore();
-    const filtered =
-      terms.length > 0
-        ? store.menuItems.filter((item) =>
-            terms.some(
-              (t) =>
-                item.name.toLowerCase().includes(t) ||
-                item.description.toLowerCase().includes(t) ||
-                item.category.toLowerCase().includes(t)
-            )
-          )
-        : store.menuItems;
-
-    const menuItems = (filtered.length > 0 ? filtered : store.menuItems).slice(0, 12);
-
-    return {
-      menu: menuItems.map((m) => ({
-        nama: m.name,
-        harga: formatRupiah(m.price),
-        deskripsi: m.description,
-        kategori: m.category === 'makanan' ? 'Makanan Utama'
-          : m.category === 'minuman' ? 'Minuman'
-          : m.category === 'dessert' ? 'Dessert'
-          : m.category,
-        label: BADGE_LABEL[m.badge ?? 'none'] || undefined,
-        pilihan_level_pedas: m.spiceLevels && m.spiceLevels.length > 0
-          ? m.spiceLevels.map((s: any) => s.label).join(' / ')
-          : undefined,
-        tambahan_tersedia: m.addOns && m.addOns.length > 0
-          ? m.addOns.map((a: any) =>
-              a.price > 0 ? `${a.label} (+${formatRupiah(a.price)})` : a.label
-            ).join(', ')
-          : undefined,
-      })),
-      promo_aktif: store.promos
-        .filter((p) => p.isActive)
-        .map((p) => ({
-          judul: p.title,
-          deskripsi: p.description,
-          harga_normal: formatRupiah(p.originalPrice),
-          harga_promo: formatRupiah(p.discountedPrice),
-          hemat: formatRupiah(p.originalPrice - p.discountedPrice),
-        })),
-      kupon_aktif: [],
-    };
+    console.error('Gagal memuat konteks menu untuk chat:', err);
+    return { menu: [], promo_aktif: [], kupon_aktif: [] };
   }
 }
 

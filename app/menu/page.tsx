@@ -41,7 +41,6 @@ import {
   CartItem,
 } from '@/lib/store';
 import { useTableContext } from '@/lib/useTableContext';
-import { STATIC_MENU_ITEMS, STATIC_CATEGORIES } from '@/lib/staticData';
 import { IMenuItem, ICategory } from '@/lib/types';
 import FloatingCart from '@/components/FloatingCart';
 import AIChatPanel from '@/components/AIChatPanel';
@@ -52,8 +51,8 @@ export default function MenuPage() {
   const { tableNumber: scannedTableNumber, loading: tableLoading } = useTableContext();
 
   // ── State: Data & Filter ──
-  const [categories, setCategories] = useState<ICategory[]>(STATIC_CATEGORIES);
-  const [menuItems, setMenuItems] = useState<IMenuItem[]>(STATIC_MENU_ITEMS);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [menuItems, setMenuItems] = useState<IMenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('semua');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -102,7 +101,7 @@ export default function MenuPage() {
     }, 2800);
   }, []);
 
-  // Load menu items from API or fallback to static data
+  // The database is the single source of truth for the customer menu.
   useEffect(() => {
     setIsMounted(true);
 
@@ -116,20 +115,16 @@ export default function MenuPage() {
     }
 
     fetch('/api/menu')
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Gagal memuat menu');
+        return res.json();
+      })
       .then((data) => {
-        if (data && Array.isArray(data.menuItems) && data.menuItems.length > 0) {
-          // Merge to ensure coffee & pastry items are always available even if DB is partial
-          const dbItemNames = new Set(data.menuItems.map((m: any) => m.name.toLowerCase()));
-          const missingStatic = STATIC_MENU_ITEMS.filter((s) => !dbItemNames.has(s.name.toLowerCase()));
-          setMenuItems([...data.menuItems, ...missingStatic]);
-        }
-        if (data && Array.isArray(data.categories) && data.categories.length > 0) {
-          setCategories(data.categories);
-        }
+        setMenuItems(Array.isArray(data?.menuItems) ? data.menuItems : []);
+        setCategories(Array.isArray(data?.categories) ? data.categories : []);
       })
       .catch(() => {
-        console.log('Using static default menu items');
+        console.error('Gagal memuat menu dari database');
       });
   }, []);
 
@@ -548,7 +543,7 @@ export default function MenuPage() {
   const featuredFavoriteItems = favoriteItems.slice(0, 4);
   const displayedFavoriteItems = showAllFavorites ? favoriteItems : featuredFavoriteItems;
 
-  const recommendationItems = [
+  const staticRecommendationItems = [
     {
       id: 'item-12',
       _id: 'item-12',
@@ -604,7 +599,7 @@ export default function MenuPage() {
   ];
 
   // ── Package Bundles (matching Image 1) ──
-  const bundlePackages = [
+  const staticBundlePackages = [
     {
       id: 'item-16',
       _id: 'item-16',
@@ -654,6 +649,23 @@ export default function MenuPage() {
       isActive: true,
     },
   ];
+
+  // Showcase cards must reference menu records returned by the database, never demo data.
+  const recommendationItems = menuItems.slice(0, 4).map((item) => ({
+    ...item,
+    tag: item.category || 'MENU PILIHAN',
+    badge: item.badge && item.badge !== 'none' ? item.badge.replace(/_/g, ' ') : 'PILIHAN',
+  }));
+  const bundlePackages = menuItems
+    .filter((item) => item.category === 'paket')
+    .slice(0, 3)
+    .map((item) => ({
+      ...item,
+      title: item.name,
+      subtitle: item.description || 'Paket pilihan kami',
+      saveBadge: 'PAKET PILIHAN',
+      originalPrice: item.price,
+    }));
 
   // ── Unified Category Items (Identical for Sidebar Navigation and Category Filter Capsule) ──
   const quickCategories = [

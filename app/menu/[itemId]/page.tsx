@@ -7,7 +7,6 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Minus, Plus, ShoppingBag, Check } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { addToCart } from '@/lib/store';
-import { STATIC_MENU_ITEMS } from '@/lib/staticData';
 import { IMenuItem, IAddOn } from '@/lib/types';
 
 export default function ItemDetailPage() {
@@ -16,44 +15,55 @@ export default function ItemDetailPage() {
   const itemId = params?.itemId as string;
 
   const [item, setItem] = useState<IMenuItem | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedSpice, setSelectedSpice] = useState<string>('Sedang');
   const [selectedAddOns, setSelectedAddOns] = useState<IAddOn[]>([]);
   const [qty, setQty] = useState<number>(1);
   const [addedMessage, setAddedMessage] = useState<boolean>(false);
 
   useEffect(() => {
-    // Find item from API or initial dataset fallback
+    let cancelled = false;
+
+    // The detail page must only display the product returned by the database.
     fetch('/api/menu')
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Gagal memuat menu');
+        return res.json();
+      })
       .then((data) => {
-        // API (Prisma) returns `id`, not `_id`
         const found = data.menuItems?.find((m: IMenuItem) => m.id === itemId);
-        if (found) {
+        if (found && !cancelled) {
           setItem(found);
           if (found.spiceLevels && found.spiceLevels.length > 0) {
             setSelectedSpice(found.spiceLevels[1]?.label || found.spiceLevels[0]?.label);
           }
-        } else {
-          fallbackLocal();
         }
+        if (!cancelled) setHasLoaded(true);
       })
-      .catch(() => fallbackLocal());
+      .catch(() => {
+        if (!cancelled) setHasLoaded(true);
+      });
 
-    function fallbackLocal() {
-      // Static data uses _id as fallback key
-      const found = (STATIC_MENU_ITEMS as any[]).find((m) => m.id === itemId || m._id === itemId) || STATIC_MENU_ITEMS[0];
-      setItem(found);
-      if (found.spiceLevels && found.spiceLevels.length > 0) {
-        setSelectedSpice(found.spiceLevels[1]?.label || found.spiceLevels[0]?.label);
-      }
-    }
+    return () => { cancelled = true; };
   }, [itemId]);
 
-  if (!item) {
+  if (!hasLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center text-[#b45309] font-medium">
         Memuat detail hidangan...
       </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <h1 className="font-serif text-2xl font-bold text-[#2a1a15]">Produk tidak ditemukan</h1>
+        <p className="text-sm text-[#614a42]">Produk ini mungkin sudah tidak tersedia atau telah dihapus.</p>
+        <Link href="/menu" className="rounded-full bg-[#b45309] px-5 py-2.5 text-sm font-semibold text-white">
+          Kembali ke Menu
+        </Link>
+      </main>
     );
   }
 

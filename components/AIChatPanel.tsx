@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Sparkles, Bot, User, ExternalLink, MapPin, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { IMenuItem } from '@/lib/types';
-import { STATIC_MENU_ITEMS } from '@/lib/staticData';
 import AIProductCard from './AIProductCard';
 
 interface AIChatPanelProps {
@@ -232,7 +231,7 @@ function renderBold(text: string): React.ReactNode {
 }
 
 export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
-  const [menuItems, setMenuItems] = useState<IMenuItem[]>(STATIC_MENU_ITEMS);
+  const [menuItems, setMenuItems] = useState<IMenuItem[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -248,16 +247,15 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
   // Load menu items from API for real-time accurate photos, prices, descriptions
   useEffect(() => {
     fetch('/api/menu')
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Gagal memuat menu');
+        return res.json();
+      })
       .then((data) => {
-        if (data && Array.isArray(data.menuItems) && data.menuItems.length > 0) {
-          const dbItemNames = new Set(data.menuItems.map((m: any) => m.name.toLowerCase()));
-          const missingStatic = STATIC_MENU_ITEMS.filter((s) => !dbItemNames.has(s.name.toLowerCase()));
-          setMenuItems([...data.menuItems, ...missingStatic]);
-        }
+        setMenuItems(Array.isArray(data?.menuItems) ? data.menuItems : []);
       })
       .catch(() => {
-        // Fallback already defaults to STATIC_MENU_ITEMS
+        console.error('Gagal memuat menu dari database');
       });
   }, []);
 

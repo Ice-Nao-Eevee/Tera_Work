@@ -3,7 +3,7 @@
  *
  * Uses Prisma + Supabase PostgreSQL.
  * getMemoryStore() provides a static fallback when no DB connection is available.
- * seedDatabaseIfEmpty() populates the DB with initial data on first run.
+ * Demo data can be seeded explicitly through SEED_DEMO_DATA=true.
  */
 
 import prisma from './prisma';
@@ -41,7 +41,10 @@ export async function connectDB(): Promise<void> {
   if (globalForDb._dbSeeded) return;
   globalForDb._dbSeeded = true;
   try {
-    await seedDatabaseIfEmpty();
+    // Never repopulate a production menu automatically after its last item is deleted.
+    if (process.env.SEED_DEMO_DATA === 'true') {
+      await seedDatabaseIfEmpty();
+    }
     await seedCouponsIfEmpty();
     await seedTablesIfEmpty();
     await backfillLegacyTableTokens();

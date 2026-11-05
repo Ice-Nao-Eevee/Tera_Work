@@ -14,11 +14,10 @@ import {
 } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
 import { IMenuItem } from '@/lib/types';
-import { STATIC_MENU_ITEMS } from '@/lib/staticData';
 import { addToCart, getCartItems, storeEvents } from '@/lib/store';
 
 export default function FavoritPage() {
-  const [menuItems, setMenuItems] = useState<IMenuItem[]>(STATIC_MENU_ITEMS);
+  const [menuItems, setMenuItems] = useState<IMenuItem[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [cartItems, setCartItems] = useState(getCartItems());
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
@@ -33,17 +32,14 @@ export default function FavoritPage() {
     } catch (_) {}
 
     fetch('/api/menu')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && Array.isArray(data.menuItems) && data.menuItems.length > 0) {
-          const dbNames = new Set(data.menuItems.map((m: any) => m.name.toLowerCase()));
-          const missing = STATIC_MENU_ITEMS.filter(
-            (s) => !dbNames.has(s.name.toLowerCase()),
-          );
-          setMenuItems([...data.menuItems, ...missing]);
-        }
+      .then(async (r) => {
+        if (!r.ok) throw new Error('Gagal memuat menu');
+        return r.json();
       })
-      .catch(() => {});
+      .then((data) => {
+        setMenuItems(Array.isArray(data?.menuItems) ? data.menuItems : []);
+      })
+      .catch(() => console.error('Gagal memuat menu dari database'));
   }, []);
 
   const refreshCart = useCallback(() => setCartItems(getCartItems()), []);
