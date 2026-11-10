@@ -17,19 +17,54 @@ export interface CouponData {
 }
 
 /**
- * Checks if a coupon can be used today based on calendar day.
- * Resets automatically each new calendar day without any background cron job.
+ * Returns current calendar date in Asia/Jakarta (WIB) formatted as "YYYY-MM-DD".
  */
-export function isCouponAvailableToday(coupon: {
-  lastUsedDate?: Date | string | null;
-}): boolean {
+export function todayWIB(): string {
+  // en-CA produces YYYY-MM-DD format
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+}
+
+/**
+ * Formats any Date/string into "YYYY-MM-DD" in Asia/Jakarta (WIB).
+ */
+export function formatDateWIB(date: Date | string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date(date));
+}
+
+/**
+ * Normalizes a coupon code (trim + uppercase).
+ */
+export function normalizeCouponCode(raw: unknown): string {
+  if (typeof raw !== 'string') return '';
+  return raw.trim().toUpperCase();
+}
+
+/**
+ * Checks if a coupon can be used today based on WIB calendar day.
+ * Resets automatically each new calendar day in Asia/Jakarta without any cron job.
+ */
+export function isCouponAvailableToday(
+  coupon: {
+    lastUsedDate?: Date | string | null;
+    usages?: { usageDate: string; deviceId?: string }[];
+  },
+  deviceId?: string
+): boolean {
+  const today = todayWIB();
+
+  if (Array.isArray(coupon.usages)) {
+    if (deviceId) {
+      return !coupon.usages.some((u) => u.usageDate === today && u.deviceId === deviceId);
+    }
+    return !coupon.usages.some((u) => u.usageDate === today);
+  }
+
   if (!coupon.lastUsedDate) return true;
-
-  const lastUsed = new Date(coupon.lastUsedDate);
-  const now = new Date();
-
-  // If used on the same calendar day, it is unavailable
-  return lastUsed.toDateString() !== now.toDateString();
+  try {
+    return formatDateWIB(coupon.lastUsedDate) !== today;
+  } catch {
+    return true;
+  }
 }
 
 /**
@@ -76,6 +111,8 @@ export type CouponValidationResult =
 
 /**
  * Validates a coupon code against business rules.
+ * Error messages for missing, inactive, not-yet-started, or expired coupons
+ * are intentionally uniform ("Kupon tidak valid") to prevent enumeration.
  */
 export function checkCouponRules(
   coupon: CouponData | null,
@@ -84,7 +121,7 @@ export function checkCouponRules(
   if (!coupon || !coupon.isActive) {
     return {
       valid: false,
-      error: 'Kupon tidak ditemukan atau tidak aktif.',
+      error: 'Kupon tidak valid',
     };
   }
 
@@ -92,24 +129,10 @@ export function checkCouponRules(
   const start = new Date(coupon.startDate);
   const end = new Date(coupon.endDate);
 
-  if (now < start) {
+  if (now < start || now > end) {
     return {
       valid: false,
-      error: 'Kupon belum dapat digunakan (periode belum dimulai).',
-    };
-  }
-
-  if (now > end) {
-    return {
-      valid: false,
-      error: 'Kupon sudah kedaluwarsa.',
-    };
-  }
-
-  if (!isCouponAvailableToday(coupon)) {
-    return {
-      valid: false,
-      error: 'Kupon ini sudah dipakai hari ini. Silakan coba lagi besok!',
+      error: 'Kupon tidak valid',
     };
   }
 

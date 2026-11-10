@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminGuard';
@@ -8,6 +9,14 @@ export const dynamic = 'force-dynamic';
 
 const MAX_TABLE_NUMBER = 999;
 const MAX_BULK = 100;
+
+const createTableSchema = z
+  .object({
+    tableNumber: z.union([z.number(), z.string()]).optional(),
+    from: z.union([z.number(), z.string()]).optional(),
+    to: z.union([z.number(), z.string()]).optional(),
+  })
+  .strict();
 
 // GET /api/admin/tables — all tables incl. qrToken + order count (guarded)
 export async function GET(req: NextRequest) {
@@ -33,7 +42,15 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
   try {
     await connectDB();
-    const body = await req.json();
+    const rawBody = await req.json().catch(() => null);
+    const parsed = createTableSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Data meja tidak valid.' },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
 
     const isRange = body.from !== undefined || body.to !== undefined;
     const from = parseInt(String(isRange ? body.from : body.tableNumber), 10);

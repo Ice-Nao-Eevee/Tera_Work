@@ -84,7 +84,7 @@ export default function CartPage() {
         </Link>
         {orderHistory.length > 0 && (
           <Link
-            href={`/order/${encodeURIComponent(orderHistory[0].orderCode)}`}
+            href={`/order/${encodeURIComponent(orderHistory[0].orderId || orderHistory[0].orderCode)}`}
             className="mt-3 px-8 py-3 bg-white border border-[#d4bc8c] text-[#b45309] font-medium text-sm rounded-full shadow-sm hover:bg-[#fdf9f7] transition-colors flex items-center justify-center gap-2"
           >
             <ClipboardList className="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function CartPage() {
 
             {orderHistory.length > 0 && (
               <Link
-                href={`/order/${encodeURIComponent(orderHistory[0].orderCode)}`}
+                href={`/order/${encodeURIComponent(orderHistory[0].orderId || orderHistory[0].orderCode)}`}
                 className="w-full py-3 bg-white border border-[#d4bc8c] text-[#b45309] font-medium text-sm rounded-full shadow-sm hover:bg-[#fdf9f7] transition-colors flex items-center justify-center gap-2"
               >
                 <ClipboardList className="w-4 h-4" />

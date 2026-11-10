@@ -1,16 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { checkCouponRules } from '@/lib/coupon';
-import { getTableFromCookie } from '@/lib/tableToken';
+import { requireAdmin, verifyCsrfOrigin } from '@/lib/adminGuard';
+import { checkCouponRules, normalizeCouponCode, todayWIB } from '@/lib/coupon';
+import { connectDB } from '@/lib/db';
+import {
+  checkCouponRateLimit,
+  checkOrderRateLimit,
+  getClientIp,
+} from '@/lib/ratelimit';
+import { getDeviceIdFromCookie, getTableFromCookie } from '@/lib/tableToken';
+import { verifyTurnstileToken } from '@/lib/turnstile';
+
+const PENDING_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_ACTIVE_ORDERS_PER_TABLE = 2;
+
+class OrderDomainError extends Error {
+  status: number;
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
 
 function generateOrderCode(): string {
   const num = Math.floor(1000 + Math.random() * 9000);
   return `ARU-${num}`;
 }
 
-// GET /api/orders - list all orders, newest first
-export async function GET() {
+const orderItemAddOnSchema = z
+  .object({
+    label: z.string().trim().min(1).max(100),
+    price: z.unknown().optional(), // browser price ignored
+  })
+  .strict();
+
+const orderItemInputSchema = z
+  .object({
+    menuId: z.string().trim().min(1).max(128).optional(),
+    menuItemId: z.string().trim().min(1).max(128).optional(),
+    qty: z.number().int().min(1).max(20),
+    spiceLevel: z.string().trim().max(50).optional(),
+    addOns: z.array(orderItemAddOnSchema).max(20).optional(),
+    // Browser-supplied display/monetary fields are accepted ONLY to be ignored:
+    name: z.string().max(200).optional(),
+    price: z.unknown().optional(),
+    unitPrice: z.unknown().optional(),
+    lineTotal: z.unknown().optional(),
+  })
+  .strict()
+  .refine((item) => Boolean(item.menuId || item.menuItemId), {
+    message: 'ID menu wajib diisi.',
+  });
+
+const createOrderSchema = z
+  .object({
+    items: z.array(orderItemInputSchema).min(1).max(30),
+    couponCode: z.string().trim().max(64).optional().nullable(),
+    notes: z.string().max(200).optional().default(''),
+    paymentMethod: z.enum(['cash', 'qris']).optional().default('cash'),
+    turnstileToken: z.string().max(4096).optional().nullable(),
+    website: z.string().max(256).optional(),
+    // Browser-supplied totals/statuses are ignored server-side:
+    price: z.unknown().optional(),
+    subtotal: z.unknown().optional(),
+    discount: z.unknown().optional(),
+    discountAmount: z.unknown().optional(),
+    taxAmount: z.unknown().optional(),
+    serviceChargeAmount: z.unknown().optional(),
+    total: z.unknown().optional(),
+    paymentStatus: z.unknown().optional(),
+  })
+  .strict();
+
+// GET /api/orders - list all orders, newest first (Admin only)
+export async function GET(req: NextRequest) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   try {
+    await connectDB();
+
+    // Auto-cancel pending orders older than 15 minutes
+    const staleCutoff = new Date(Date.now() - PENDING_EXPIRY_MS);
+    await prisma.order.updateMany({
+      where: {
+        status: 'pending',
+        createdAt: { lt: staleCutoff },
+      },
+      data: { status: 'cancelled' },
+    });
+
     const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' } });
     return NextResponse.json({ orders });
   } catch (err) {
@@ -20,23 +101,38 @@ export async function GET() {
 }
 
 // POST /api/orders - create a new order (from customer checkout)
-//
-// SECURITY: All monetary values (subtotal, taxAmount, serviceChargeAmount, total)
-// are RECALCULATED server-side from the database. Browser-supplied totals are
-// completely ignored to prevent price manipulation attacks.
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
+  const csrfDenied = verifyCsrfOrigin(req);
+  if (csrfDenied) return csrfDenied;
 
-    // ── Validate: items array must be non-empty ────────────────────────────
-    if (!Array.isArray(body.items) || body.items.length === 0) {
+  try {
+    await connectDB();
+
+    // Reject any attempt to pass ?meja= or ?table= in query string
+    if (req.nextUrl.searchParams.has('meja') || req.nextUrl.searchParams.has('table')) {
       return NextResponse.json(
-        { error: 'Pesanan tidak boleh kosong.' },
+        { error: 'Parameter meja pada URL tidak diizinkan. Silakan scan QR meja Anda.' },
         { status: 400 }
       );
     }
 
-    // ── Resolve table from the QR cookie (never trust body.tableNumber/tableId) ─
+    const rawBody = await req.json().catch(() => null);
+    if (!rawBody || typeof rawBody !== 'object' || Array.isArray(rawBody)) {
+      return NextResponse.json(
+        { error: 'Data pesanan tidak valid.' },
+        { status: 400 }
+      );
+    }
+
+    // ── Honeypot check (Task C5): reject silently/generically if filled ──
+    if (typeof (rawBody as any).website === 'string' && (rawBody as any).website.trim().length > 0) {
+      return NextResponse.json(
+        { error: 'Permintaan tidak dapat diproses.' },
+        { status: 400 }
+      );
+    }
+
+    // ── Resolve table strictly from the QR httpOnly cookie (Task C1) ──
     const table = await getTableFromCookie();
     if (!table) {
       return NextResponse.json(
@@ -44,130 +140,143 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const tableNumber = table.tableNumber;
 
-    // ── Batch fetch settings, menu items, and promos in parallel ───────
-    const promoIds: string[] = Array.from(
-      new Set(
-        body.items
-          .map((i: any) => String(i.menuItemId ?? ''))
-          .filter((id: string) => id.startsWith('promo_'))
-          .map((id: string) => id.replace(/^promo_/, ''))
-      )
-    );
-    const promoTitles: string[] = Array.from(
-      new Set(
-        body.items
-          .filter((i: any) => String(i.menuItemId ?? '').startsWith('promo_'))
-          .map((i: any) => String(i.name ?? '').trim())
-          .filter((n: string) => n.length > 0)
-      )
-    );
+    // ── Rate limit: 5 orders per minute per IP + table token (Task C4) ──
+    const orderRateLimited = await checkOrderRateLimit(req, table.qrToken);
+    if (orderRateLimited) return orderRateLimited;
 
-    const regularIds: string[] = Array.from(
-      new Set(
-        body.items
-          .map((i: any) => String(i.menuItemId ?? ''))
-          .filter((id: string) => !id.startsWith('promo_') && id.length > 0)
-      )
-    );
-    const regularNames: string[] = Array.from(
-      new Set(
-        body.items
-          .filter((i: any) => !String(i.menuItemId ?? '').startsWith('promo_'))
-          .map((i: any) => String(i.name ?? '').trim())
-          .filter((n: string) => n.length > 0)
-      )
-    );
+    // ── Strict Zod validation (Task A2) ──
+    const parsed = createOrderSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Data pesanan tidak valid. Periksa kembali jumlah item dan catatan Anda.' },
+        { status: 400 }
+      );
+    }
 
-    const [settings, dbMenuItems, dbPromos] = await Promise.all([
+    const data = parsed.data;
+
+    // ── Anti-bot Cloudflare Turnstile verification (Task C5) ──
+    const turnstileResult = await verifyTurnstileToken(
+      data.turnstileToken,
+      getClientIp(req)
+    );
+    if (!turnstileResult.ok) {
+      return NextResponse.json(
+        { error: turnstileResult.error || 'Verifikasi keamanan gagal.' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedCoupon = normalizeCouponCode(data.couponCode);
+    if (normalizedCoupon) {
+      const couponRateLimited = await checkCouponRateLimit(req);
+      if (couponRateLimited) return couponRateLimited;
+    }
+
+    const deviceId = await getDeviceIdFromCookie(table.id);
+
+    // Separate regular menu IDs and promo IDs
+    const requestedIds = data.items.map((i) => (i.menuId || i.menuItemId || '').trim());
+    const uniqueIds = Array.from(new Set(requestedIds));
+    if (uniqueIds.length > 30) {
+      return NextResponse.json(
+        { error: 'Jumlah menu unik per pesanan maksimal 30 item.' },
+        { status: 400 }
+      );
+    }
+
+    const promoIds = uniqueIds
+      .filter((id) => id.startsWith('promo_'))
+      .map((id) => id.replace(/^promo_/, ''));
+    const regularIds = uniqueIds.filter((id) => !id.startsWith('promo_'));
+
+    // Plain-text sanitization for notes (max 200 chars, strip control chars)
+    const cleanNotes = String(data.notes || '')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+      .trim()
+      .slice(0, 200);
+
+    const usageDate = todayWIB();
+    const staleCutoff = new Date(Date.now() - PENDING_EXPIRY_MS);
+
+    // 1. Auto-cancel stale pending orders (> 15 minutes) on this table and fetch authoritative pricing data in parallel
+    const [, settings, dbMenuItems, dbPromos, dbCoupon] = await Promise.all([
+      prisma.order.updateMany({
+        where: {
+          tableId: table.id,
+          status: 'pending',
+          createdAt: { lt: staleCutoff },
+        },
+        data: { status: 'cancelled' },
+      }),
       prisma.settings.findFirst(),
-      regularIds.length > 0 || regularNames.length > 0
+      regularIds.length > 0
         ? prisma.menuItem.findMany({
-            where: {
-              OR: [
-                ...(regularIds.length > 0 ? [{ id: { in: regularIds } }] : []),
-                ...(regularNames.length > 0 ? [{ name: { in: regularNames } }] : []),
-              ],
-            },
+            where: { id: { in: regularIds }, isActive: true },
           })
-        : [],
-      promoIds.length > 0 || promoTitles.length > 0
+        : Promise.resolve([]),
+      promoIds.length > 0
         ? prisma.promo.findMany({
-            where: {
-              OR: [
-                ...(promoIds.length > 0 ? [{ id: { in: promoIds } }] : []),
-                ...(promoTitles.length > 0 ? [{ title: { in: promoTitles } }] : []),
-              ],
-            },
+            where: { id: { in: promoIds }, isActive: true },
           })
-        : [],
+        : Promise.resolve([]),
+      normalizedCoupon
+        ? prisma.coupon.findUnique({
+            where: { code: normalizedCoupon },
+          })
+        : Promise.resolve(null),
     ]);
 
-    const menuItemMap = new Map<string, typeof dbMenuItems[0]>();
-    for (const m of dbMenuItems) {
-      menuItemMap.set(m.id, m);
-      menuItemMap.set(m.name.toLowerCase().trim(), m);
-    }
+    const menuItemMap = new Map(dbMenuItems.map((m) => [m.id, m]));
+    const promoMap = new Map(dbPromos.map((p) => [p.id, p]));
 
-    const promoMap = new Map<string, typeof dbPromos[0]>();
-    for (const p of dbPromos) {
-      promoMap.set(p.id, p);
-      promoMap.set(p.title.toLowerCase().trim(), p);
-    }
-
-    const taxRatePercent = settings?.taxRatePercent ?? 10;
-    const serviceRatePercent = settings?.serviceChargeRatePercent ?? 5;
-
-    // ── Recalculate all prices server-side ────────────────────────────────
     let subtotal = 0;
     const validatedItems: {
       menuItemId: string;
       name: string;
       qty: number;
+      unitPrice: number;
       price: number;
       spiceLevel: string;
       addOns: { label: string; price: number }[];
       lineTotal: number;
     }[] = [];
 
-    for (const rawItem of body.items) {
-      const qty = Math.max(1, parseInt(String(rawItem.qty ?? 1), 10) || 1);
-      const menuItemId = String(rawItem.menuItemId ?? '');
+    for (const rawItem of data.items) {
+      const itemId = (rawItem.menuId || rawItem.menuItemId || '').trim();
+      const qty = rawItem.qty;
 
-      if (menuItemId.startsWith('promo_')) {
-        // ── Promo item: look up in pre-fetched map ──────────────────────────
-        const promoId = menuItemId.replace(/^promo_/, '');
-        const promo = promoMap.get(promoId) || promoMap.get(String(rawItem.name || '').toLowerCase().trim());
+      if (itemId.startsWith('promo_')) {
+        const promoId = itemId.replace(/^promo_/, '');
+        const promo = promoMap.get(promoId);
         if (!promo || !promo.isActive) {
-          return NextResponse.json(
-            { error: `Promo "${rawItem.name || '(tidak dikenal)'}" sudah tidak tersedia.` },
-            { status: 400 }
-          );
+          throw new OrderDomainError('Promo yang dipilih tidak tersedia.', 400);
         }
-        const lineTotal = promo.discountedPrice * qty;
+        const unitPrice = promo.discountedPrice;
+        const lineTotal = unitPrice * qty;
         subtotal += lineTotal;
         validatedItems.push({
           menuItemId: `promo_${promo.id}`,
           name: promo.title,
           qty,
-          price: promo.discountedPrice,
+          unitPrice,
+          price: unitPrice,
           spiceLevel: '',
           addOns: [],
           lineTotal,
         });
       } else {
-        // ── Regular menu item: look up in pre-fetched map (by ID or Name) ───
-        const menuItem = menuItemMap.get(menuItemId) || menuItemMap.get(String(rawItem.name || '').toLowerCase().trim());
+        const menuItem = menuItemMap.get(itemId);
         if (!menuItem || !menuItem.isActive) {
-          return NextResponse.json(
-            { error: `Menu "${rawItem.name || '(tidak dikenal)'}" tidak tersedia. Harap perbarui keranjang Anda.` },
-            { status: 400 }
+          throw new OrderDomainError(
+            'Menu yang dipilih tidak valid atau sedang tidak tersedia.',
+            400
           );
         }
 
-        // Validate add-ons against DB prices — browser prices are ignored
-        const dbAddOns = (menuItem.addOns as { label: string; price: number }[]) || [];
+        const dbAddOns =
+          (menuItem.addOns as { label: string; price: number }[]) || [];
         let addOnsTotal = 0;
         const validatedAddOns: { label: string; price: number }[] = [];
 
@@ -176,7 +285,10 @@ export async function POST(req: NextRequest) {
             const dbAddOn = dbAddOns.find((a) => a.label === rawAddOn.label);
             if (dbAddOn) {
               addOnsTotal += dbAddOn.price;
-              validatedAddOns.push({ label: dbAddOn.label, price: dbAddOn.price });
+              validatedAddOns.push({
+                label: dbAddOn.label,
+                price: dbAddOn.price,
+              });
             }
           }
         }
@@ -188,105 +300,160 @@ export async function POST(req: NextRequest) {
           menuItemId: menuItem.id,
           name: menuItem.name,
           qty,
+          unitPrice,
           price: unitPrice,
-          spiceLevel: String(rawItem.spiceLevel || ''),
+          spiceLevel: String(rawItem.spiceLevel || '').slice(0, 50),
           addOns: validatedAddOns,
           lineTotal,
         });
       }
     }
 
-    // ── Coupon Validation (Optional) ─────────────────────────────────────
-    const rawCouponCode = body.couponCode
-      ? String(body.couponCode).trim().toUpperCase()
-      : null;
-    let validatedCoupon: any = null;
+    // Validate coupon rules (Task A4)
+    let validatedCoupon: { id: string; code: string } | null = null;
     let discountAmount = 0;
 
-    if (rawCouponCode) {
-      const coupon = await prisma.coupon.findUnique({
-        where: { code: rawCouponCode },
-      });
-      const couponCheck = checkCouponRules(coupon as any, subtotal);
-      if (!couponCheck.valid) {
-        return NextResponse.json(
-          { error: couponCheck.error },
-          { status: 400 }
-        );
+    if (normalizedCoupon) {
+      const couponCheck = checkCouponRules(dbCoupon as any, subtotal);
+      if (!couponCheck.valid || !dbCoupon) {
+        throw new OrderDomainError(couponCheck.error || 'Kupon tidak valid', 400);
       }
-      validatedCoupon = coupon;
+      validatedCoupon = { id: dbCoupon.id, code: dbCoupon.code };
       discountAmount = couponCheck.discountAmount;
     }
 
-    // ── Compute tax / service / total server-side ─────────────────────────
+    const taxRatePercent = settings?.taxRatePercent ?? 10;
+    const serviceRatePercent = settings?.serviceChargeRatePercent ?? 5;
     const taxAmount = Math.round((subtotal * taxRatePercent) / 100);
     const serviceChargeAmount = Math.round((subtotal * serviceRatePercent) / 100);
-    const total = Math.max(0, subtotal - discountAmount + taxAmount + serviceChargeAmount);
+    const total = Math.max(
+      0,
+      subtotal - discountAmount + taxAmount + serviceChargeAmount
+    );
 
-    // ── Generate unique order code ────────────────────────────────────────
-    let orderCode = generateOrderCode();
-    for (let i = 0; i < 3; i++) {
-      const existing = await prisma.order.findUnique({ where: { orderCode } });
-      if (!existing) break;
-      orderCode = generateOrderCode();
-    }
-
-    const now = new Date();
-
-    // ── Create Order & Record Coupon Usage atomically in Transaction ──────
-    const order = await prisma.$transaction(async (tx) => {
-      if (validatedCoupon) {
-        // Re-check coupon availability inside transaction to prevent race conditions
-        const txCoupon = await tx.coupon.findUnique({
-          where: { id: validatedCoupon.id },
-        });
-        const reCheck = checkCouponRules(txCoupon as any, subtotal);
-        if (!reCheck.valid) {
-          throw new Error(reCheck.error);
-        }
-
-        // Mark coupon as used today
-        await tx.coupon.update({
-          where: { id: validatedCoupon.id },
-          data: {
-            lastUsedDate: now,
-            usedToday: true,
+    // ── Atomic Transaction: Active Order Limit + Order Creation + CouponUsage (Task A4 & C3) ──
+    const order = await prisma.$transaction(
+      async (tx) => {
+        // Enforce max 2 active orders per table (Task C3)
+        const activeOrdersCount = await tx.order.count({
+          where: {
+            tableId: table.id,
+            status: { notIn: ['completed', 'cancelled'] },
           },
         });
-      }
+        if (activeOrdersCount >= MAX_ACTIVE_ORDERS_PER_TABLE) {
+          throw new OrderDomainError(
+            'Meja ini masih memiliki 2 pesanan aktif. Silakan tunggu pesanan selesai atau hubungi kasir.',
+            429
+          );
+        }
 
-      const paymentMethod = ['cash', 'qris'].includes(String(body.paymentMethod || '').toLowerCase())
-        ? String(body.paymentMethod).toLowerCase()
-        : 'cash';
-      const paymentStatus = ['paid', 'unpaid'].includes(String(body.paymentStatus || '').toLowerCase())
-        ? String(body.paymentStatus).toLowerCase()
-        : 'unpaid';
+        // Generate unique orderCode for human-readable receipt display
+        let orderCode = generateOrderCode();
+        for (let i = 0; i < 5; i++) {
+          const existing = await tx.order.findUnique({ where: { orderCode } });
+          if (!existing) break;
+          orderCode = generateOrderCode();
+        }
 
-      const orderData: any = {
-        orderCode,
-        tableNumber,
-        tableId: table.id,
-        items: validatedItems,
-        notes: String(body.notes ?? '').slice(0, 500),
-        subtotal,
-        taxAmount,
-        serviceChargeAmount,
-        couponCode: validatedCoupon ? validatedCoupon.code : null,
-        discountAmount,
-        total,
-        status: 'received',
-        paymentMethod,
-        paymentStatus,
-      };
+        // Create Order (initial status is ALWAYS 'pending' awaiting cashier confirmation, paymentStatus is ALWAYS 'unpaid')
+        const createdOrder = await tx.order.create({
+          data: {
+            orderCode,
+            tableNumber: table.tableNumber,
+            tableId: table.id,
+            items: validatedItems,
+            notes: cleanNotes,
+            subtotal,
+            taxAmount,
+            serviceChargeAmount,
+            couponCode: validatedCoupon ? validatedCoupon.code : null,
+            discountAmount,
+            total,
+            status: 'pending',
+            paymentMethod: data.paymentMethod || 'cash',
+            paymentStatus: 'unpaid',
+          },
+        });
 
-      return tx.order.create({ data: orderData });
-    });
+        // Record CouponUsage atomically — DB unique constraint enforces 1x/day WIB
+        if (validatedCoupon) {
+          await tx.couponUsage.create({
+            data: {
+              couponId: validatedCoupon.id,
+              deviceId,
+              usageDate,
+              orderId: createdOrder.id,
+            },
+          });
+          await tx.coupon.update({
+            where: { id: validatedCoupon.id },
+            data: {
+              lastUsedDate: new Date(),
+              usedToday: true,
+            },
+          });
+        }
 
-    return NextResponse.json({ order }, { status: 201 });
+        return createdOrder;
+      },
+      { maxWait: 15000, timeout: 20000 }
+    );
+
+    return NextResponse.json(
+      {
+        order: {
+          id: order.id,
+          orderCode: order.orderCode,
+          tableNumber: order.tableNumber,
+          items: order.items,
+          notes: order.notes,
+          subtotal: order.subtotal,
+          taxAmount: order.taxAmount,
+          serviceChargeAmount: order.serviceChargeAmount,
+          couponCode: order.couponCode,
+          discountAmount: order.discountAmount,
+          total: order.total,
+          status: order.status,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          createdAt: order.createdAt,
+        },
+      },
+      { status: 201 }
+    );
   } catch (err: any) {
+    if (
+      (err instanceof Prisma.PrismaClientKnownRequestError || err?.code === 'P2002') &&
+      err.code === 'P2002'
+    ) {
+      const target = Array.isArray(err.meta?.target)
+        ? err.meta.target.join(',')
+        : String(err.meta?.target || '');
+      const modelName = String(err.meta?.modelName || '');
+      const msg = String(err.message || '');
+      if (
+        modelName === 'CouponUsage' ||
+        target.includes('couponId') ||
+        target.includes('usageDate') ||
+        target.includes('coupon_usages') ||
+        msg.includes('coupon_usages') ||
+        msg.includes('couponId')
+      ) {
+        return NextResponse.json(
+          { error: 'Kupon sudah dipakai hari ini' },
+          { status: 409 }
+        );
+      }
+    }
+
+    if (err instanceof OrderDomainError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+
     console.error('POST /api/orders error:', err);
     return NextResponse.json(
-      { error: err.message || 'Gagal membuat pesanan' },
+      { error: 'Gagal membuat pesanan. Silakan coba lagi.' },
       { status: 500 }
     );
   }

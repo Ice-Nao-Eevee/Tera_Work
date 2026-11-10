@@ -61,14 +61,15 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
     if (!showHistory || orderHistory.length === 0) return;
     const fetchStatuses = async () => {
       for (const entry of orderHistory) {
-        if (orderStatuses[entry.orderCode]) continue; // already fetched
+        const lookupKey = entry.orderId || entry.orderCode;
+        if (!lookupKey || orderStatuses[lookupKey]) continue; // already fetched
         try {
-          const res = await fetch(`/api/orders/${encodeURIComponent(entry.orderCode)}`);
+          const res = await fetch(`/api/orders/${encodeURIComponent(lookupKey)}`);
           const data = await res.json();
           if (data.order) {
             setOrderStatuses(prev => ({
               ...prev,
-              [entry.orderCode]: {
+              [lookupKey]: {
                 status: data.order.status,
                 items: data.order.items?.map((i: { name: string; qty: number }) => ({ name: i.name, qty: i.qty })) || [],
               },
@@ -109,7 +110,9 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
     if (s === 'completed' || s === 'selesai') return { label: 'Selesai', cls: 'bg-[#dcfce7] text-[#15803d] border-[#86efac]' };
     if (s === 'ready' || s === 'siap') return { label: 'Siap Disajikan', cls: 'bg-[#dbeafe] text-[#1d4ed8] border-[#93c5fd]' };
     if (s === 'preparing') return { label: 'Disiapkan', cls: 'bg-[#fef3c7] text-[#b45309] border-[#fde68a]' };
-    if (s === 'received') return { label: 'Diterima', cls: 'bg-[#f3e8d6] text-[#b45309] border-[#d4bc8c]' };
+    if (s === 'received') return { label: 'Diterima Dapur', cls: 'bg-[#f3e8d6] text-[#b45309] border-[#d4bc8c]' };
+    if (s === 'pending') return { label: 'Menunggu Konfirmasi', cls: 'bg-[#fef3c7] text-[#92400e] border-[#fde68a]' };
+    if (s === 'cancelled') return { label: 'Dibatalkan', cls: 'bg-red-50 text-red-700 border-red-200' };
     return { label: status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
   };
 
@@ -239,17 +242,18 @@ export default function FloatingCart({ isOpen, onClose }: FloatingCartProps) {
                   <span className="text-[10px] text-[#827a73] font-medium">{orderHistory.length} pesanan</span>
                 </div>
                 {orderHistory.map((entry) => {
-                  const orderData = orderStatuses[entry.orderCode];
-                  const status = orderData?.status || 'received';
+                  const lookupKey = entry.orderId || entry.orderCode;
+                  const orderData = orderStatuses[lookupKey];
+                  const status = orderData?.status || 'pending';
                   const badge = statusBadge(status);
                   const orderItems = orderData?.items || [];
 
                   return (
                     <button
-                      key={entry.orderCode}
+                      key={lookupKey}
                       onClick={() => {
                         onClose();
-                        router.push(`/order/${encodeURIComponent(entry.orderCode)}`);
+                        router.push(`/order/${encodeURIComponent(lookupKey)}`);
                       }}
                       className="w-full text-left bg-white rounded-2xl border border-[#f0e6e3] p-3.5 hover:border-[#d4bc8c] hover:shadow-sm transition-all group"
                     >

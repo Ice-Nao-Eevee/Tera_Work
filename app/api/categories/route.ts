@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminGuard';
 import { invalidateMenuCache } from '@/lib/menuCache';
 
-// GET /api/categories  list all categories sorted by sortOrder
+const createCategorySchema = z
+  .object({
+    name: z.string().trim().min(1, 'Nama kategori wajib diisi').max(100),
+    slug: z.string().trim().max(100).optional(),
+    sortOrder: z.coerce.number().int().min(0).max(10000).optional(),
+  })
+  .strict();
+
+// GET /api/categories — list all categories sorted by sortOrder
 export async function GET() {
   try {
     await connectDB();
@@ -17,22 +27,35 @@ export async function GET() {
   }
 }
 
-// POST /api/categories  create a new category
+// POST /api/categories — create a new category (Admin only, Task E4)
 export async function POST(req: NextRequest) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   try {
     await connectDB();
-    const body = await req.json();
-
-    if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
-      return NextResponse.json({ error: 'Nama kategori wajib diisi' }, { status: 400 });
+    const rawBody = await req.json().catch(() => null);
+    if (!rawBody || typeof rawBody !== 'object') {
+      return NextResponse.json({ error: 'Data kategori tidak valid' }, { status: 400 });
     }
 
-    const name = body.name.trim();
-    let slug = body.slug;
-    if (!slug) {
-      slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const parsed = createCategorySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || 'Data kategori tidak valid' },
+        { status: 400 }
+      );
     }
-    const sortOrder = body.sortOrder !== undefined ? Number(body.sortOrder) : await prisma.category.count();
+
+    const { name } = parsed.data;
+    const slug =
+      parsed.data.slug && parsed.data.slug.length > 0
+        ? parsed.data.slug.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        : name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const sortOrder =
+      parsed.data.sortOrder !== undefined
+        ? parsed.data.sortOrder
+        : await prisma.category.count();
 
     const category = await prisma.category.create({
       data: { name, slug, sortOrder },

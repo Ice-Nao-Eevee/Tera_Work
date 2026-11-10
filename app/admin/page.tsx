@@ -46,7 +46,7 @@ interface Review { id: string; customer: string; menu: string; rating: number; c
 interface Notification { id: string; text: string; read: boolean; createdAt: string; }
 interface Restaurant { name: string; description?: string; phone?: string; email: string; address: string; hours?: string; instagram: string; whatsapp: string; logo?: string; }
 interface AppSettings { taxRatePercent: number; serviceChargeRatePercent: number; restaurantInfo: Restaurant; }
-interface AdminUser { name: string; username: string; password: string; avatar: string; }
+interface AdminUser { name: string; username: string; avatar: string; }
 
 function withAdminId<T extends { id?: string; _id?: string }>(value: T): T & { _id: string } {
   return { ...value, _id: value._id ?? value.id ?? '' };
@@ -56,7 +56,7 @@ function withAdminId<T extends { id?: string; _id?: string }>(value: T): T & { _
 const SS_PREFIX = 'ss_admin_';
 const DEFAULTS = {
   settings: { taxRatePercent: 10, serviceChargeRatePercent: 5, restaurantInfo: { name: 'Warkop Betawa', address: '', whatsapp: '', instagram: '', email: '' } } as AppSettings,
-  admin: { name: 'Admin Selera', username: 'admin', password: 'admin123', avatar: '' } as AdminUser,
+  admin: { name: 'Admin Selera', username: 'admin', avatar: '' } as AdminUser,
 };
 function ssGet<T>(key: string): T { try { return JSON.parse(localStorage.getItem(SS_PREFIX + key) ?? 'null') ?? (DEFAULTS as any)[key] ?? []; } catch { return (DEFAULTS as any)[key] ?? [] as any; } }
 function ssSet<T>(key: string, value: T): T { localStorage.setItem(SS_PREFIX + key, JSON.stringify(value)); return value; }
@@ -80,7 +80,7 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ── UI Micro-components (unchanged from original) ────────────────────────────
 function Badge({ status }: { status: string }) {
-  const cls = /tersedia|aktif|aman|selesai|dibaca|completed|ready|lunas|paid/i.test(status) ? 'bg-[#e8f5ee] text-[#25805b]' : /baru|diproses|siap|menipis|received|preparing/i.test(status) ? 'bg-[#fff0df] text-[#bb7420]' : /habis|nonaktif|dibatalkan|belum|unpaid/i.test(status) ? 'bg-[#fbe7e7] text-[#c34040]' : 'bg-[#f0edeb] text-[#625a56]';
+  const cls = /tersedia|aktif|aman|selesai|dibaca|completed|ready|lunas|paid/i.test(status) ? 'bg-[#e8f5ee] text-[#25805b]' : /pending|menunggu/i.test(status) ? 'bg-[#fef3c7] text-[#92400e]' : /baru|diproses|siap|menipis|received|preparing/i.test(status) ? 'bg-[#fff0df] text-[#bb7420]' : /habis|nonaktif|dibatalkan|cancelled|belum|unpaid/i.test(status) ? 'bg-[#fbe7e7] text-[#c34040]' : 'bg-[#f0edeb] text-[#625a56]';
   return <span className={`inline-block rounded-full text-[11px] font-bold px-[9px] py-[5px] ${cls}`}>{status}</span>;
 }
 function EmptyState({ icon = '◌', title, text, action }: { icon?: string; title: string; text: string; action?: React.ReactNode }) {
@@ -213,7 +213,7 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept="image/jpeg,image/png,image/webp"
               className="hidden"
               onChange={e => { const file = e.target.files?.[0]; if (file) void uploadPhoto(file); e.target.value = ''; }}
             />
@@ -262,7 +262,7 @@ function ProductForm({ product, categories, onClose, onSaved }: { product?: Prod
                       {dragOver ? <Upload size={20} /> : <ImagePlus size={20} />}
                     </span>
                     <span className="text-sm font-bold text-[#292522]">Seret & lepas foto di sini</span>
-                    <span className="text-[11px] font-medium text-[#827a73]">atau klik untuk memilih file · JPG, PNG, WEBP, GIF · maks. 5MB</span>
+                    <span className="text-[11px] font-medium text-[#827a73]">atau klik untuk memilih file · JPG, PNG, WEBP · maks. 5MB</span>
                   </>
                 )}
               </button>
@@ -430,6 +430,12 @@ function OrderDetailModal({ order, onClose, onSaved, products }: { order: Order;
 
             <hr className="border-[#e9e3dc] my-3" />
 
+            {order.notes && (
+              <div className="mb-3 rounded-lg bg-[#faf8f6] border border-[#e9e3dc] p-2.5 text-xs text-[#5a423a]">
+                <b className="text-[#292522]">Catatan Pelanggan:</b> {order.notes}
+              </div>
+            )}
+
             {/* Totals */}
             <div className="flex justify-between text-sm mb-1 text-[#827a73]"><span>Subtotal</span><span>{rupiah(subtotal)}</span></div>
             {order.couponCode && (
@@ -446,7 +452,7 @@ function OrderDetailModal({ order, onClose, onSaved, products }: { order: Order;
               <div>
                 <label className="block text-xs font-bold mb-1 text-[#292522]">Status Dapur (Progres)</label>
                 <select className={iCls} value={status} onChange={e => setStatus(e.target.value)}>
-                  {['received','preparing','ready','completed'].map(s => <option key={s} value={s}>{s}</option>)}
+                  {['pending','received','preparing','ready','completed','cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 
@@ -867,7 +873,7 @@ function DashboardPage({ onToast }: { onToast: (m: string) => void }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5"><StatCard icon="▣" label="Total Menu" value={products.length} /><StatCard icon="◉" label="Menu Terjual" value={sold} /><StatCard icon="Rp" label="Pendapatan" value={rupiah(revenue)} /><StatCard icon="▤" label="Pesanan" value={orders.length} /></div>
       <div className="grid grid-cols-1 md:grid-cols-[1.55fr_1fr] gap-[18px] mb-5">
         <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)]"><div className="flex items-center justify-between mb-4"><h2 className="font-bold text-base m-0">Pesanan Terbaru</h2><span className="text-[#827a73] text-xs">{orders.length} total</span></div>{recent.length ? <DataTable headers={['Kode','Meja','Item','Total','Status','Waktu']} rows={recent.map(o => [<b key="i">{o.orderCode}</b>, `Meja ${o.tableNumber}`, o.items.map(i => `${i.name} x${i.qty}`).join(', '), rupiah(o.total), <Badge key="s" status={o.status} />, fmtDate(o.createdAt || '')])} /> : <EmptyState title="Belum ada aktivitas" text="Pesanan dari pelanggan akan tampil di sini." />}</section>
-        <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)]"><h2 className="font-bold text-base m-0 mb-4">Info Restoran</h2><div className="text-sm text-[#827a73] space-y-1"><p>Total menu aktif: <b className="text-[#292522]">{products.filter(p => p.isActive).length}</b></p><p>Pesanan masuk: <b className="text-[#292522]">{orders.filter(o => o.status === 'received').length}</b></p><p>Sedang diproses: <b className="text-[#292522]">{orders.filter(o => o.status === 'preparing').length}</b></p><p>Siap disajikan: <b className="text-[#292522]">{orders.filter(o => o.status === 'ready').length}</b></p></div></section>
+        <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)]"><h2 className="font-bold text-base m-0 mb-4">Info Restoran</h2><div className="text-sm text-[#827a73] space-y-1"><p>Total menu aktif: <b className="text-[#292522]">{products.filter(p => p.isActive).length}</b></p><p>Menunggu konfirmasi kasir: <b className="text-[#92400e]">{orders.filter(o => o.status === 'pending').length}</b></p><p>Pesanan masuk (dapur): <b className="text-[#292522]">{orders.filter(o => o.status === 'received').length}</b></p><p>Sedang diproses: <b className="text-[#292522]">{orders.filter(o => o.status === 'preparing').length}</b></p><p>Siap disajikan: <b className="text-[#292522]">{orders.filter(o => o.status === 'ready').length}</b></p></div></section>
       </div>
       {showPF && <ProductForm categories={categories} onClose={() => setShowPF(false)} onSaved={m => { onToast(m); refresh(); }} />}
     </div>
@@ -978,6 +984,7 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
   const [search, setSearch] = useState('');
   const [statF, setStatF] = useState('');
   const [payF, setPayF] = useState('');
+  const [queueTab, setQueueTab] = useState<'all' | 'cashier_pending' | 'kitchen'>('all');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
   const refresh = useCallback(async () => {
@@ -1010,22 +1017,75 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
     }
   };
 
-  const shown = orders.filter(o =>
-    `${o.orderCode}${o.tableNumber}`.toLowerCase().includes(search.toLowerCase()) &&
-    (!statF || o.status === statF) &&
-    (!payF || (o.paymentStatus || 'unpaid') === payF)
-  );
+  const quickUpdateStatus = async (o: Order, nextStatus: 'received' | 'cancelled') => {
+    try {
+      await apiFetch(`/api/orders/${encodeURIComponent(o.orderCode)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      onToast(
+        nextStatus === 'received'
+          ? `Pesanan ${o.orderCode} dikonfirmasi dan masuk antrean dapur`
+          : `Pesanan ${o.orderCode} dibatalkan`
+      );
+      refresh();
+    } catch (err: any) {
+      alert(err.message || 'Gagal memperbarui status pesanan');
+    }
+  };
+
+  const pendingCount = orders.filter(o => o.status === 'pending').length;
+  const kitchenCount = orders.filter(o => ['received', 'preparing', 'ready'].includes(o.status)).length;
+
+  const shown = orders.filter(o => {
+    if (queueTab === 'cashier_pending' && o.status !== 'pending') return false;
+    if (queueTab === 'kitchen' && !['received', 'preparing', 'ready'].includes(o.status)) return false;
+    return (
+      `${o.orderCode}${o.tableNumber}`.toLowerCase().includes(search.toLowerCase()) &&
+      (!statF || o.status === statF) &&
+      (!payF || (o.paymentStatus || 'unpaid') === payF)
+    );
+  });
 
   if (loading) return <div className="text-[#827a73] text-sm">Memuat pesanan...</div>;
 
   return (
     <div>
-      <PageHeading title="Pesanan" desc="Pantau pesanan yang masuk dari pelanggan." />
+      <PageHeading title="Pesanan" desc="Konfirmasi pesanan kasir sebelum diteruskan ke antrean dapur." />
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setQueueTab('all')}
+          className={`px-3.5 py-2 rounded-[9px] text-xs font-bold transition-colors ${
+            queueTab === 'all' ? 'bg-[#292522] text-white' : 'bg-white border border-[#e9e3dc] text-[#625a56] hover:bg-[#f3eeea]'
+          }`}
+        >
+          Semua Pesanan ({orders.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setQueueTab('cashier_pending')}
+          className={`px-3.5 py-2 rounded-[9px] text-xs font-bold transition-colors ${
+            queueTab === 'cashier_pending' ? 'bg-[#92400e] text-white' : 'bg-[#fef3c7] border border-[#fde68a] text-[#92400e] hover:bg-[#fde68a]/70'
+          }`}
+        >
+          Menunggu Konfirmasi Kasir ({pendingCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setQueueTab('kitchen')}
+          className={`px-3.5 py-2 rounded-[9px] text-xs font-bold transition-colors ${
+            queueTab === 'kitchen' ? 'bg-[#25805b] text-white' : 'bg-[#e8f5ee] border border-[#a7f3d0] text-[#25805b] hover:bg-[#d1fae5]'
+          }`}
+        >
+          Antrean Dapur ({kitchenCount})
+        </button>
+      </div>
       <div className="flex flex-wrap gap-[9px] mb-[18px]">
         <input className={iCls + ' min-w-[210px] max-w-[260px]'} placeholder="Cari kode atau meja" value={search} onChange={e => setSearch(e.target.value)} />
         <select className={iCls + ' max-w-[190px]'} value={statF} onChange={e => setStatF(e.target.value)}>
           <option value="">Semua status dapur</option>
-          {['received', 'preparing', 'ready', 'completed'].map(s => <option key={s} value={s}>{s}</option>)}
+          {['pending', 'received', 'preparing', 'ready', 'completed', 'cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <select className={iCls + ' max-w-[190px]'} value={payF} onChange={e => setPayF(e.target.value)}>
           <option value="">Semua pembayaran</option>
@@ -1035,11 +1095,14 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
       </div>
       {shown.length ? (
         <DataTable
-          headers={['Kode', 'Meja', 'Item', 'Total', 'Status Dapur', 'Pembayaran', 'Waktu', 'Aksi']}
+          headers={['Kode', 'Meja', 'Item & Catatan', 'Total', 'Status Dapur', 'Pembayaran', 'Waktu', 'Aksi']}
           rows={shown.map(o => [
             <b key="i">{o.orderCode}</b>,
             `Meja ${o.tableNumber}`,
-            o.items.map(i => `${i.name} x${i.qty}`).join(', '),
+            <div key="it">
+              <div>{o.items.map(i => `${i.name} x${i.qty}`).join(', ')}</div>
+              {o.notes && <div className="text-[11px] text-[#827a73] mt-0.5">Catatan: {o.notes}</div>}
+            </div>,
             <span key="tot" className="font-bold text-[#733e24]">{rupiah(o.total)}</span>,
             <Badge key="s" status={o.status} />,
             <div key="pay" className="flex flex-col gap-1 items-start">
@@ -1059,7 +1122,27 @@ function OrdersPage({ onToast }: { onToast: (m: string) => void }) {
               </span>
             </div>,
             fmtDate(o.createdAt || ''),
-            <SmallBtn key="d" onClick={() => setDetailOrder(o)}>Detail</SmallBtn>
+            <div key="d" className="flex flex-wrap gap-1 items-center">
+              {o.status === 'pending' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => quickUpdateStatus(o, 'received')}
+                    className="rounded-[7px] bg-[#25805b] hover:bg-[#1e684a] text-white px-2 py-1 text-[11px] font-bold transition-colors"
+                  >
+                    ✓ Konfirmasi Dapur
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => quickUpdateStatus(o, 'cancelled')}
+                    className="rounded-[7px] bg-[#fdecec] hover:bg-[#fbd6d6] text-[#c34040] px-2 py-1 text-[11px] font-bold transition-colors"
+                  >
+                    ✕ Batalkan
+                  </button>
+                </>
+              )}
+              <SmallBtn onClick={() => setDetailOrder(o)}>Detail</SmallBtn>
+            </div>
           ])}
         />
       ) : (
@@ -1413,12 +1496,12 @@ function SettingsPage({ onToast }: { onToast: (m: string) => void }) {
           <p className="text-[#827a73] text-xs mt-3">Perubahan tarif ini otomatis berlaku di halaman keranjang dan checkout pelanggan.</p>
         </section>
         <section className="bg-white border border-[#e9e3dc] rounded-[16px] p-5 shadow-[0_10px_30px_rgba(65,39,23,.07)] mb-5">
-          <h2 className="text-base font-bold mb-4">Profil Admin (Lokal)</h2>
+          <h2 className="text-base font-bold mb-4">Profil Admin</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
             <label className="grid text-xs font-bold gap-[6px]">Nama Admin<input className={iCls} value={admin.name} onChange={e => setAdmin(a => ({ ...a, name: e.target.value }))} /></label>
-            <label className="grid text-xs font-bold gap-[6px]">Username<input className={iCls} value={admin.username} onChange={e => setAdmin(a => ({ ...a, username: e.target.value }))} /></label>
-            <label className="grid text-xs font-bold gap-[6px] sm:col-span-2">Password Lokal<input type="password" className={iCls} value={admin.password} onChange={e => setAdmin(a => ({ ...a, password: e.target.value }))} /></label>
+            <label className="grid text-xs font-bold gap-[6px]">Username<input className={iCls} value={admin.username} disabled /></label>
           </div>
+          <p className="text-[#827a73] text-xs mt-3">Kredensial login diverifikasi di server menggunakan hash password (scrypt) dan cookie sesi httpOnly.</p>
         </section>
         <div className="flex flex-wrap gap-[9px] justify-end">
           <button type="submit" className={bPri} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Pengaturan'}</button>
@@ -1428,10 +1511,39 @@ function SettingsPage({ onToast }: { onToast: (m: string) => void }) {
   );
 }
 
-// ── LoginPage (local only, unchanged) ─────────────────────────────────────────
+// ── LoginPage (server-authenticated via /api/admin/login) ─────────────────────
 function LoginPage({ onLogin }: { onLogin: () => void }) {
-  const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [showPw, setShowPw] = useState(false); const [remember, setRemember] = useState(false); const [error, setError] = useState('');
-  const submit = (e: React.FormEvent) => { e.preventDefault(); const admin = ssGet<AdminUser>('admin'); if (username === admin.username && password === admin.password) { sessionStorage.setItem('ss_session', '1'); if (remember) localStorage.setItem('ss_remember', '1'); onLogin(); } else { setError('Username atau password tidak sesuai.'); } };
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, remember }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || 'Username atau password tidak sesuai.');
+        return;
+      }
+      sessionStorage.setItem('ss_session', '1');
+      if (remember) localStorage.setItem('ss_remember', '1');
+      onLogin();
+    } catch {
+      setError('Gagal menghubungi server autentikasi.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
   return (
     <main className="min-h-screen grid grid-cols-1 md:grid-cols-2" style={{ background: '#f3ede7', fontFamily: "'DM Sans',sans-serif" }}>
       <section className="hidden md:flex flex-col justify-center relative overflow-hidden" style={{ background: '#8f1d24', color: '#fff', padding: 'clamp(40px,9vw,130px)' }}>
@@ -1452,16 +1564,14 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
         <div className="bg-white rounded-[18px] w-full max-w-[430px] p-[38px] shadow-xl">
           <p className="text-[11px] font-bold tracking-[0.1em] text-[#827a73] mb-1">SELAMAT DATANG</p>
           <h2 className="text-[29px] font-bold tracking-[-0.04em] m-0 text-[#292522]">Masuk ke dashboard</h2>
-          <p className="text-[#827a73] text-sm mt-2 mb-6">Gunakan akun lokal Anda untuk melanjutkan.</p>
+          <p className="text-[#827a73] text-sm mt-2 mb-6">Gunakan akun admin Anda untuk melanjutkan.</p>
           <form onSubmit={submit} className="grid gap-[17px]">
             <label className="grid text-xs font-bold gap-[6px] text-[#292522]">Username<input className={iCls} required value={username} onChange={e => setUsername(e.target.value)} placeholder="admin" autoComplete="username" /></label>
             <label className="grid text-xs font-bold gap-[6px] text-[#292522]">Password<div className="relative"><input className={`${iCls} pr-10`} type={showPw ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} placeholder="........" autoComplete="current-password" /><button type="button" onClick={() => setShowPw(s => !s)} className="absolute right-[2px] top-[1px] px-2 py-2 text-[#827a73] hover:text-[#aa2027]">o</button></div></label>
             <label className="flex items-center gap-2 font-normal text-sm cursor-pointer"><input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />Ingat sesi saya di perangkat ini</label>
             {error && <p className="text-xs text-[#c34040] font-medium">{error}</p>}
-            <button type="submit" className={`${bPri} w-full py-3 mt-1 justify-center`}>Masuk ke Dashboard</button>
+            <button type="submit" disabled={submitting} className={`${bPri} w-full py-3 mt-1 justify-center`}>{submitting ? 'Memverifikasi...' : 'Masuk ke Dashboard'}</button>
           </form>
-          <p className="text-xs text-[#827a73] mt-5">Akun awal: <b>admin</b> · password: <b>admin123</b></p>
-          <p className="text-xs text-[#827a73] mt-2">Ini adalah login lokal untuk demo, bukan sistem keamanan produksi.</p>
         </div>
       </section>
     </main>
@@ -1502,10 +1612,19 @@ export default function AdminPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    if (typeof window !== 'undefined') {
-      if (sessionStorage.getItem('ss_session') || localStorage.getItem('ss_remember')) setIsAuth(true);
-    }
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then(res => {
+        if (res.ok) {
+          sessionStorage.setItem('ss_session', '1');
+          setIsAuth(true);
+        } else {
+          sessionStorage.removeItem('ss_session');
+          localStorage.removeItem('ss_remember');
+          setIsAuth(false);
+        }
+      })
+      .catch(() => setIsAuth(false))
+      .finally(() => setMounted(true));
   }, []);
 
   const addToast = useCallback((msg: string) => {
@@ -1514,7 +1633,8 @@ export default function AdminPage() {
     setToasts(t => [...t, { id, msg }]);
   }, []);
   const removeToast = useCallback((id: string) => setToasts(t => t.filter(x => x.id !== id)), []);
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
     sessionStorage.removeItem('ss_session');
     localStorage.removeItem('ss_remember');
     setIsAuth(false);

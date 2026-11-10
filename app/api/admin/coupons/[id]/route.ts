@@ -1,17 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminGuard';
+
+const updateCouponSchema = z
+  .object({
+    code: z.string().trim().min(1).max(64).optional(),
+    title: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().max(1000).optional(),
+    discountType: z.enum(['PERCENTAGE', 'FIXED']).optional(),
+    discountValue: z.union([z.number(), z.string()]).optional(),
+    minOrderAmount: z.union([z.number(), z.string()]).optional(),
+    maxDiscountAmount: z.union([z.number(), z.string(), z.null()]).optional(),
+    startDate: z.string().min(1).optional(),
+    endDate: z.string().min(1).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict();
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
-// PUT /api/admin/coupons/[id] - Update coupon details
+// PUT /api/admin/coupons/[id] - Update coupon details (Guarded)
 export async function PUT(req: NextRequest, { params }: Params) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   const { id } = await params;
   try {
     await connectDB();
-    const body = await req.json().catch(() => ({}));
+    const rawBody = await req.json().catch(() => null);
+    const parsed = updateCouponSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Data pembaruan kupon tidak valid.' },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
 
     const existing = await prisma.coupon.findUnique({ where: { id } });
     if (!existing) {
@@ -61,19 +89,22 @@ export async function PUT(req: NextRequest, { params }: Params) {
     });
 
     return NextResponse.json({ coupon: updated });
-  } catch (err: any) {
+  } catch (err) {
     console.error('PUT /api/admin/coupons/[id] error:', err);
-    return NextResponse.json({ error: err.message || 'Gagal memperbarui kupon' }, { status: 500 });
+    return NextResponse.json({ error: 'Gagal memperbarui kupon' }, { status: 500 });
   }
 }
 
-// PATCH /api/admin/coupons/[id] - Toggle active or quick update
+// PATCH /api/admin/coupons/[id] - Toggle active or quick update (Guarded)
 export async function PATCH(req: NextRequest, { params }: Params) {
   return PUT(req, { params });
 }
 
-// DELETE /api/admin/coupons/[id] - Soft delete (set isActive = false)
-export async function DELETE(_req: NextRequest, { params }: Params) {
+// DELETE /api/admin/coupons/[id] - Soft delete (set isActive = false) (Guarded)
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   const { id } = await params;
   try {
     await connectDB();
@@ -83,7 +114,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Kupon tidak ditemukan.' }, { status: 404 });
     }
 
-    // Soft delete per business rule constraint
     const updated = await prisma.coupon.update({
       where: { id },
       data: { isActive: false },
@@ -94,8 +124,8 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       message: 'Kupon dinonaktifkan (soft delete).',
       coupon: updated,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error('DELETE /api/admin/coupons/[id] error:', err);
-    return NextResponse.json({ error: err.message || 'Gagal menonaktifkan kupon' }, { status: 500 });
+    return NextResponse.json({ error: 'Gagal menonaktifkan kupon' }, { status: 500 });
   }
 }

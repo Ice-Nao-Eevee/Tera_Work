@@ -5,6 +5,7 @@ import { Plus, Check, ExternalLink, Utensils } from 'lucide-react';
 import { IMenuItem } from '@/lib/types';
 import { addToCart } from '@/lib/store';
 import { formatRupiah } from '@/lib/format';
+import { safeImageUrlOrEmpty } from '@/lib/safeUrl';
 
 interface ProductCardProps {
   productName: string;
@@ -46,13 +47,18 @@ export default function AIProductCard({
   });
 
   const resolvedId = item?.id || item?._id || targetId;
-  const detailUrl = resolvedId ? `/menu/${resolvedId}` : url;
+  const safeInternalUrl =
+    url.startsWith('/menu') && !url.startsWith('//') && !/[\u0000-\u001F\s]/.test(url)
+      ? url
+      : '/menu';
+  const detailUrl = resolvedId ? `/menu/${encodeURIComponent(resolvedId)}` : safeInternalUrl;
 
   const displayName = item ? item.name : productName;
   const displayPrice = item ? formatRupiah(item.price) : '';
   const displayDesc = item?.description || 'Menu pilihan spesial dari Warkop Betawa.';
+  const validatedItemPhoto = safeImageUrlOrEmpty(item?.photoUrl);
   const displayPhoto =
-    item?.photoUrl ||
+    validatedItemPhoto ||
     'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
 
   const handleAddToCart = (e: React.MouseEvent) => {

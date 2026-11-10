@@ -3,26 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { CheckCircle2, Clock, ArrowRight, FileText } from 'lucide-react';
+import { CheckCircle2, Clock, ArrowRight, FileText, XCircle } from 'lucide-react';
 import { formatRupiah, formatDateTime } from '@/lib/format';
 import { IOrder, ISettings } from '@/lib/types';
 
 export default function OrderStatusPage() {
   const params = useParams();
-  const rawOrderCode = (params?.orderId as string) || '';
-  const decodedOrderCode = decodeURIComponent(rawOrderCode);
+  const rawOrderId = (params?.orderId as string) || '';
+  const decodedOrderId = decodeURIComponent(rawOrderId);
 
   const [order, setOrder] = useState<IOrder | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [restaurantInfo, setRestaurantInfo] = useState<ISettings['restaurantInfo'] | null>(null);
 
-  // Poll order status every 5 seconds
+  // Poll order status every 5 seconds using unguessable cuid `id`
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
     const fetchOrderStatus = async () => {
       try {
-        const res = await fetch(`/api/orders/${encodeURIComponent(decodedOrderCode)}`);
+        const res = await fetch(`/api/orders/${encodeURIComponent(decodedOrderId)}`);
         const data = await res.json();
         if (data.order) {
           setOrder(data.order);
@@ -37,7 +37,7 @@ export default function OrderStatusPage() {
     fetchOrderStatus();
     timer = setInterval(fetchOrderStatus, 5000);
     return () => clearInterval(timer);
-  }, [decodedOrderCode]);
+  }, [decodedOrderId]);
 
   // Fetch restaurant info for the receipt (only needed when completed)
   useEffect(() => {
@@ -52,34 +52,46 @@ export default function OrderStatusPage() {
       .catch(() => {});
   }, [order?.status, restaurantInfo]);
 
-  // Stepper — 4 steps including "Selesai"
+  // Stepper — 5 steps including Cashier Confirmation (Task C2) and Completed
   const statusSteps = [
-    { key: 'received',   label: 'Pesanan Diterima',  desc: 'Diterima oleh dapur' },
-    { key: 'preparing',  label: 'Sedang Disiapkan',  desc: 'Memasak & meracik sambal' },
-    { key: 'ready',      label: 'Siap Disajikan',    desc: 'Makanan siap diantar ke meja' },
-    { key: 'completed',  label: 'Selesai',            desc: 'Pesanan selesai — bayar di kasir' },
+    { key: 'pending',   label: 'Menunggu Konfirmasi Kasir', desc: 'Kasir sedang memverifikasi pesanan meja Anda' },
+    { key: 'received',  label: 'Diterima Dapur',            desc: 'Pesanan telah dikonfirmasi kasir & masuk ke dapur' },
+    { key: 'preparing', label: 'Sedang Disiapkan',          desc: 'Memasak & meracik sambal' },
+    { key: 'ready',     label: 'Siap Disajikan',            desc: 'Makanan siap diantar ke meja' },
+    { key: 'completed', label: 'Selesai',                   desc: 'Pesanan selesai — bayar di kasir' },
   ];
 
   const getStepIndex = (status?: string) => {
     switch (status) {
-      case 'received':  return 0;
-      case 'preparing': return 1;
-      case 'ready':     return 2;
-      case 'completed': return 3;
+      case 'pending':   return 0;
+      case 'received':  return 1;
+      case 'preparing': return 2;
+      case 'ready':     return 3;
+      case 'completed': return 4;
       default:          return 0;
     }
   };
 
   const currentStep = getStepIndex(order?.status);
   const isCompleted = order?.status === 'completed';
+  const isCancelled = order?.status === 'cancelled';
+  const displayCode = order?.orderCode || decodedOrderId;
 
   return (
     <main className="min-h-screen pt-8 pb-24 px-4 md:px-8 max-w-3xl mx-auto">
 
       {/* ── Header Banner ── */}
       <div className="bg-white rounded-3xl p-8 border border-[#d4bc8c] shadow-card text-center mb-8">
-        <div className="w-16 h-16 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-[#b45309] flex items-center justify-center mx-auto mb-4 shadow-xs">
-          <CheckCircle2 className="w-9 h-9 stroke-[2.2]" />
+        <div className={`w-16 h-16 rounded-full border flex items-center justify-center mx-auto mb-4 shadow-xs ${
+          isCancelled
+            ? 'bg-red-50 border-red-200 text-red-600'
+            : 'bg-[#f3e8d6] border-[#d4bc8c] text-[#b45309]'
+        }`}>
+          {isCancelled ? (
+            <XCircle className="w-9 h-9 stroke-[2.2]" />
+          ) : (
+            <CheckCircle2 className="w-9 h-9 stroke-[2.2]" />
+          )}
         </div>
 
         <span className="text-xs uppercase tracking-widest font-bold text-[#8c5950] block mb-1">
@@ -87,17 +99,21 @@ export default function OrderStatusPage() {
         </span>
 
         <h1 className="font-serif italic font-bold text-3xl md:text-4xl text-[#b45309] mb-2">
-          Pesanan Berhasil!
+          {isCancelled ? 'Pesanan Dibatalkan' : 'Pesanan Berhasil!'}
         </h1>
 
         <div className="font-mono text-sm font-semibold text-[#5a423a] mb-6">
-          Kode Pesanan: <span className="text-[#b45309] font-bold">{decodedOrderCode}</span>
+          Kode Pesanan: <span className="text-[#b45309] font-bold">{displayCode}</span>
         </div>
 
-        {!isCompleted && (
+        {!isCompleted && !isCancelled && (
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f3e8d6] border border-[#d4bc8c] text-xs md:text-sm font-medium text-[#b45309]">
             <Clock className="w-4 h-4" />
-            <span>Estimasi waktu tunggu: 15–20 menit</span>
+            <span>
+              {order?.status === 'pending'
+                ? 'Menunggu konfirmasi kasir sebelum diteruskan ke dapur'
+                : 'Estimasi waktu tunggu: 15–20 menit'}
+            </span>
           </div>
         )}
 
@@ -107,47 +123,56 @@ export default function OrderStatusPage() {
             <span>Pesanan Selesai — Silakan bayar di kasir</span>
           </div>
         )}
+
+        {isCancelled && (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 border border-red-200 text-xs md:text-sm font-semibold text-red-700">
+            <XCircle className="w-4 h-4" />
+            <span>Pesanan ini telah dibatalkan. Silakan hubungi kasir jika butuh bantuan.</span>
+          </div>
+        )}
       </div>
 
       {/* ── Live Status Stepper ── */}
-      <div className="bg-white rounded-3xl p-8 border border-[#d4bc8c] shadow-card mb-8">
-        <h2 className="font-bold text-lg text-[#2a1a15] mb-6">Progres Pesanan</h2>
+      {!isCancelled && (
+        <div className="bg-white rounded-3xl p-8 border border-[#d4bc8c] shadow-card mb-8">
+          <h2 className="font-bold text-lg text-[#2a1a15] mb-6">Progres Pesanan</h2>
 
-        <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#e6cdac]">
-          {statusSteps.map((step, idx) => {
-            const isPassed  = currentStep > idx;
-            const isCurrent = currentStep === idx;
+          <div className="relative pl-6 space-y-8 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#e6cdac]">
+            {statusSteps.map((step, idx) => {
+              const isPassed  = currentStep > idx;
+              const isCurrent = currentStep === idx;
 
-            return (
-              <div key={step.key} className="relative flex items-start gap-4">
-                {/* Stepper Node */}
-                <div
-                  className={`absolute -left-6 top-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
-                    isPassed
-                      ? 'bg-[#15803d] border-[#15803d] text-white shadow-sm'
-                      : isCurrent
-                      ? 'bg-[#b45309] border-[#b45309] text-white shadow-sm'
-                      : 'bg-white border-[#d4bc8c] text-[#9e8d87]'
-                  }`}
-                >
-                  {isPassed ? '✓' : idx + 1}
-                </div>
-
-                <div className="ml-3">
-                  <h3
-                    className={`font-bold text-base transition-colors ${
-                      isCurrent ? 'text-[#b45309]' : isPassed ? 'text-[#15803d]' : 'text-[#9e8d87]'
+              return (
+                <div key={step.key} className="relative flex items-start gap-4">
+                  {/* Stepper Node */}
+                  <div
+                    className={`absolute -left-6 top-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all ${
+                      isPassed
+                        ? 'bg-[#15803d] border-[#15803d] text-white shadow-sm'
+                        : isCurrent
+                        ? 'bg-[#b45309] border-[#b45309] text-white shadow-sm'
+                        : 'bg-white border-[#d4bc8c] text-[#9e8d87]'
                     }`}
                   >
-                    {step.label}
-                  </h3>
-                  <p className="text-xs text-[#735a52] mt-0.5 font-light">{step.desc}</p>
+                    {isPassed ? '✓' : idx + 1}
+                  </div>
+
+                  <div className="ml-3">
+                    <h3
+                      className={`font-bold text-base transition-colors ${
+                        isCurrent ? 'text-[#b45309]' : isPassed ? 'text-[#15803d]' : 'text-[#9e8d87]'
+                      }`}
+                    >
+                      {step.label}
+                    </h3>
+                    <p className="text-xs text-[#735a52] mt-0.5 font-light">{step.desc}</p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Order Itemized Summary ── */}
       {order && !isCompleted && (
@@ -158,14 +183,18 @@ export default function OrderStatusPage() {
           </div>
 
           <div className="space-y-3">
-            {order.items.map((item, i) => (
-              <div key={i} className="flex justify-between text-sm text-[#5a423a]">
-                <span>
-                  {item.qty}x {item.name} {item.spiceLevel ? `(${item.spiceLevel})` : ''}
-                </span>
-                <span className="font-semibold text-[#2a1a15]">{formatRupiah(item.lineTotal)}</span>
-              </div>
-            ))}
+            {order.items.map((item, i) => {
+              const snapPrice = item.unitPrice ?? item.price;
+              return (
+                <div key={i} className="flex justify-between text-sm text-[#5a423a]">
+                  <span>
+                    {item.qty}x {item.name} {item.spiceLevel ? `(${item.spiceLevel})` : ''}
+                    <span className="text-xs text-[#9e8d87] ml-1">(@{formatRupiah(snapPrice)})</span>
+                  </span>
+                  <span className="font-semibold text-[#2a1a15]">{formatRupiah(item.lineTotal ?? snapPrice * item.qty)}</span>
+                </div>
+              );
+            })}
           </div>
 
           {order.couponCode && (
@@ -209,7 +238,7 @@ export default function OrderStatusPage() {
         </div>
       )}
 
-      {/* ── Struk Digital (appears automatically when status = completed) ── */}
+      {/* ── Struk Digital (appears automatically when status = completed, reads from snapshot Task A3) ── */}
       {order && isCompleted && (
         <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-[#b45309]/30 shadow-card mb-8">
           {/* Receipt Header */}
@@ -237,26 +266,33 @@ export default function OrderStatusPage() {
             </div>
           </div>
 
-          {/* Itemized List */}
+          {/* Itemized List from Snapshot (unitPrice + name) */}
           <div className="space-y-2.5 mb-4">
-            {order.items.map((item, i) => (
-              <div key={i} className="flex justify-between gap-3 text-sm text-[#5a423a]">
-                <span className="flex-1">
-                  {item.qty}× {item.name}
-                  {item.spiceLevel ? (
-                    <span className="text-[11px] text-[#9e8d87] ml-1">({item.spiceLevel})</span>
-                  ) : null}
-                  {Array.isArray(item.addOns) && item.addOns.length > 0 && (
+            {order.items.map((item, i) => {
+              const snapUnitPrice = item.unitPrice ?? item.price;
+              const snapLineTotal = item.lineTotal ?? snapUnitPrice * item.qty;
+              return (
+                <div key={i} className="flex justify-between gap-3 text-sm text-[#5a423a]">
+                  <span className="flex-1">
+                    {item.qty}× {item.name}
                     <span className="text-[11px] text-[#9e8d87] ml-1">
-                      + {item.addOns.map((a: any) => a.label).join(', ')}
+                      (@{formatRupiah(snapUnitPrice)})
                     </span>
-                  )}
-                </span>
-                <span className="font-semibold text-[#2a1a15] tabular-nums whitespace-nowrap">
-                  {formatRupiah(item.lineTotal)}
-                </span>
-              </div>
-            ))}
+                    {item.spiceLevel ? (
+                      <span className="text-[11px] text-[#9e8d87] ml-1">({item.spiceLevel})</span>
+                    ) : null}
+                    {Array.isArray(item.addOns) && item.addOns.length > 0 && (
+                      <span className="text-[11px] text-[#9e8d87] ml-1">
+                        + {item.addOns.map((a: any) => a.label).join(', ')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-semibold text-[#2a1a15] tabular-nums whitespace-nowrap">
+                    {formatRupiah(snapLineTotal)}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           {/* Totals */}
@@ -265,6 +301,12 @@ export default function OrderStatusPage() {
               <span>Subtotal</span>
               <span className="tabular-nums">{formatRupiah(order.subtotal)}</span>
             </div>
+            {order.couponCode && (order.discountAmount ?? 0) > 0 && (
+              <div className="flex justify-between text-sm text-[#15803d] font-semibold">
+                <span>Diskon Kupon ({order.couponCode})</span>
+                <span className="tabular-nums">-{formatRupiah(order.discountAmount || 0)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm text-[#735a52]">
               <span>Pajak</span>
               <span className="tabular-nums">{formatRupiah(order.taxAmount)}</span>

@@ -1,6 +1,12 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'warkop-betawa-qr-secret-key-2026';
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET?.trim();
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is not configured.');
+  }
+  return secret;
+}
 
 export interface TableTokenPayload {
   tableId: string;
@@ -13,7 +19,7 @@ export interface TableTokenPayload {
  * Generates a signed QR token for a table
  */
 export function generateTableToken(tableId: string, tableNumber: number): string {
-  return jwt.sign({ tableId, tableNumber }, JWT_SECRET, { expiresIn: '12h' });
+  return jwt.sign({ tableId, tableNumber }, getJwtSecret(), { expiresIn: '12h' });
 }
 
 /**
@@ -21,8 +27,8 @@ export function generateTableToken(tableId: string, tableNumber: number): string
  */
 export function verifyTableToken(token: string): TableTokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TableTokenPayload;
-  } catch (err) {
+    return jwt.verify(token, getJwtSecret()) as TableTokenPayload;
+  } catch {
     return null;
   }
 }

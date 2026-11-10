@@ -31,16 +31,10 @@ export default function PrintTablesPage() {
   const [onlyActive, setOnlyActive] = useState(true);
 
   useEffect(() => {
-    const authed = sessionStorage.getItem('ss_session') || localStorage.getItem('ss_remember');
-    if (!authed) {
-      setError('Silakan login ke dashboard admin terlebih dahulu.');
-      setLoading(false);
-      return;
-    }
     fetch('/api/admin/tables', { headers: adminHeaders(), cache: 'no-store' })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(res.status === 401 ? 'Kunci admin diperlukan. Buka menu Meja di dashboard dan masukkan kunci admin.' : data.error || `HTTP ${res.status}`);
+        if (!res.ok) throw new Error(res.status === 401 ? 'Silakan login ke dashboard admin terlebih dahulu.' : data.error || `HTTP ${res.status}`);
         setTables(data.tables || []);
         setBaseUrl(data.baseUrl || '');
       })

@@ -58,6 +58,7 @@ export interface IOrderItem {
   menuItemId?: string;
   name: string;
   qty: number;
+  unitPrice?: number;
   price: number;
   spiceLevel?: string;
   addOns: { label: string; price: number }[];
@@ -77,7 +78,7 @@ export interface IOrder {
   couponCode?: string | null;
   discountAmount?: number;
   total: number;
-  status: 'received' | 'preparing' | 'ready' | 'completed';
+  status: 'pending' | 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled' | string;
   paymentMethod?: 'cash' | 'qris' | string;
   paymentStatus?: 'unpaid' | 'paid' | string;
   createdAt?: Date;
@@ -117,4 +118,3 @@ export interface ISettings {
   serviceChargeRatePercent: number;
   restaurantInfo: IRestaurantInfo;
 }
-

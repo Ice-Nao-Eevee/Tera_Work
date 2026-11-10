@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminGuard';
 import { generateUniqueTableToken } from '@/lib/tableToken';
 
 export const dynamic = 'force-dynamic';
+
+const updateTableSchema = z
+  .object({
+    isActive: z.boolean().optional(),
+    regenerateToken: z.boolean().optional(),
+  })
+  .strict();
 
 // PATCH /api/admin/tables/[id] — { isActive: boolean } and/or { regenerateToken: true }
 export async function PATCH(
@@ -14,7 +22,12 @@ export async function PATCH(
   if (denied) return denied;
   try {
     const { id } = await params;
-    const body = await req.json();
+    const rawBody = await req.json().catch(() => null);
+    const parsed = updateTableSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Data pembaruan meja tidak valid.' }, { status: 400 });
+    }
+    const body = parsed.data;
     const data: { isActive?: boolean; qrToken?: string } = {};
     if (typeof body.isActive === 'boolean') data.isActive = body.isActive;
     if (body.regenerateToken === true) data.qrToken = await generateUniqueTableToken();

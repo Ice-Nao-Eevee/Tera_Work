@@ -3,8 +3,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Sparkles, Bot, User, ExternalLink, MapPin, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { IMenuItem } from '@/lib/types';
+import { safeUrl } from '@/lib/safeUrl';
 import AIProductCard from './AIProductCard';
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -89,13 +93,22 @@ function renderInline(
     }
 
     const label = match[1];
-    const url = match[2];
-    const isExternal = url.startsWith('http');
-    const isWhatsApp = url.includes('wa.me');
-    const isMaps = url.includes('maps.google') || url.includes('goo.gl/maps');
-    const isMenuLink = url.startsWith('/menu');
+    const rawUrl = match[2].trim();
+    const validatedHttpUrl = safeUrl(rawUrl);
+    const isMenuLink =
+      rawUrl.startsWith('/menu') &&
+      !rawUrl.startsWith('//') &&
+      !/[\u0000-\u001F\s]/.test(rawUrl);
+    const isSafeRelativeLink =
+      rawUrl.startsWith('/') &&
+      !rawUrl.startsWith('//') &&
+      !/[\u0000-\u001F\s]/.test(rawUrl);
 
-    if (isExternal) {
+    if (validatedHttpUrl) {
+      const url = validatedHttpUrl;
+      const isWhatsApp = url.includes('wa.me');
+      const isMaps = url.includes('maps.google') || url.includes('goo.gl/maps');
+
       if (isMaps) {
         // Render an interactive minimap card with embedded Google Maps preview
         const embedUrl =
@@ -179,21 +192,26 @@ function renderInline(
         <AIProductCard
           key={segKey++}
           productName={label}
-          url={url}
+          url={rawUrl}
           menuItems={menuItems}
           onSelectMenu={onSelectMenu}
         />
       );
-    } else {
-      // Other internal links
+    } else if (isSafeRelativeLink) {
+      // Safe internal relative links
       segments.push(
         <Link
           key={segKey++}
-          href={url}
+          href={rawUrl}
           className="text-amber-700 hover:text-amber-900 underline underline-offset-2 decoration-amber-400 transition-colors"
         >
           {renderBold(label)}
         </Link>
+      );
+    } else {
+      // Unsafe scheme (e.g. javascript:, data:) — render strictly as plain text
+      segments.push(
+        <span key={segKey++}>{renderBold(label)}</span>
       );
     }
 
@@ -241,8 +259,21 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionVerified, setSessionVerified] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && TURNSTILE_SITE_KEY) {
+      (window as any).onChatTurnstileSuccess = (token: string) => {
+        setTurnstileToken(token || '');
+      };
+      (window as any).onChatTurnstileExpired = () => {
+        setTurnstileToken('');
+      };
+    }
+  }, []);
 
   // Load menu items from API for real-time accurate photos, prices, descriptions
   useEffect(() => {
@@ -278,7 +309,7 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
       if (e) e.preventDefault();
       if (!input.trim() || isLoading) return;
 
-      const userMsg = input.trim();
+      const userMsg = input.trim().slice(0, 300);
       setInput('');
 
       const updatedMessages: ChatMessage[] = [...messages, { role: 'user', content: userMsg }];
@@ -286,22 +317,54 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
       setIsLoading(true);
 
       try {
-        // Build history (all messages except the last user message we just added)
-        const history = updatedMessages.slice(0, -1).map((m) => ({
+        // Send strictly validated { messages: [{ role: 'user' | 'assistant', content }] } (max 6 prior + 1 new)
+        const payloadMessages = updatedMessages.slice(-7).map((m) => ({
           role: m.role === 'assistant' ? 'assistant' : 'user',
-          content: m.content,
+          content: m.content.slice(0, 300),
         }));
 
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: userMsg,
-            history,
+            messages: payloadMessages,
+            ...(TURNSTILE_SITE_KEY && !sessionVerified && turnstileToken
+              ? { turnstileToken }
+              : {}),
           }),
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+
+        if (res.status === 429) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                'Pesan dikirim terlalu cepat. Silakan tunggu sebentar sebelum bertanya lagi ya ☕',
+            },
+          ]);
+          return;
+        }
+
+        if (!res.ok) {
+          if (data.requireTurnstile) {
+            setSessionVerified(false);
+          }
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                data.error ||
+                'Maaf, pesan tidak dapat diproses. Silakan coba lagi atau tanya kasir ya.',
+            },
+          ]);
+          return;
+        }
+
+        setSessionVerified(true);
         const reply = data.reply ?? 'Maaf, ada gangguan. Coba tanya kasir ya.';
         setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
       } catch {
@@ -316,7 +379,7 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
         setIsLoading(false);
       }
     },
-    [input, isLoading, messages]
+    [input, isLoading, messages, sessionVerified, turnstileToken]
   );
 
   if (!isOpen) return null;
@@ -404,14 +467,32 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* First-message Turnstile anti-bot check (Task D6) */}
+        {TURNSTILE_SITE_KEY && !sessionVerified && (
+          <div className="px-3 pt-2 bg-[#f3e8d6] border-t border-[#d4bc8c] flex justify-center">
+            <Script
+              src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+              strategy="afterInteractive"
+            />
+            <div
+              className="cf-turnstile"
+              data-sitekey={TURNSTILE_SITE_KEY}
+              data-size="compact"
+              data-callback="onChatTurnstileSuccess"
+              data-expired-callback="onChatTurnstileExpired"
+            />
+          </div>
+        )}
+
         {/* Input Form */}
         <form onSubmit={handleSend} className="p-3 bg-[#f3e8d6] border-t border-[#d4bc8c] flex gap-2">
           <input
             suppressHydrationWarning
             ref={inputRef}
             type="text"
+            maxLength={300}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value.slice(0, 300))}
             placeholder="Tanyakan menu, sambal, atau rekomendasi..."
             className="flex-1 px-4 py-2.5 text-sm bg-white rounded-full border border-[#d4bc8c] focus:outline-none focus:border-[#b45309] text-[#2a1a15] placeholder-[#9e8d87]"
             disabled={isLoading}

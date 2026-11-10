@@ -25,6 +25,7 @@ const MANUAL_TABLE_KEY = 'selera_sambal_manual_table';
 const ORDER_HISTORY_KEY = 'selera_sambal_order_history';
 
 export interface OrderHistoryEntry {
+  orderId?: string;
   orderCode: string;
   tableNumber: number;
   total: number;
@@ -298,7 +299,11 @@ export function saveOrderToHistory(entry: OrderHistoryEntry): void {
   if (typeof window === 'undefined') return;
   const history = getOrderHistory();
   // Avoid duplicates
-  const filtered = history.filter(h => h.orderCode !== entry.orderCode);
+  const filtered = history.filter(
+    (h) =>
+      h.orderCode !== entry.orderCode &&
+      (!entry.orderId || h.orderId !== entry.orderId)
+  );
   filtered.unshift(entry); // newest first
   // Keep max 50 entries
   const trimmed = filtered.slice(0, 50);

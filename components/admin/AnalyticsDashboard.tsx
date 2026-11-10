@@ -501,6 +501,14 @@ export default function AnalyticsDashboard({ onToast }: AnalyticsDashboardProps)
   };
 
   // ── Export to PDF (Printable Report Window) ─────────────────────────────────
+  const escapeHtml = (str: string) =>
+    String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank', 'width=900,height=800');
     if (!printWindow) {
@@ -518,7 +526,7 @@ export default function AnalyticsDashboard({ onToast }: AnalyticsDashboardProps)
         (b) => `
         <tr>
           <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: bold; text-align: center;">#${b.rank}</td>
-          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600;">${b.name}</td>
+          <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600;">${escapeHtml(b.name)}</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${b.qty} porsi</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${rupiah(b.revenue)}</td>
           <td style="padding: 8px 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${b.sharePercent}%</td>
@@ -532,12 +540,12 @@ export default function AnalyticsDashboard({ onToast }: AnalyticsDashboardProps)
       .map(
         (o) => `
         <tr>
-          <td style="padding: 6px 10px; border-bottom: 1px solid #eee; font-family: monospace; font-weight: bold;">${o.orderCode}</td>
-          <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">Meja ${o.tableNumber}</td>
-          <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${o.items.map((i) => `${i.name} (${i.qty})`).join(', ')}</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #eee; font-family: monospace; font-weight: bold;">${escapeHtml(o.orderCode)}</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">Meja ${Number(o.tableNumber) || 0}</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #eee;">${o.items.map((i) => `${escapeHtml(i.name)} (${Number(i.qty) || 0})`).join(', ')}</td>
           <td style="padding: 6px 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">${rupiah(o.total)}</td>
           <td style="padding: 6px 10px; border-bottom: 1px solid #eee; text-align: center;">
-            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; font-weight: 600;">${o.status}</span>
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #f3f4f6; font-weight: 600;">${escapeHtml(o.status)}</span>
           </td>
         </tr>
       `

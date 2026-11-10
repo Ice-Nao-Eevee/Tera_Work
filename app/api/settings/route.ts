@@ -1,7 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import { STATIC_SETTINGS } from '@/lib/staticData';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminGuard';
+
+const restaurantInfoSchema = z
+  .object({
+    name: z.string().trim().max(200).optional(),
+    address: z.string().trim().max(500).optional(),
+    openHours: z.string().trim().max(200).optional(),
+    contact: z.string().trim().max(100).optional(),
+    wifiPassword: z.string().trim().max(100).optional(),
+    announcement: z.string().trim().max(500).optional(),
+  })
+  .strict();
+
+const updateSettingsSchema = z
+  .object({
+    taxRatePercent: z.union([z.number(), z.string()]).optional(),
+    serviceChargeRatePercent: z.union([z.number(), z.string()]).optional(),
+    restaurantInfo: restaurantInfoSchema.optional(),
+  })
+  .strict();
 
 // GET /api/settings
 export async function GET() {
@@ -16,11 +38,22 @@ export async function GET() {
   }
 }
 
-// PUT /api/settings
+// PUT /api/settings (Admin only)
 export async function PUT(req: NextRequest) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   try {
     await connectDB();
-    const body = await req.json();
+    const rawBody = await req.json().catch(() => null);
+    const parsed = updateSettingsSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Data pengaturan tidak valid.' },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
 
     if (body.taxRatePercent !== undefined) {
       const tax = Number(body.taxRatePercent);
@@ -49,14 +82,16 @@ export async function PUT(req: NextRequest) {
           data: {
             ...(body.taxRatePercent !== undefined && { taxRatePercent: Number(body.taxRatePercent) }),
             ...(body.serviceChargeRatePercent !== undefined && { serviceChargeRatePercent: Number(body.serviceChargeRatePercent) }),
-            ...(body.restaurantInfo !== undefined && { restaurantInfo: body.restaurantInfo }),
+            ...(body.restaurantInfo !== undefined && {
+              restaurantInfo: body.restaurantInfo as unknown as Prisma.InputJsonValue,
+            }),
           },
         })
       : await prisma.settings.create({
           data: {
             taxRatePercent: body.taxRatePercent !== undefined ? Number(body.taxRatePercent) : STATIC_SETTINGS.taxRatePercent,
             serviceChargeRatePercent: body.serviceChargeRatePercent !== undefined ? Number(body.serviceChargeRatePercent) : STATIC_SETTINGS.serviceChargeRatePercent,
-            restaurantInfo: body.restaurantInfo ?? STATIC_SETTINGS.restaurantInfo,
+            restaurantInfo: (body.restaurantInfo ?? STATIC_SETTINGS.restaurantInfo) as unknown as Prisma.InputJsonValue,
           },
         });
     return NextResponse.json({ settings });

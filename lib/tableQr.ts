@@ -5,9 +5,6 @@
  * QR images are generated on the fly in the browser (never written to disk).
  */
 
-
-
-
 export const BRAND_NAME = 'Selera Sambal';
 const ADMIN_KEY_STORAGE = 'ss_admin_key';
 
@@ -21,13 +18,16 @@ export function setAdminKey(key: string): void {
   else sessionStorage.removeItem(ADMIN_KEY_STORAGE);
 }
 export function adminHeaders(): Record<string, string> {
-  return { 'Content-Type': 'application/json', 'x-admin-key': getAdminKey() };
+  const key = getAdminKey();
+  return key
+    ? { 'Content-Type': 'application/json', 'x-admin-key': key }
+    : { 'Content-Type': 'application/json' };
 }
 
-/** `${BASE_URL}/t/${token}` — base comes from NEXT_PUBLIC_APP_URL (served by the API). */
+/** `${BASE_URL}/m/${token}` — base comes from NEXT_PUBLIC_APP_URL (served by the API). */
 export function tableScanUrl(baseUrl: string, token: string): string {
   const base = (baseUrl || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, '');
-  return `${base}/t/${token}`;
+  return `${base}/m/${token}`;
 }
 
 export async function qrDataUrl(text: string, width = 300): Promise<string> {
@@ -36,7 +36,6 @@ export async function qrDataUrl(text: string, width = 300): Promise<string> {
   const QRCode = (await import('qrcode')).default;
   return QRCode.toDataURL(text, { width, margin: 1, errorCorrectionLevel: 'M' });
 }
-
 
 /** Builds a labelled PNG ("Selera Sambal" / QR / "Meja N") and triggers a download. */
 export async function downloadTableQrPng(url: string, tableNumber: number): Promise<void> {

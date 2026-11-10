@@ -71,11 +71,12 @@ model Order {
   couponCode          String?
   discountAmount      Int      @default(0)
   total               Int
-  status              String   @default("received")
+  status              String   @default("pending")
   paymentMethod       String   @default("cash")
   paymentStatus       String   @default("unpaid")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  couponUsage         CouponUsage?
 
   @@index([status, createdAt])
   @@index([paymentStatus, createdAt])
@@ -84,24 +85,40 @@ model Order {
 }
 
 model Coupon {
-  id                String    @id @default(cuid())
-  code              String    @unique
+  id                String        @id @default(cuid())
+  code              String        @unique
   title             String
   description       String
-  discountType      String    // "PERCENTAGE" or "FIXED"
+  discountType      String        // "PERCENTAGE" or "FIXED"
   discountValue     Int
-  minOrderAmount    Int       @default(0)
+  minOrderAmount    Int           @default(0)
   maxDiscountAmount Int?
   startDate         DateTime
   endDate           DateTime
-  isActive          Boolean   @default(true)
+  isActive          Boolean       @default(true)
   lastUsedDate      DateTime?
-  usedToday         Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  usedToday         Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  usages            CouponUsage[]
 
   @@index([code, isActive])
   @@map("coupons")
+}
+
+model CouponUsage {
+  id        String   @id @default(cuid())
+  couponId  String
+  deviceId  String   @default("global")
+  usageDate String   // format "YYYY-MM-DD", dihitung di zona Asia/Jakarta (WIB)
+  orderId   String   @unique
+  createdAt DateTime @default(now())
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, deviceId, usageDate])
+  @@map("coupon_usages")
 }
 
 model Settings {

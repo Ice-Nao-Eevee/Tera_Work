@@ -13,7 +13,11 @@ import {
   STATIC_PROMOS,
   STATIC_SETTINGS,
 } from './staticData';
-import { generateTableTokenString, TABLE_TOKEN_LENGTH } from './tableToken';
+import {
+  generateTableTokenString,
+  generateUniqueTableToken,
+  TABLE_TOKEN_LENGTH,
+} from './tableToken';
 
 // ── Re-export aliases ─────────────────────────────────────────────────────────
 export const INITIAL_MENU_ITEMS = STATIC_MENU_ITEMS;
@@ -32,6 +36,56 @@ export function getMemoryStore() {
 // ── Seed tracker (run once per process lifetime) ─────────────────────────────
 const globalForDb = globalThis as unknown as { _dbSeeded?: boolean };
 
+const WEAK_SEED_PASSWORDS = new Set([
+  'admin',
+  'admin123',
+  'admin123456',
+  'password',
+  'password123',
+  '12345678',
+  '123456789012',
+  'selerasambal',
+]);
+
+/**
+ * Validates ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD when seeding admin config (Task F1).
+ * Never creates a default admin account with a hardcoded password.
+ * Throws if seed credentials are provided (or required in production seed mode) but are empty,
+ * shorter than 12 characters, or match known weak passwords.
+ */
+export function validateAdminSeedCredentials(
+  email = process.env.ADMIN_SEED_EMAIL,
+  password = process.env.ADMIN_SEED_PASSWORD,
+  requirePresent = false
+): { email: string; password: string } | null {
+  const cleanEmail = (email ?? '').trim();
+  const cleanPassword = (password ?? '').trim();
+
+  if (!cleanEmail && !cleanPassword && !requirePresent) {
+    return null;
+  }
+
+  if (!cleanEmail || !cleanPassword) {
+    throw new Error(
+      'ADMIN_SEED_EMAIL dan ADMIN_SEED_PASSWORD wajib diisi keduanya dan tidak boleh kosong.'
+    );
+  }
+
+  if (cleanPassword.length < 12) {
+    throw new Error(
+      'ADMIN_SEED_PASSWORD ditolak: panjang password minimal 12 karakter.'
+    );
+  }
+
+  if (WEAK_SEED_PASSWORDS.has(cleanPassword.toLowerCase())) {
+    throw new Error(
+      'ADMIN_SEED_PASSWORD ditolak: jangan gunakan password umum/default.'
+    );
+  }
+
+  return { email: cleanEmail, password: cleanPassword };
+}
+
 /**
  * Call at the top of any route handler to ensure the DB is seeded.
  * Safe to call multiple times — seeds only once per process lifetime,
@@ -41,6 +95,9 @@ export async function connectDB(): Promise<void> {
   if (globalForDb._dbSeeded) return;
   globalForDb._dbSeeded = true;
   try {
+    // Validate ADMIN_SEED_EMAIL / ADMIN_SEED_PASSWORD if set (Task F1)
+    validateAdminSeedCredentials();
+
     // Never repopulate a production menu automatically after its last item is deleted.
     if (process.env.SEED_DEMO_DATA === 'true') {
       await seedDatabaseIfEmpty();
@@ -108,15 +165,15 @@ async function seedTablesIfEmpty() {
   }
 }
 
-/** Replaces legacy JWT-style qrTokens with 10-char nanoid tokens (never touches orders). */
+/** Replaces legacy or <16-char qrTokens with 16-char nanoid tokens (never touches orders). */
 async function backfillLegacyTableTokens() {
   try {
     const tables = await prisma.restaurantTable.findMany({ select: { id: true, qrToken: true } });
     for (const t of tables) {
-      if (t.qrToken.length === TABLE_TOKEN_LENGTH) continue;
+      if (t.qrToken && t.qrToken.length >= TABLE_TOKEN_LENGTH) continue;
       await prisma.restaurantTable.update({
         where: { id: t.id },
-        data: { qrToken: generateTableTokenString() },
+        data: { qrToken: await generateUniqueTableToken() },
       });
     }
   } catch (e) {

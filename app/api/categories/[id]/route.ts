@@ -1,23 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminGuard';
 import { invalidateMenuCache } from '@/lib/menuCache';
 
-// PUT /api/categories/[id] — update a category
+const updateCategorySchema = z
+  .object({
+    name: z.string().trim().min(1).max(100).optional(),
+    slug: z.string().trim().min(1).max(100).optional(),
+    sortOrder: z.coerce.number().int().min(0).max(10000).optional(),
+  })
+  .strict();
+
+// PUT /api/categories/[id] — update a category (Admin only, Task E4)
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   try {
     await connectDB();
     const { id } = await params;
-    const body = await req.json();
+    const rawBody = await req.json().catch(() => null);
+    if (!rawBody || typeof rawBody !== 'object') {
+      return NextResponse.json({ error: 'Data kategori tidak valid' }, { status: 400 });
+    }
+
+    const parsed = updateCategorySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || 'Data kategori tidak valid' },
+        { status: 400 }
+      );
+    }
+
+    const d = parsed.data;
     const category = await prisma.category.update({
       where: { id },
       data: {
-        ...(body.name !== undefined && { name: body.name }),
-        ...(body.slug !== undefined && { slug: body.slug }),
-        ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) }),
+        ...(d.name !== undefined && { name: d.name }),
+        ...(d.slug !== undefined && { slug: d.slug }),
+        ...(d.sortOrder !== undefined && { sortOrder: d.sortOrder }),
       },
     });
     invalidateMenuCache();
@@ -31,11 +57,14 @@ export async function PUT(
   }
 }
 
-// DELETE /api/categories/[id] — delete a category
+// DELETE /api/categories/[id] — delete a category (Admin only)
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   try {
     await connectDB();
     const { id } = await params;

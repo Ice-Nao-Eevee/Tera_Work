@@ -1,19 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import prisma from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminGuard';
 import { getCachedMenu, setCachedMenu, invalidateMenuCache } from '@/lib/menuCache';
+import { safeImageUrlOrEmpty } from '@/lib/safeUrl';
 
-// GET /api/menu  list all active menu items + all categories
+const spiceLevelSchema = z
+  .object({
+    label: z.string().trim().min(1).max(100),
+    priceModifier: z.coerce.number().int().min(0).max(2147483647).default(0),
+  })
+  .strict();
+
+const addOnSchema = z
+  .object({
+    label: z.string().trim().min(1).max(100),
+    price: z.coerce.number().int().min(0).max(2147483647),
+  })
+  .strict();
+
+const createMenuItemSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Nama menu wajib diisi').max(200),
+    description: z.string().max(1000).optional().default(''),
+    price: z.coerce
+      .number()
+      .int()
+      .min(0, 'Harga menu harus berupa angka dan tidak boleh negatif')
+      .max(2147483647, 'Harga terlalu besar (maksimal Rp 2.147.483.647)'),
+    category: z.string().trim().min(1, 'Kategori menu wajib diisi').max(100),
+    photoUrl: z
+      .string()
+      .max(2048)
+      .optional()
+      .default('')
+      .refine((v) => safeImageUrlOrEmpty(v) !== null, {
+        message: 'URL foto harus berupa URL http(s) yang valid.',
+      }),
+    badge: z.string().trim().max(50).optional().default('none'),
+    spiceLevels: z.array(spiceLevelSchema).max(10).optional().default([]),
+    addOns: z.array(addOnSchema).max(30).optional().default([]),
+    isActive: z.boolean().optional().default(true),
+  })
+  .strict();
+
+// GET /api/menu — list all active menu items + all categories (or all=true for admin)
 export async function GET(req: NextRequest) {
   try {
     const includeInactive = req.nextUrl.searchParams.get('all') === 'true';
+    if (includeInactive) {
+      const denied = requireAdmin(req);
+      if (denied) return denied;
+    }
 
-    // Serve from in-memory cache for public customer view (<10ms response)
     if (!includeInactive) {
       const cached = getCachedMenu();
       if (cached) {
         return NextResponse.json(cached, {
-          headers: { 'X-Cache': 'HIT', 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+          headers: {
+            'X-Cache': 'HIT',
+            'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          },
         });
       }
     }
@@ -64,51 +112,52 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/menu  create a new menu item (admin)
+// POST /api/menu — create a new menu item (Admin only, Task E2 & E4)
 export async function POST(req: NextRequest) {
+  const denied = requireAdmin(req);
+  if (denied) return denied;
+
   try {
     await connectDB();
-    const body = await req.json();
-
-    if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
-      return NextResponse.json({ error: 'Nama menu wajib diisi' }, { status: 400 });
+    const rawBody = await req.json().catch(() => null);
+    if (!rawBody || typeof rawBody !== 'object') {
+      return NextResponse.json({ error: 'Data menu tidak valid' }, { status: 400 });
     }
 
-    const price = Number(body.price);
-    if (body.price === undefined || isNaN(price) || price < 0) {
-      return NextResponse.json({ error: 'Harga menu harus berupa angka dan tidak boleh negatif' }, { status: 400 });
+    const parsed = createMenuItemSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      const firstMsg = parsed.error.issues[0]?.message || 'Data menu tidak valid';
+      return NextResponse.json({ error: firstMsg }, { status: 400 });
     }
 
-    if (price > 2147483647) {
-      return NextResponse.json({ error: 'Harga terlalu besar (maksimal Rp 2.147.483.647)' }, { status: 400 });
-    }
-
-    if (!body.category || typeof body.category !== 'string' || !body.category.trim()) {
-      return NextResponse.json({ error: 'Kategori menu wajib diisi' }, { status: 400 });
+    const d = parsed.data;
+    const cleanPhotoUrl = safeImageUrlOrEmpty(d.photoUrl);
+    if (cleanPhotoUrl === null) {
+      return NextResponse.json(
+        { error: 'URL foto tidak valid. Gunakan protokol http:// atau https://.' },
+        { status: 400 }
+      );
     }
 
     const item = await prisma.menuItem.create({
       data: {
-        name: body.name.trim(),
-        description: body.description ?? '',
-        price: Math.round(price),
-        category: body.category.trim(),
-        photoUrl: body.photoUrl ?? '',
-        badge: body.badge ?? 'none',
-        spiceLevels: Array.isArray(body.spiceLevels) ? body.spiceLevels : [],
-        addOns: Array.isArray(body.addOns) ? body.addOns : [],
-        isActive: body.isActive ?? true,
+        name: d.name,
+        description: d.description,
+        price: d.price,
+        category: d.category,
+        photoUrl: cleanPhotoUrl,
+        badge: d.badge,
+        spiceLevels: d.spiceLevels,
+        addOns: d.addOns,
+        isActive: d.isActive,
       },
     });
 
-    // Invalidate menu cache so changes appear immediately
     invalidateMenuCache();
 
     return NextResponse.json({ item }, { status: 201 });
-  } catch (err: any) {
+  } catch (err) {
     console.error('POST /api/menu error:', err);
-    return NextResponse.json({ 
-      error: err?.message ? `Gagal menambah menu: ${err.message}` : 'Gagal menambah menu (kesalahan server database)' 
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Gagal menambah menu' }, { status: 500 });
   }
 }

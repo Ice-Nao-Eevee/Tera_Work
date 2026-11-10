@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { Utensils, Tag, ArrowRight, AlertCircle, Ticket, Check, X, Banknote, QrCode } from 'lucide-react';
 import { formatRupiah } from '@/lib/format';
@@ -19,6 +20,26 @@ import { useTableContext } from '@/lib/useTableContext';
 import { STATIC_PROMOS } from '@/lib/staticData';
 import { IPromo } from '@/lib/types';
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: HTMLElement | string,
+        options: {
+          sitekey: string;
+          callback?: (token: string) => void;
+          'expired-callback'?: () => void;
+          'error-callback'?: () => void;
+          theme?: 'light' | 'dark' | 'auto';
+        }
+      ) => string;
+      reset?: (widgetId?: string) => void;
+    };
+  }
+}
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
@@ -34,6 +55,12 @@ export default function CheckoutPage() {
   const [serviceRate, setServiceRate] = useState<number>(0.05);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qris'>('cash');
 
+  // ── Anti-Bot (Turnstile + Honeypot) ──
+  const [websiteHoneypot, setWebsiteHoneypot] = useState<string>('');
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
+
   // ── Coupon State ──
   const [couponCodeInput, setCouponCodeInput] = useState<string>('');
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
@@ -45,6 +72,20 @@ export default function CheckoutPage() {
 
   const refreshCart = useCallback(() => {
     setItems(getCartItems());
+  }, []);
+
+  const renderTurnstileWidget = useCallback(() => {
+    if (!TURNSTILE_SITE_KEY || !turnstileContainerRef.current || !window.turnstile) return;
+    if (turnstileWidgetIdRef.current) return;
+    try {
+      turnstileWidgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'light',
+        callback: (token: string) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(''),
+        'error-callback': () => setTurnstileToken(''),
+      });
+    } catch (_) {}
   }, []);
 
   useEffect(() => {
@@ -79,6 +120,10 @@ export default function CheckoutPage() {
     const unsubscribe = storeEvents.subscribe(refreshCart);
     return () => unsubscribe();
   }, [refreshCart]);
+
+  useEffect(() => {
+    renderTurnstileWidget();
+  }, [renderTurnstileWidget]);
 
   const handleAddPromo = (promo: IPromo) => {
     const promoId = promo.id || promo._id || 'promo-1';
@@ -148,7 +193,7 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok || !data.valid) {
-        setCouponError(data.error || 'Kupon tidak dapat digunakan.');
+        setCouponError(data.error || 'Kupon tidak valid');
         setAppliedCoupon(null);
         setDiscountAmount(0);
       } else {
@@ -189,31 +234,30 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setSubmitError('Silakan selesaikan verifikasi keamanan terlebih dahulu.');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError('');
 
-    const fullNotes = [notes, extraNotes].filter(Boolean).join(' | ');
+    const fullNotes = [notes, extraNotes].filter(Boolean).join(' | ').slice(0, 200);
 
     try {
-      // NOTE: the table is resolved server-side from the QR cookie — not sent here.
+      // Send only menuId, qty, spiceLevel, addOns, couponCode, notes, paymentMethod, turnstileToken, website (honeypot)
       const payload = {
         items: items.map((ci) => ({
-          menuItemId: ci.menuItem.id || (ci.menuItem as any)._id,
-          name: ci.menuItem.name,
-          qty: ci.qty,
-          price: ci.unitPrice,
+          menuId: ci.menuItem.id || (ci.menuItem as any)._id,
+          qty: Math.min(20, Math.max(1, ci.qty)),
           spiceLevel: ci.spiceLevel || '',
-          addOns: ci.selectedAddOns,
-          lineTotal: ci.lineTotal,
+          addOns: (ci.selectedAddOns || []).map((a) => ({ label: a.label })),
         })),
         notes: fullNotes,
         paymentMethod,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,
-        // NOTE: subtotal/tax/total below are hints only — server ignores and recalculates
-        subtotal,
-        taxAmount,
-        serviceChargeAmount,
-        total: grandTotal,
+        turnstileToken: turnstileToken || undefined,
+        website: websiteHoneypot,
       };
 
       const res = await fetch('/api/orders', {
@@ -226,20 +270,27 @@ export default function CheckoutPage() {
 
       if (!res.ok) {
         setSubmitError(data.error || 'Terjadi kendala saat mengirim pesanan.');
+        if (TURNSTILE_SITE_KEY && window.turnstile?.reset && turnstileWidgetIdRef.current) {
+          window.turnstile.reset(turnstileWidgetIdRef.current);
+          setTurnstileToken('');
+        }
         return;
       }
 
-      if (data.order?.orderCode) {
-        // Save order to local history BEFORE clearing cart (need cart data for summary)
+      const publicOrderId = data.order?.id;
+      const orderCode = data.order?.orderCode;
+
+      if (publicOrderId && orderCode) {
         saveOrderToHistory({
-          orderCode: data.order.orderCode,
+          orderId: publicOrderId,
+          orderCode,
           tableNumber,
           total: data.order.total || grandTotal,
           itemCount: items.reduce((sum, ci) => sum + ci.qty, 0),
           createdAt: new Date().toISOString(),
         });
-        clearCart(); // also clears MANUAL_TABLE_KEY
-        router.push(`/order/${encodeURIComponent(data.order.orderCode)}`);
+        clearCart();
+        router.push(`/order/${encodeURIComponent(publicOrderId)}`);
       } else {
         throw new Error('Respons server tidak valid');
       }
@@ -265,6 +316,14 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen pt-8 pb-24 px-4 md:px-8 max-w-7xl mx-auto">
+      {TURNSTILE_SITE_KEY && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onLoad={renderTurnstileWidget}
+        />
+      )}
+
       <h1 className="font-serif italic font-bold text-4xl md:text-5xl text-[#b45309] mb-8">
         Konfirmasi Pesanan
       </h1>
@@ -461,13 +520,14 @@ export default function CheckoutPage() {
           {/* ── Catatan Tambahan ── */}
           <div className="bg-white rounded-3xl p-6 border border-[#d4bc8c] shadow-card space-y-3">
             <label className="font-bold text-base text-[#2a1a15] block">
-              Catatan Tambahan (Opsional)
+              Catatan Tambahan (Opsional, maks. 200 karakter)
             </label>
             <input
               suppressHydrationWarning
               type="text"
+              maxLength={200}
               value={extraNotes}
-              onChange={(e) => setExtraNotes(e.target.value)}
+              onChange={(e) => setExtraNotes(e.target.value.slice(0, 200))}
               placeholder="Contoh: Jangan terlalu pedas, tambah kerupuk..."
               className="w-full p-4 rounded-2xl border border-[#d4bc8c] bg-[#fcf8f2]/50 text-sm text-[#2a1a15] placeholder-[#9e8d87] focus:outline-none focus:border-[#b45309] focus:bg-white transition-all"
             />
@@ -591,6 +651,37 @@ export default function CheckoutPage() {
               <span className="font-bold text-lg text-[#2a1a15]">Total Keseluruhan</span>
               <span className="font-bold text-2xl text-[#b45309]">{formatRupiah(grandTotal)}</span>
             </div>
+
+            {/* Honeypot input (hidden from humans, Task C5) */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: '-10000px',
+                top: 'auto',
+                width: '1px',
+                height: '1px',
+                overflow: 'hidden',
+              }}
+            >
+              <label htmlFor="checkout-website-hp">Website</label>
+              <input
+                id="checkout-website-hp"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={websiteHoneypot}
+                onChange={(e) => setWebsiteHoneypot(e.target.value)}
+              />
+            </div>
+
+            {/* Cloudflare Turnstile Widget (Task C5) */}
+            {TURNSTILE_SITE_KEY && (
+              <div className="flex justify-center pt-1">
+                <div ref={turnstileContainerRef} />
+              </div>
+            )}
 
             {/* Inline submit error */}
             {submitError && (
