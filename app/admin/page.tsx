@@ -1679,7 +1679,7 @@ export default function AdminPage() {
         @media print { .no-print { display:none !important; } }
       `}</style>
       <div className="ss-admin flex min-h-screen bg-[#f8f6f2] text-[#292522]">
-        <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 sticky top-0 h-screen self-start ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:sticky md:translate-x-0`} style={{ padding: '26px 14px' }}>
+        <aside className={`no-print bg-[#251f1e] text-[#f7f1eb] flex flex-col z-[50] overflow-y-auto shrink-0 transition-all duration-200 sticky top-0 h-screen max-h-screen self-start ${collapsed ? 'w-[72px]' : 'w-[250px]'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:sticky md:translate-x-0`} style={{ padding: '26px 14px' }}>
           <a href="#" onClick={e => { e.preventDefault(); setPage('dashboard'); setMobileOpen(false); }} className={`flex items-center gap-[10px] font-bold text-[16px] pb-[25px] text-[#f7f1eb] no-underline ${collapsed ? 'justify-center' : 'px-[10px]'}`}>
             <img
               src="/warkop-betawa-logo.png"

@@ -1,6 +1,6 @@
 ---
 description: Security guardrails for Selera Sambal QR Ordering App (server-authoritative pricing, admin auth, QR token, Supabase RLS, LLM chatbot security, and injection/upload defenses)
-globs: ["app/api/**/*.ts", "prisma/**/*.prisma", "lib/**/*.ts"]
+globs: "**/app/api/**/*.ts, **/prisma/**/*.prisma, **/lib/**/*.ts"
 alwaysApply: true
 ---
 
