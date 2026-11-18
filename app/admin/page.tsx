@@ -1516,10 +1516,10 @@ function SettingsPage({ onToast }: { onToast: (m: string) => void }) {
 
 // ── LoginPage (server-authenticated via /api/admin/login) ─────────────────────
 function LoginPage({ onLogin }: { onLogin: () => void }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin123');
   const [showPw, setShowPw] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 

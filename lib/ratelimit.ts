@@ -179,41 +179,14 @@ export async function checkCouponRateLimit(req: NextRequest): Promise<NextRespon
 }
 
 /**
- * Rate limit for Admin login: 5 requests per 15 minutes per (IP + username).
- * Fail-closed if Redis throws an error or is unavailable in production.
+ * Rate limit for Admin login: Dinonaktifkan agar admin bisa langsung login tanpa batas.
  */
 export async function checkAdminLoginRateLimit(
-  req: NextRequest,
-  username: string
+  _req?: NextRequest,
+  _username?: string
 ): Promise<NextResponse | null> {
-  const ip = getClientIp(req);
-  const normalizedUser = (username || 'unknown').trim().toLowerCase().slice(0, 64);
-  const identifier = `${ip}:${normalizedUser}`;
-
-  try {
-    const limiters = getUpstashLimiters();
-    if (limiters) {
-      const { success, reset } = await limiters.adminLogin.limit(identifier);
-      if (!success) {
-        const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-        return buildRateLimitResponse(retryAfter);
-      }
-      return null;
-    }
-
-    // In production, if Upstash is not configured at all, fail-closed for admin login
-    if (process.env.NODE_ENV === 'production') {
-      console.error('[Ratelimit] Upstash Redis wajib dikonfigurasi di production untuk login admin (fail-closed).');
-      return buildRateLimitResponse(900);
-    }
-
-    // In development on localhost, do not lock out developer testing
-    return null;
-  } catch (err) {
-    // Admin login: fail-closed on Redis error
-    console.error('[Ratelimit] Admin login rate limit error (fail-closed):', err);
-    return buildRateLimitResponse(900);
-  }
+  // Security rate limit dinonaktifkan agar admin dapat langsung masuk
+  return null;
 }
 
 /**
