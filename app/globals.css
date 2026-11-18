@@ -9,6 +9,11 @@
   --font-inter: 'Inter', sans-serif;
 }
 
+html {
+  background-color: #faf5ee;
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family: var(--font-inter);
   background-color: #faf5ee;
@@ -16,6 +21,8 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  min-height: 100vh;
   /* Authentic warm cafe ambience & tactile artisan paper grain (Bukan AI, natural & selaras warkop) */
   background-image:
     /* Overhead warm cafe pendant glow */
