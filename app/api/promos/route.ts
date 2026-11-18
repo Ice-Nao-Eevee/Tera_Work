@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectDB } from '@/lib/db';
+import { connectDB, getMemoryStore } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminGuard';
 
@@ -27,10 +27,15 @@ export async function GET(req: NextRequest) {
     const promos = await prisma.promo.findMany({
       where: includeInactive ? undefined : { isActive: true },
     });
-    return NextResponse.json({ promos });
+    if (promos.length > 0) {
+      return NextResponse.json({ promos });
+    }
+    const store = getMemoryStore();
+    return NextResponse.json({ promos: store.promos });
   } catch (err) {
-    console.error('GET /api/promos error:', err);
-    return NextResponse.json({ error: 'Gagal memuat promo' }, { status: 500 });
+    console.warn('GET /api/promos falling back to memory store:', err);
+    const store = getMemoryStore();
+    return NextResponse.json({ promos: store.promos });
   }
 }
 

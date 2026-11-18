@@ -285,8 +285,8 @@ export default function AIChatPanel({ isOpen, onClose }: AIChatPanelProps) {
       .then((data) => {
         setMenuItems(Array.isArray(data?.menuItems) ? data.menuItems : []);
       })
-      .catch(() => {
-        console.error('Gagal memuat menu dari database');
+      .catch((err) => {
+        console.warn('Gagal memuat menu:', err);
       });
   }, []);
 

@@ -123,8 +123,8 @@ export default function MenuPage() {
         setMenuItems(Array.isArray(data?.menuItems) ? data.menuItems : []);
         setCategories(Array.isArray(data?.categories) ? data.categories : []);
       })
-      .catch(() => {
-        console.error('Gagal memuat menu dari database');
+      .catch((err) => {
+        console.warn('Gagal memuat menu:', err);
       });
   }, []);
 

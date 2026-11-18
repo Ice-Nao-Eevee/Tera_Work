@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectDB } from '@/lib/db';
+import { connectDB, getMemoryStore } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminGuard';
 import { invalidateMenuCache } from '@/lib/menuCache';
@@ -53,10 +53,21 @@ export async function GET(
     await connectDB();
     const { id } = await params;
     const item = await prisma.menuItem.findUnique({ where: { id } });
-    if (!item) return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
+    if (!item) {
+      const store = getMemoryStore();
+      const fallbackItem = store.menuItems.find((m) => m.id === id || m._id === id);
+      if (fallbackItem) return NextResponse.json({ item: fallbackItem });
+      return NextResponse.json({ error: 'Menu tidak ditemukan' }, { status: 404 });
+    }
     return NextResponse.json({ item });
   } catch (err) {
-    console.error('GET /api/menu/[id] error:', err);
+    console.warn('GET /api/menu/[id] error, falling back to memory store:', err);
+    try {
+      const { id } = await params;
+      const store = getMemoryStore();
+      const fallbackItem = store.menuItems.find((m) => m.id === id || m._id === id);
+      if (fallbackItem) return NextResponse.json({ item: fallbackItem });
+    } catch {}
     return NextResponse.json({ error: 'Gagal memuat menu' }, { status: 500 });
   }
 }

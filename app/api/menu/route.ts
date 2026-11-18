@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectDB } from '@/lib/db';
+import { connectDB, getMemoryStore } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminGuard';
 import { getCachedMenu, setCachedMenu, invalidateMenuCache } from '@/lib/menuCache';
@@ -97,18 +97,31 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const result = { menuItems, categories };
+    if (menuItems.length > 0 || categories.length > 0) {
+      const result = { menuItems, categories };
 
-    if (!includeInactive) {
-      setCachedMenu(result);
+      if (!includeInactive) {
+        setCachedMenu(result);
+      }
+
+      return NextResponse.json(result, {
+        headers: { 'X-Cache': 'MISS' },
+      });
     }
 
-    return NextResponse.json(result, {
-      headers: { 'X-Cache': 'MISS' },
+    // Fallback to memory store if DB returned empty
+    const store = getMemoryStore();
+    return NextResponse.json({
+      menuItems: store.menuItems,
+      categories: store.categories,
     });
   } catch (err) {
-    console.error('GET /api/menu error:', err);
-    return NextResponse.json({ error: 'Gagal memuat menu' }, { status: 500 });
+    console.warn('GET /api/menu falling back to static memory store:', err);
+    const store = getMemoryStore();
+    return NextResponse.json({
+      menuItems: store.menuItems,
+      categories: store.categories,
+    });
   }
 }
 

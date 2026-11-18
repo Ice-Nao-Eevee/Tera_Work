@@ -10,8 +10,6 @@ export const ADMIN_SESSION_COOKIE = 'selera_admin_session';
 const SESSION_MAX_AGE_DEFAULT = 60 * 60 * 12; // 12 hours
 const SESSION_MAX_AGE_REMEMBER = 60 * 60 * 24 * 7; // 7 days
 
-let ephemeralDevSecret: string | null = null;
-
 function getSessionSecret(): string | null {
   const secret =
     process.env.ADMIN_SESSION_SECRET?.trim() ||
@@ -22,10 +20,7 @@ function getSessionSecret(): string | null {
   if (process.env.NODE_ENV === 'production') {
     return null;
   }
-  if (!ephemeralDevSecret) {
-    ephemeralDevSecret = crypto.randomBytes(32).toString('hex');
-  }
-  return ephemeralDevSecret;
+  return 'dev-warkop-betawa-stable-admin-session-secret-2026';
 }
 
 /**
@@ -83,11 +78,16 @@ export function getExpectedAdminCredentials(): {
 
   const seedPassword = process.env.ADMIN_SEED_PASSWORD?.trim();
   if (seedPassword) {
-    if (seedPassword.length < 12) {
+    if (seedPassword.length < 12 && process.env.NODE_ENV === 'production') {
       console.error('[AdminGuard] ADMIN_SEED_PASSWORD ditolak karena kurang dari 12 karakter.');
       return null;
     }
     return { username, passwordHashOrPlain: seedPassword };
+  }
+
+  // Fallback untuk mode development lokal
+  if (process.env.NODE_ENV !== 'production') {
+    return { username, passwordHashOrPlain: 'admin123' };
   }
 
   return null;

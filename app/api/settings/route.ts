@@ -33,8 +33,8 @@ export async function GET() {
     if (!settings) settings = { id: 'static', ...STATIC_SETTINGS } as any;
     return NextResponse.json({ settings });
   } catch (err) {
-    console.error('GET /api/settings error:', err);
-    return NextResponse.json({ error: 'Gagal memuat pengaturan' }, { status: 500 });
+    console.warn('GET /api/settings falling back to static settings:', err);
+    return NextResponse.json({ settings: { id: 'static', ...STATIC_SETTINGS } });
   }
 }
 

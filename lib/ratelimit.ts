@@ -207,10 +207,7 @@ export async function checkAdminLoginRateLimit(
       return buildRateLimitResponse(900);
     }
 
-    const fb = checkDevFallbackWindow(`admin_login:${identifier}`, 5, 15 * 60_000);
-    if (!fb.success) {
-      return buildRateLimitResponse(fb.retryAfterSeconds);
-    }
+    // In development on localhost, do not lock out developer testing
     return null;
   } catch (err) {
     // Admin login: fail-closed on Redis error

@@ -73,6 +73,9 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    if (res.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('admin:unauthorized'));
+    }
     throw new Error(err.error || `HTTP ${res.status}`);
   }
   return res.json();
@@ -852,7 +855,7 @@ function DashboardPage({ onToast }: { onToast: (m: string) => void }) {
       setOrders(oData.orders || []);
       setCategories((cData.categories || []).map(withAdminId));
     } catch (err) {
-      console.error('Dashboard fetch error', err);
+      console.warn('Dashboard fetch error', err);
     } finally {
       setLoading(false);
     }
@@ -1625,6 +1628,14 @@ export default function AdminPage() {
       })
       .catch(() => setIsAuth(false))
       .finally(() => setMounted(true));
+
+    const handleUnauthorized = () => {
+      sessionStorage.removeItem('ss_session');
+      localStorage.removeItem('ss_remember');
+      setIsAuth(false);
+    };
+    window.addEventListener('admin:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('admin:unauthorized', handleUnauthorized);
   }, []);
 
   const addToast = useCallback((msg: string) => {

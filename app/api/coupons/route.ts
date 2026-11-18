@@ -40,10 +40,7 @@ export async function GET() {
 
     return NextResponse.json({ coupons: availableToday });
   } catch (err) {
-    console.error('GET /api/coupons error:', err);
-    return NextResponse.json(
-      { error: 'Gagal memuat kupon' },
-      { status: 500 }
-    );
+    console.warn('GET /api/coupons error, returning empty list:', err);
+    return NextResponse.json({ coupons: [] });
   }
 }

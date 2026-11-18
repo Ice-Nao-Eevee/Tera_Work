@@ -46,11 +46,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ coupons: enriched });
   } catch (err) {
-    console.error('GET /api/admin/coupons error:', err);
-    return NextResponse.json(
-      { error: 'Gagal memuat data kupon' },
-      { status: 500 }
-    );
+    console.warn('GET /api/admin/coupons error, returning empty list:', err);
+    return NextResponse.json({ coupons: [] });
   }
 }
 

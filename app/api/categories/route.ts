@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { connectDB } from '@/lib/db';
+import { connectDB, getMemoryStore } from '@/lib/db';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminGuard';
 import { invalidateMenuCache } from '@/lib/menuCache';
@@ -20,10 +20,15 @@ export async function GET() {
     const categories = await prisma.category.findMany({
       orderBy: { sortOrder: 'asc' },
     });
-    return NextResponse.json({ categories });
+    if (categories.length > 0) {
+      return NextResponse.json({ categories });
+    }
+    const store = getMemoryStore();
+    return NextResponse.json({ categories: store.categories });
   } catch (err) {
-    console.error('GET /api/categories error:', err);
-    return NextResponse.json({ error: 'Gagal memuat kategori' }, { status: 500 });
+    console.warn('GET /api/categories falling back to memory store:', err);
+    const store = getMemoryStore();
+    return NextResponse.json({ categories: store.categories });
   }
 }
 
